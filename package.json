@@ -1,0 +1,13 @@
+{
+  "name": "crosschain-gov-solana-payload-scripts",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1"
+  }
+}
