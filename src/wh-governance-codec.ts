@@ -138,6 +138,7 @@ const serializeInstruction = (
  * | MODULE          |                               32 | Governance module identifier            |
  * | ACTION          |                                1 | Governance action identifier            |
  * | CHAIN           |                                2 | Chain identifier                        |
+ * | PROGRAM_ID      |                               32 | Governance Program ID                   |
  * |-----------------+----------------------------------+-----------------------------------------|
  * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
@@ -148,13 +149,16 @@ const serializeInstruction = (
  * @returns
  */
 export const convertInstructionToWhGovernanceSolanaPayload = (
+  governanceProgramId: web3.PublicKey,
   instruction: web3.TransactionInstruction
 ): Uint8Array => {
+  const governanceProgramIdBytes = governanceProgramId.toBytes();
   const serializedInstruction = serializeInstruction(instruction);
   const payload = new Uint8Array(
     WH_GOV_MODULE.length +
       SOLANA_ACTION_BYTES.length +
       WH_SOLANA_CHAIN_ID.length +
+      governanceProgramIdBytes.length +
       serializedInstruction.length
   );
 
@@ -165,6 +169,21 @@ export const convertInstructionToWhGovernanceSolanaPayload = (
   offset += SOLANA_ACTION_BYTES.length;
   payload.set(WH_SOLANA_CHAIN_ID, offset);
   offset += WH_SOLANA_CHAIN_ID.length;
+  payload.set(governanceProgramIdBytes, offset);
+  offset += governanceProgramIdBytes.length;
   payload.set(serializedInstruction, offset);
   return payload;
 };
+
+/** Create "Sentinel" PublicKey to match WH governance placeholder keys */
+export const generateSentinelPubkey = (name: string) => {
+  const buf = Buffer.alloc(32);
+  const nameBytes = utf8Encode.encode(name);
+  buf.set(nameBytes);
+  return new web3.PublicKey(buf);
+};
+
+/** PAYER placeholder key */
+export const WH_PAYER_SENTINEL_KEY = generateSentinelPubkey("payer");
+/** OWNER placeholder key */
+export const WH_OWNER_SENTINEL_KEY = generateSentinelPubkey("owner");

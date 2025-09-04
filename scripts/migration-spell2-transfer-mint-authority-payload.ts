@@ -1,6 +1,10 @@
 import { Program, web3 } from "@coral-xyz/anchor-29";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor-29/dist/cjs/utils/token";
-import { convertInstructionToWhGovernanceSolanaPayload } from "../src/wh-governance-codec";
+import {
+  convertInstructionToWhGovernanceSolanaPayload,
+  SKY_WH_GOVERNANCE_PROGRAM_ID,
+  WH_PAYER_SENTINEL_KEY,
+} from "../src";
 
 const NTT_MANAGER_ADDRESS = new web3.PublicKey(
   "STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn"
@@ -17,8 +21,6 @@ const TOKEN_MINT = new web3.PublicKey(
   "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA"
 );
 
-// TODO update with appropriate payer
-const PAYER = new web3.PublicKey("TODO");
 // TODO update with the appropriate key for the LZ OFT
 // Program
 const NEW_MINT_AUTHORITY = new web3.PublicKey("TODO");
@@ -30,7 +32,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
       newAuthority: NEW_MINT_AUTHORITY,
     })
     .accountsStrict({
-      payer: PAYER,
+      payer: WH_PAYER_SENTINEL_KEY,
       config: NTT_CONFIG,
       tokenAuthority: NTT_TOKEN_AUTHORITY,
       mint: TOKEN_MINT,
@@ -40,6 +42,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
 
   const transferMintAuthorityGovernancePayload =
     convertInstructionToWhGovernanceSolanaPayload(
+      SKY_WH_GOVERNANCE_PROGRAM_ID,
       transferMintAuthorityInstruction
     );
   console.log(
