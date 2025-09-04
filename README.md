@@ -1,6 +1,6 @@
 # Sky Solana Crosschain Governance Payload Scripts
 
-This repository contains scripts for construction TransactionInstructions and converting them into a crosschain governance payload for a respective spell.
+This repository contains scripts for the construction of TransactionInstructions and converting them into a crosschain governance payload for a respective spell.
 
 ## Structure and Usage
 Each spell instruction has a corresponding script that can be run to output the payload required for the Solana crosschain governance.

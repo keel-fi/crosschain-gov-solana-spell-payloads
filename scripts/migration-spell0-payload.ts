@@ -1,5 +1,8 @@
 import { web3 } from "@coral-xyz/anchor";
-import { convertInstructionToWhGovernanceSolanaPayload } from "../src/wh-governance-codec";
+import {
+  convertInstructionToWhGovernanceSolanaPayload,
+  SKY_WH_GOVERNANCE_PROGRAM_ID,
+} from "../src";
 // Creates a payload for upgrading the Solana NTT Manager program.
 
 const LOADER_V3_PROGRAM_ADDRESS = new web3.PublicKey(
@@ -52,7 +55,10 @@ const printSpell0NttUpgradePayload = () => {
     NTT_MANAGER_UPGRADE_AUTHORITY
   );
   const upgradeGovernancePayload =
-    convertInstructionToWhGovernanceSolanaPayload(upgradeInstruction);
+    convertInstructionToWhGovernanceSolanaPayload(
+      SKY_WH_GOVERNANCE_PROGRAM_ID,
+      upgradeInstruction
+    );
   console.log("Upgrade Instruction Payload: ", upgradeGovernancePayload);
 };
 
