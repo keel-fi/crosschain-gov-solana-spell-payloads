@@ -3,6 +3,8 @@
     "module": "commonjs",
     "noImplicitAny": true,
     "removeComments": true,
-    "preserveConstEnums": true
+    "preserveConstEnums": true,
+    "types": ["mocha", "node"],
+    "esModuleInterop": true
   }
 }

@@ -3,7 +3,12 @@
   "version": "0.0.1",
   "main": "index.ts",
   "license": "MIT",
+  "scripts": {
+    "test": "mocha"
+  },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "mocha": "^11.7.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
