@@ -26,7 +26,7 @@ enum WHChainId {
 }
 
 const SOLANA_ACTION_BYTES = new Uint8Array([WHGovernanceAction.SolanaCall]);
-const WH_SOLANA_CHAIN_ID = new Uint8Array([WHChainId.Solana, 0]);
+const WH_SOLANA_CHAIN_ID = new Uint8Array([0, WHChainId.Solana]);
 
 /**
  * Serialize a number to a byte array of a given length.
@@ -57,10 +57,9 @@ const serializeNumberToBytes = (num: number, length: number): Uint8Array => {
 
   const buffer = new Uint8Array(length);
 
-  for (let i = 0; i < length; i++) {
-    // Write least significant byte first (little-endian)
+  // Write most significant byte first (big-endian)
+  for (let i = length - 1; i >= 0; i--) {
     buffer[i] = num & 0xff;
-    // Shift right to prepare for the next byte
     num >>= 8;
   }
 
