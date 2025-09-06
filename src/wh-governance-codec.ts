@@ -1,5 +1,7 @@
 import { web3 } from "@coral-xyz/anchor";
 
+// NOTE: we could use buffer-layout if we're ok with more deps.
+
 const utf8Encode = new TextEncoder();
 // "GeneralPurposeGovernance" in bytes
 const GENERAL_PURPOSE_GOVERNANCE_BYTES = utf8Encode.encode(
