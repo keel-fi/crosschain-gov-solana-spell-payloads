@@ -1,15 +1,10 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
-import {
-  convertInstructionToWhGovernanceSolanaPayload,
-  convertWhGovernanceSolanaPayloadToInstruction,
-  WH_OWNER_SENTINEL_KEY,
-  WH_PAYER_SENTINEL_KEY,
-} from "./wh-governance-codec";
+import { convertInstructionToLzGovernanceSolanaPayload, convertLzGovernanceSolanaPayloadToInstruction, deriveExecutionContextAddress, LZ_CONTEXT_PLACEHOLDER, LZ_CPI_AUTHORITY_PLACEHOLDER, LZ_PAYER_PLACEHOLDER } from "./lz-governance-codec";
 
-describe("wh-governance-codec", () => {
+describe("lz-governance-codec", () => {
   it("should (de)serialize successfully", () => {
-    const governanceProgramId = web3.PublicKey.unique();
+    const originCaller = web3.PublicKey.unique();
     const data = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
     const programId = web3.PublicKey.unique();
     const accounts: web3.AccountMeta[] = [
@@ -19,12 +14,17 @@ describe("wh-governance-codec", () => {
         isWritable: true,
       },
       {
-        pubkey: WH_OWNER_SENTINEL_KEY,
+        pubkey: LZ_CONTEXT_PLACEHOLDER,
         isSigner: false,
         isWritable: true,
       },
       {
-        pubkey: WH_PAYER_SENTINEL_KEY,
+        pubkey: LZ_CPI_AUTHORITY_PLACEHOLDER,
+        isSigner: true,
+        isWritable: false,
+      },
+      {
+        pubkey: LZ_PAYER_PLACEHOLDER,
         isSigner: true,
         isWritable: false,
       },
@@ -35,32 +35,37 @@ describe("wh-governance-codec", () => {
       data,
     });
 
-    const serializedInstruction = convertInstructionToWhGovernanceSolanaPayload(
-      governanceProgramId,
+    const serializedInstruction = convertInstructionToLzGovernanceSolanaPayload(
+      originCaller.toBuffer(),
       instruction
     );
 
-    const owner = web3.PublicKey.unique();
+    const cpiAuthority = web3.PublicKey.unique();
     const payer = web3.PublicKey.unique();
+    const executionContextAddress = deriveExecutionContextAddress(payer);
     const expectedInstruction = {
       ...instruction,
       keys: [
         accounts[0],
         {
           ...accounts[1],
-          pubkey: owner,
+          pubkey: executionContextAddress,
         },
         {
           ...accounts[2],
+          pubkey: cpiAuthority,
+        },
+        {
+          ...accounts[3],
           pubkey: payer,
         },
       ],
     };
     const deserializedInstruction =
-      convertWhGovernanceSolanaPayloadToInstruction(
+      convertLzGovernanceSolanaPayloadToInstruction(
         serializedInstruction,
+        cpiAuthority,
         payer,
-        owner
       );
     assert.deepEqual(deserializedInstruction, expectedInstruction);
   });

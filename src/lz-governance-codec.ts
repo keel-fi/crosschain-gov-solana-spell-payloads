@@ -6,40 +6,28 @@ import {
   SERIALIZED_ACCOUNT_LEN,
 } from "./shared-governance-codec";
 
-// NOTE: we could use buffer-layout if we're ok with more deps.
-
 const utf8Encode = new TextEncoder();
-// "GeneralPurposeGovernance" in bytes
-const GENERAL_PURPOSE_GOVERNANCE_BYTES = utf8Encode.encode(
-  "GeneralPurposeGovernance"
+const EXECUTOR_ID = new web3.PublicKey(
+  "6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn"
 );
-// 0 padded "GeneralPurposeGovernance" in bytes
-const WH_GOV_MODULE = new Uint8Array(32);
-WH_GOV_MODULE.set(
-  GENERAL_PURPOSE_GOVERNANCE_BYTES,
-  32 - GENERAL_PURPOSE_GOVERNANCE_BYTES.length
-);
+const EXECUTION_CONTEXT_SEED = utf8Encode.encode("ExecutionContext");
+const EXECUTION_CONTEXT_VERSION_1 = 1;
+const EXECUTION_CONTEXT_VERSION_SEED = Buffer.from([
+  EXECUTION_CONTEXT_VERSION_1,
+]);
 
-enum WHGovernanceAction {
-  Undefined,
-  EvmCall,
-  SolanaCall,
+enum LZGovernanceAction {
+  // Undefined = 0, // unused
+  // EvmCall = 1, // unused
+  SolanaCall = 2,
 }
 
-enum WHChainId {
-  Unset = 0,
-  Solana = 1,
-  Ethereum = 2,
-  Terra = 3,
-}
+const ORIGIN_CALLER_LEN = 32;
+const SOLANA_ACTION_BYTES = new Uint8Array([LZGovernanceAction.SolanaCall]);
 
-const SOLANA_ACTION_BYTES = new Uint8Array([WHGovernanceAction.SolanaCall]);
-const WH_SOLANA_CHAIN_ID = new Uint8Array([0, WHChainId.Solana]);
-const WH_GOV_MESSAGE_HEADER_LEN =
-  WH_GOV_MODULE.length +
-  SOLANA_ACTION_BYTES.length +
-  WH_SOLANA_CHAIN_ID.length +
-  32; // pubkey length
+// ACTION + ORIGIN_CALLER
+const LZ_GOV_MESSAGE_HEADER_LEN =
+  SOLANA_ACTION_BYTES.length + ORIGIN_CALLER_LEN;
 
 /**
  * Serialize TransactionInstruction to the following format.
@@ -47,8 +35,7 @@ const WH_GOV_MESSAGE_HEADER_LEN =
  * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
- * | data_length     |                                2 | Length of the data                      |
- * | data            |                    `data_length` | Data to be passed to the program        |
+ * | data            |                        remaining | Data to be passed to the program        |
  */
 const serializeInstruction = (
   instruction: web3.TransactionInstruction
@@ -59,7 +46,6 @@ const serializeInstruction = (
     programId.length + // program_id
     2 + // accounts_length
     SERIALIZED_ACCOUNT_LEN * instruction.keys.length + // accounts
-    2 + // data_len
     instruction.data.length; // data
   const buffer = Buffer.alloc(totalLen);
 
@@ -72,8 +58,6 @@ const serializeInstruction = (
     buffer.set(serializedAccountMeta, offset);
     offset += serializedAccountMeta.length;
   }
-  buffer.writeUInt16BE(instruction.data.length, offset);
-  offset += 2;
   buffer.set(instruction.data, offset);
 
   return buffer;
@@ -85,8 +69,7 @@ const serializeInstruction = (
  * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
- * | data_length     |                                2 | Length of the data                      |
- * | data            |                    `data_length` | Data to be passed to the program        |
+ * | data            |                        remaining | Data to be passed to the program        |
  */
 const deserializeInstruction = (
   payload: Buffer
@@ -108,9 +91,7 @@ const deserializeInstruction = (
     offset += SERIALIZED_ACCOUNT_LEN;
   }
 
-  const dataLen = payload.readUInt16BE(offset);
-  offset += 2;
-  const data = payload.subarray(offset, offset + dataLen);
+  const data = payload.subarray(offset);
 
   return new web3.TransactionInstruction({
     keys: accounts,
@@ -120,74 +101,92 @@ const deserializeInstruction = (
 };
 
 /**
- * Given a TransactionInstruction, convert it to a WH governance payload for Solana.
+ * Given a TransactionInstruction, convert it to a LZ governance payload for Solana.
  * General purpose governance message to call arbitrary instructions on a governed program.
- *
- * This message adheres to the Wormhole governance packet standard:
- * https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0002_governance_messaging.md
  *
  * The wire format for this message is:
  * | field           |                     size (bytes) | description                             |
  * |-----------------+----------------------------------+-----------------------------------------|
- * | MODULE          |                               32 | Governance module identifier            |
  * | ACTION          |                                1 | Governance action identifier            |
- * | CHAIN           |                                2 | Chain identifier                        |
- * | PROGRAM_ID      |                               32 | Governance Program ID                   |
+ * | ORIGIN_CALLER   |                               32 | Origin caller address as bytes32        |
  * |-----------------+----------------------------------+-----------------------------------------|
  * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
- * | data_length     |                                2 | Length of the data                      |
- * | data            |                    `data_length` | Data to be passed to the program        |
+ * | data            |                        remaining | Data to be passed to the program        |
+ *
  */
-export const convertInstructionToWhGovernanceSolanaPayload = (
-  governanceProgramId: web3.PublicKey,
+export const convertInstructionToLzGovernanceSolanaPayload = (
+  originCaller: Buffer,
   instruction: web3.TransactionInstruction
 ): Buffer => {
-  const governanceProgramIdBytes = governanceProgramId.toBytes();
   const serializedInstruction = serializeInstruction(instruction);
   const payload = Buffer.alloc(
-    WH_GOV_MESSAGE_HEADER_LEN + serializedInstruction.length
+    LZ_GOV_MESSAGE_HEADER_LEN + serializedInstruction.length
   );
 
+  if (originCaller.length !== ORIGIN_CALLER_LEN) {
+    throw new Error("Invalid length of ORIGIN_CALLER");
+  }
+
   let offset = 0;
-  payload.set(WH_GOV_MODULE, offset);
-  offset += WH_GOV_MODULE.length;
   payload.set(SOLANA_ACTION_BYTES, offset);
   offset += SOLANA_ACTION_BYTES.length;
-  payload.set(WH_SOLANA_CHAIN_ID, offset);
-  offset += WH_SOLANA_CHAIN_ID.length;
-  payload.set(governanceProgramIdBytes, offset);
-  offset += governanceProgramIdBytes.length;
+  payload.set(originCaller, offset);
+  offset += ORIGIN_CALLER_LEN;
   payload.set(serializedInstruction, offset);
   return payload;
 };
 
+/** CPI_AUTHORITY placeholder key */
+export const LZ_CPI_AUTHORITY_PLACEHOLDER =
+  generateSentinelPubkey("cpi_authority");
 /** PAYER placeholder key */
-export const WH_PAYER_SENTINEL_KEY = generateSentinelPubkey("payer");
-/** OWNER placeholder key */
-export const WH_OWNER_SENTINEL_KEY = generateSentinelPubkey("owner");
+export const LZ_PAYER_PLACEHOLDER = generateSentinelPubkey("payer");
+/** CONTEXT placeholder key */
+export const LZ_CONTEXT_PLACEHOLDER = generateSentinelPubkey("context");
 
 /**
- * Deserialize a WH Governance payload by stripping the message header,
+ * Derive the Execution context address
+ * @param payer
+ * @returns
+ */
+export const deriveExecutionContextAddress = (
+  payer: web3.PublicKey
+): web3.PublicKey => {
+  const [executionContextAddress] = web3.PublicKey.findProgramAddressSync(
+    [EXECUTION_CONTEXT_SEED, payer.toBytes(), EXECUTION_CONTEXT_VERSION_SEED],
+    EXECUTOR_ID
+  );
+  return executionContextAddress;
+};
+
+/**
+ * Deserialize a LZ Governance payload by stripping the message header,
  * deserializing the underlying instruction, and replacing the
  * sentinel keys with proper values.
  */
-export const convertWhGovernanceSolanaPayloadToInstruction = (
+export const convertLzGovernanceSolanaPayloadToInstruction = (
   payload: Buffer,
-  payerKey: web3.PublicKey,
-  ownerKey: web3.PublicKey
+  cpi_authority: web3.PublicKey,
+  payerKey: web3.PublicKey
 ) => {
   // Remove the Gov Message header
-  const serializedInstruction = payload.subarray(WH_GOV_MESSAGE_HEADER_LEN);
+  const serializedInstruction = payload.subarray(LZ_GOV_MESSAGE_HEADER_LEN);
   // Deserialize instruction
   const instruction = deserializeInstruction(serializedInstruction);
-  // Replace sentinel keys with provider values
+
+  // Derive the execution context address
+  const executionContextAddress = deriveExecutionContextAddress(payerKey);
+
+  // Replace placeholder keys with provider values
   instruction.keys = instruction.keys.map((accountMeta) => {
-    if (accountMeta.pubkey.equals(WH_PAYER_SENTINEL_KEY)) {
+    if (accountMeta.pubkey.equals(LZ_CPI_AUTHORITY_PLACEHOLDER)) {
+      accountMeta.pubkey = cpi_authority;
+    } else if (accountMeta.pubkey.equals(LZ_PAYER_PLACEHOLDER)) {
       accountMeta.pubkey = payerKey;
-    } else if (accountMeta.pubkey.equals(WH_OWNER_SENTINEL_KEY)) {
-      accountMeta.pubkey = ownerKey;
+    } else if (accountMeta.pubkey.equals(LZ_CONTEXT_PLACEHOLDER)) {
+      accountMeta.pubkey = executionContextAddress;
     }
     return accountMeta;
   });
