@@ -41,6 +41,9 @@ export const simulateInstructions = async (
     },
   });
   const resp = respContext.value;
+  if (resp.err) {
+    throw new Error(JSON.stringify(resp.err));
+  }
 
   return accountKeyList.reduce((acc, key, i) => {
     acc[key.toString()] = {

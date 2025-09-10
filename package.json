@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.31.1",
-    "@coral-xyz/anchor-29": "npm:@coral-xyz/anchor@0.29.0"
+    "@coral-xyz/anchor-29": "npm:@coral-xyz/anchor@0.29.0",
+    "@solana/buffer-layout": "^4.0.1",
+    "@solana/buffer-layout-utils": "^0.2.0"
   }
 }

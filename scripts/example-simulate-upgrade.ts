@@ -2,6 +2,7 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
+  assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
   simulateInstructions,
 } from "../src";
@@ -46,6 +47,7 @@ const main = async () => {
 
   const resp = await simulateInstructions(connection, PAYER, [instruction]);
 
+  const PROGRAM_ADDRESS = "H3BpbuheXwBnfxjb2L66mxZ9nFhRmUentYwQDspd6yJ9";
   const PROGRAM_DATA_ADDRESS = "G9PGxifnjuhcJHtVV4XMgRMY3ZsWyvyQsKHqVnMf4XRB";
 
   // Assert the Program data changed
@@ -55,6 +57,9 @@ const main = async () => {
     new Uint8Array(programDataAfter),
     new Uint8Array(programDataResp.before.data.buffer)
   );
+
+  const programResp = resp[PROGRAM_ADDRESS];
+  assertNoAccountChanges(programResp.before, programResp.after);
 };
 
 main();
