@@ -53,8 +53,8 @@ const main = async () => {
   // check rates updated
   const tokenSwapResp = resp[PSM_SWAP_POOL];
   const dataAfter = Buffer.from(tokenSwapResp.after.data[0], "base64");
-  const bytesBefore = new Uint8Array(tokenSwapResp.before.data.buffer);
-  const bytesAfter = new Uint8Array(dataAfter.buffer);
+  const bytesBefore = new Uint8Array(tokenSwapResp.before.data);
+  const bytesAfter = new Uint8Array(dataAfter);
   const tokenSwapBefore = TokenSwapLayout.decode(bytesBefore);
   const tokenSwapAfter = TokenSwapLayout.decode(bytesAfter);
   // Assert curve parameters matches our expected changes
@@ -74,15 +74,33 @@ const main = async () => {
   assert.equal(tokenSwapBefore.isInitialized, tokenSwapAfter.isInitialized);
   assert.equal(tokenSwapBefore.bumpSeed, tokenSwapAfter.bumpSeed);
   assert.equal(
-    tokenSwapBefore.poolTokenProgramId,
-    tokenSwapAfter.poolTokenProgramId
+    tokenSwapBefore.poolTokenProgramId.toString(),
+    tokenSwapAfter.poolTokenProgramId.toString()
   );
-  assert.equal(tokenSwapBefore.tokenAccountA, tokenSwapAfter.tokenAccountA);
-  assert.equal(tokenSwapBefore.tokenAccountB, tokenSwapAfter.tokenAccountB);
-  assert.equal(tokenSwapBefore.tokenPool, tokenSwapAfter.tokenPool);
-  assert.equal(tokenSwapBefore.mintA, tokenSwapAfter.mintA);
-  assert.equal(tokenSwapBefore.mintB, tokenSwapAfter.mintB);
-  assert.equal(tokenSwapBefore.feeAccount, tokenSwapAfter.feeAccount);
+  assert.equal(
+    tokenSwapBefore.tokenAccountA.toString(),
+    tokenSwapAfter.tokenAccountA.toString()
+  );
+  assert.equal(
+    tokenSwapBefore.tokenAccountB.toString(),
+    tokenSwapAfter.tokenAccountB.toString()
+  );
+  assert.equal(
+    tokenSwapBefore.tokenPool.toString(),
+    tokenSwapAfter.tokenPool.toString()
+  );
+  assert.equal(
+    tokenSwapBefore.mintA.toString(),
+    tokenSwapAfter.mintA.toString()
+  );
+  assert.equal(
+    tokenSwapBefore.mintB.toString(),
+    tokenSwapAfter.mintB.toString()
+  );
+  assert.equal(
+    tokenSwapBefore.feeAccount.toString(),
+    tokenSwapAfter.feeAccount.toString()
+  );
   assert.equal(
     tokenSwapBefore.tradeFeeNumerator,
     tokenSwapAfter.tradeFeeNumerator

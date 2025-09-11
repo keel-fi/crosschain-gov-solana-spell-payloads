@@ -55,7 +55,7 @@ const main = async () => {
   const programDataAfter = Buffer.from(programDataResp.after.data[0], "base64");
   assert.notDeepEqual(
     new Uint8Array(programDataAfter),
-    new Uint8Array(programDataResp.before.data.buffer)
+    new Uint8Array(programDataResp.before.data)
   );
 
   const programResp = resp[PROGRAM_ADDRESS];
