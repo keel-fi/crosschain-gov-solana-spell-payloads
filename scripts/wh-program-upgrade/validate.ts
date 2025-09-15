@@ -94,7 +94,7 @@ const main = async () => {
 
   // Assert that any extra ProgramData space is just zero padding
   assert.ok(
-    programCodeAfter.subarray(programCodeAfter.length).every(b => b === 0),
+    programCodeAfter.subarray(bufferCodeBefore.length).every(b => b === 0),
     "ProgramData trailing padding not zero"
   );
 
