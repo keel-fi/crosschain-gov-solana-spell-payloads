@@ -20,7 +20,7 @@ export const getUpgradeInstruction = (
       { pubkey: bufferAccount, isWritable: true, isSigner: false },
       { pubkey: spillAccount, isWritable: true, isSigner: false },
       { pubkey: web3.SYSVAR_RENT_PUBKEY, isWritable: false, isSigner: false },
-      { pubkey: web3.SYSVAR_CLOCK_PUBKEY, isWritable: true, isSigner: false },
+      { pubkey: web3.SYSVAR_CLOCK_PUBKEY, isWritable: false, isSigner: false },
       { pubkey: authority, isWritable: false, isSigner: true },
     ],
     programId: LOADER_V3_PROGRAM_ADDRESS,
