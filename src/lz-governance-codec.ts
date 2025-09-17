@@ -16,23 +16,18 @@ const EXECUTION_CONTEXT_VERSION_SEED = Buffer.from([
   EXECUTION_CONTEXT_VERSION_1,
 ]);
 
-enum LZGovernanceAction {
-  // Undefined = 0, // unused
-  // EvmCall = 1, // unused
-  SolanaCall = 2,
-}
-
+// Origin caller address as bytes32
 const ORIGIN_CALLER_LEN = 32;
-const SOLANA_ACTION_BYTES = new Uint8Array([LZGovernanceAction.SolanaCall]);
+// Target address as bytes32 
+const TARGET_LEN = 32;
 
-// ACTION + ORIGIN_CALLER
-const LZ_GOV_MESSAGE_HEADER_LEN =
-  SOLANA_ACTION_BYTES.length + ORIGIN_CALLER_LEN;
+// ORIGIN_CALLER + TARGET
+const LZ_GOV_MESSAGE_HEADER_LEN = ORIGIN_CALLER_LEN + TARGET_LEN;
+
 
 /**
  * Serialize TransactionInstruction to the following format.
  * |-----------------+----------------------------------+-----------------------------------------|
- * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
  * | data            |                        remaining | Data to be passed to the program        |
@@ -40,19 +35,16 @@ const LZ_GOV_MESSAGE_HEADER_LEN =
 const serializeInstruction = (
   instruction: web3.TransactionInstruction
 ): Buffer => {
-  const programId = instruction.programId.toBytes();
+  const accountsLen = instruction.keys.length;
   const accounts = instruction.keys.map(serializeAccountToBytes);
   const totalLen =
-    programId.length + // program_id
     2 + // accounts_length
-    SERIALIZED_ACCOUNT_LEN * instruction.keys.length + // accounts
+    SERIALIZED_ACCOUNT_LEN * accountsLen + // accounts
     instruction.data.length; // data
   const buffer = Buffer.alloc(totalLen);
 
   let offset = 0;
-  buffer.set(programId, offset);
-  offset += programId.length;
-  buffer.writeUInt16BE(instruction.keys.length, offset);
+  buffer.writeUInt16BE(accountsLen, offset);
   offset += 2;
   for (const serializedAccountMeta of accounts) {
     buffer.set(serializedAccountMeta, offset);
@@ -66,17 +58,15 @@ const serializeInstruction = (
 /**
  * Deserialize TransactionInstruction from the following format.
  * |-----------------+----------------------------------+-----------------------------------------|
- * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
  * | data            |                        remaining | Data to be passed to the program        |
  */
 const deserializeInstruction = (
+  targetProgram: web3.PublicKey,
   payload: Buffer
 ): web3.TransactionInstruction => {
   let offset = 0;
-  const programIdBytes = payload.subarray(offset, offset + 32);
-  offset += 32;
   const accountLen = payload.readUInt16BE(offset);
   offset += 2;
 
@@ -95,7 +85,7 @@ const deserializeInstruction = (
 
   return new web3.TransactionInstruction({
     keys: accounts,
-    programId: new web3.PublicKey(programIdBytes),
+    programId: targetProgram,
     data,
   });
 };
@@ -107,10 +97,9 @@ const deserializeInstruction = (
  * The wire format for this message is:
  * | field           |                     size (bytes) | description                             |
  * |-----------------+----------------------------------+-----------------------------------------|
- * | ACTION          |                                1 | Governance action identifier            |
  * | ORIGIN_CALLER   |                               32 | Origin caller address as bytes32        |
+ * | TARGET          |                               32 | Target address as bytes32               |
  * |-----------------+----------------------------------+-----------------------------------------|
- * | program_id      |                               32 | Program ID of the program to be invoked |
  * | accounts_length |                                2 | Number of accounts                      |
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
  * | data            |                        remaining | Data to be passed to the program        |
@@ -129,11 +118,13 @@ export const convertInstructionToLzGovernanceSolanaPayload = (
     throw new Error("Invalid length of ORIGIN_CALLER");
   }
 
+  const targetProgramBytes = instruction.programId.toBytes();
+
   let offset = 0;
-  payload.set(SOLANA_ACTION_BYTES, offset);
-  offset += SOLANA_ACTION_BYTES.length;
   payload.set(originCaller, offset);
   offset += ORIGIN_CALLER_LEN;
+  payload.set(targetProgramBytes, offset);
+  offset += TARGET_LEN;
   payload.set(serializedInstruction, offset);
   return payload;
 };
@@ -171,10 +162,16 @@ export const convertLzGovernanceSolanaPayloadToInstruction = (
   cpi_authority: web3.PublicKey,
   payerKey: web3.PublicKey
 ) => {
+
+  // Get the target program for header
+  const targetProgramBytes = payload.subarray(ORIGIN_CALLER_LEN, ORIGIN_CALLER_LEN + TARGET_LEN);
+  const targetProgram = new web3.PublicKey(targetProgramBytes);
+
   // Remove the Gov Message header
   const serializedInstruction = payload.subarray(LZ_GOV_MESSAGE_HEADER_LEN);
+  
   // Deserialize instruction
-  const instruction = deserializeInstruction(serializedInstruction);
+  const instruction = deserializeInstruction(targetProgram, serializedInstruction);
 
   // Derive the execution context address
   const executionContextAddress = deriveExecutionContextAddress(payerKey);
