@@ -30,15 +30,18 @@ const printSpellUpgradePayload = () => {
     // excess lamports
     PROGRAM_UPGRADE_AUTHORITY
   );
+
   const upgradeGovernancePayload =
     convertInstructionToWhGovernanceSolanaPayload(
       SKY_WH_GOVERNANCE_PROGRAM_ID,
       upgradeInstruction
     );
+
   fs.writeFileSync(
     "output.json",
     JSON.stringify(upgradeGovernancePayload.toJSON().data)
   );
+  
   console.log("Upgrade Instruction Payload: ", upgradeGovernancePayload);
 };
 

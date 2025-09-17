@@ -30,7 +30,7 @@ export const simulateInstructions = async (
     instructions: instructions,
   }).compileToV0Message();
   const transaction = new web3.VersionedTransaction(messageV0);
-
+  transaction.sign([])
   const respContext = await connection.simulateTransaction(transaction, {
     // Skip signature verification before simulation
     sigVerify: false,
@@ -42,6 +42,7 @@ export const simulateInstructions = async (
   });
   const resp = respContext.value;
   if (resp.err) {
+    console.log("logs: ", resp.logs )
     throw new Error(JSON.stringify(resp.err));
   }
 

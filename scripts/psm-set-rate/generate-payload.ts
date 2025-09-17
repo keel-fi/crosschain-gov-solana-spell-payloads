@@ -34,10 +34,12 @@ const printPsmSSRUpdatePayload = () => {
       ORIGIN_CALLER,
       updateInstruction
     );
+
   fs.writeFileSync(
     "output.json",
     JSON.stringify(updateLzGovernancePayload.toJSON().data)
   );
+  
   console.log("Upgrade Instruction Payload: ", updateLzGovernancePayload);
 };
 
