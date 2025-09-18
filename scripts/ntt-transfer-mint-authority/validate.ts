@@ -2,10 +2,12 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor-29";
 import {
   convertWhGovernanceSolanaPayloadToInstruction,
-  simulateInstructions,
+  getUpgradeInstruction,
 } from "../../src";
+import { FailedTransactionMetadata, LiteSVM, TransactionMetadata } from "litesvm";
+import path from "path";
 
-const PAYLOAD = Buffer.from(([
+const TRANSFER_MINT_AUTHORITY_PAYLOAD = Buffer.from(([
   0, 0, 0, 0, 0, 0, 0, 0, 71, 101, 110, 101, 114, 97, 108, 80, 117, 114, 112, 
   111, 115, 101, 71, 111, 118, 101, 114, 110, 97, 110, 99, 101, 2, 0, 1, 6, 
   116, 45, 124, 165, 35, 160, 58, 170, 254, 72, 171, 171, 2, 228, 126, 184, 
@@ -27,24 +29,108 @@ const PAYLOAD = Buffer.from(([
   204, 205, 98, 91, 56, 155, 22, 68, 199, 20, 64, 232, 167
 ]));
 
-const PAYER = new web3.PublicKey("N7qfnBZgt4GcCgpa8mUPGCZEG9sCESDizWDFamwvv8v");
+const NTT_MANAGER_ADDRESS = new web3.PublicKey(
+  "STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn"
+);
+const NTT_PROGRAM_DATA_ADDRESS = new web3.PublicKey(
+  "CKKGtQ2m1t4gHUz2tECGQNqaaFtGsoc9eBjzm61qqV2Q"
+);
+const NEW_PROGRAM_BUFFER = new web3.PublicKey(
+  "UGrgktHeUccU3dujEWrEfYaEv9x79K77uooEdadkUVD"
+);
+const NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER = new web3.PublicKey(
+  "66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj"
+);
+const NTT_CONFIG = new web3.PublicKey(
+  "DCWd3ygRyr9qESyRfPRCMQ6o1wAsPu2niPUc48ixWeY9"
+);
+const TOKEN_MINT = new web3.PublicKey(
+  "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA"
+);
+const BPF_LOADER_UPGRADEABLE_PROGRAM_ID = new web3.PublicKey(
+  "BPFLoaderUpgradeab1e11111111111111111111111"
+);
+
+async function fetchAndSetAccount(
+  svm: LiteSVM,
+  cluster: string, 
+  pubkey: web3.PublicKey
+) {
+  const connection = new web3.Connection(cluster);
+  const account = await connection.getAccountInfo(pubkey);
+  if (!account) throw new Error(`Account not found: ${pubkey.toBase58()}`);
+
+  const accountInfoBytes = {
+    lamports: account.lamports,
+    owner: account.owner,
+    data: Buffer.from(account.data),
+    executable: account.executable,
+  };
+
+  svm.setAccount(pubkey, accountInfoBytes)
+}
+
+const MAINNET_RPC_URL = "https://api.mainnet-beta.solana.com";
+const DEVNET_RPC_URL = "https://api.devnet.solana.com";
 
 const main = async () => {
-  const connection = new web3.Connection("https://api.mainnet-beta.solana.com");
 
-  const instruction = convertWhGovernanceSolanaPayloadToInstruction(
-    PAYLOAD,
-    PAYER,
-    PAYER // owner does not matter here
+  const svm = new LiteSVM();
+  svm.withSigverify(false)
+
+  await svm.addProgramFromFile(NTT_PROGRAM_DATA_ADDRESS, path.resolve(__dirname, "./fixtures/ntt_manager.so"));
+  await fetchAndSetAccount(svm, MAINNET_RPC_URL, NTT_PROGRAM_DATA_ADDRESS);
+  await fetchAndSetAccount(svm, MAINNET_RPC_URL, NTT_MANAGER_ADDRESS);
+  // load ntt program data account
+
+  // load the new program buffer (in devnet)
+  await fetchAndSetAccount(svm, DEVNET_RPC_URL, NEW_PROGRAM_BUFFER);
+  // load the ntt upgrade authority ITS A PDA!!
+  // await fetchAndSetAccount(svm, MAINNET_RPC_URL, NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER);
+  // load the ntt config
+  await fetchAndSetAccount(svm, MAINNET_RPC_URL, NTT_CONFIG);
+  // load the mint
+  await fetchAndSetAccount(svm, MAINNET_RPC_URL, TOKEN_MINT);
+
+  // get upgrade program ix for ntt program
+  const upgradeIx = getUpgradeInstruction(
+    NTT_MANAGER_ADDRESS,
+    NTT_PROGRAM_DATA_ADDRESS,
+    NEW_PROGRAM_BUFFER,
+    NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER,
+    NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER
   );
 
-  console.log("instruction keys: ", instruction.keys);
-  console.log("instruction data: ", instruction.data);
-  console.log("instruction programId: ", instruction.programId);
+  const transferMintAuthorityIx = convertWhGovernanceSolanaPayloadToInstruction(
+    TRANSFER_MINT_AUTHORITY_PAYLOAD,
+    NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER,
+    NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER // owner does not matter here
+  );
 
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const blockhash = svm.latestBlockhash();
+  const messageV0 = new web3.TransactionMessage({
+    payerKey: NTT_UPGRADE_AUTHORITY_AND_CONFIG_OWNER,
+    recentBlockhash: blockhash,
+    instructions: [upgradeIx, transferMintAuthorityIx],
+  }).compileToV0Message();
 
-  // TODO: testing TBD
+  const transaction = new web3.VersionedTransaction(messageV0);
+  
+  const resp = svm.sendTransaction(transaction);
+  
+
+  if (resp instanceof TransactionMetadata) {
+    console.log("success");
+    console.log(resp.logs());
+  } else if (resp instanceof FailedTransactionMetadata) {
+    // FailedTransactionMetadata
+    console.error("failed");
+    console.error(resp.meta().toString())
+    console.error(resp.err())
+  }
+
 };
 
 main()
+
+
