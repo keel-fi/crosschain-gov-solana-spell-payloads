@@ -32,7 +32,7 @@ const LZ_GOV_MESSAGE_HEADER_LEN = ORIGIN_CALLER_LEN + TARGET_LEN;
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
  * | data            |                        remaining | Data to be passed to the program        |
  */
-const serializeInstruction = (
+export const serializeLzInstruction = (
   instruction: web3.TransactionInstruction
 ): Buffer => {
   const accountsLen = instruction.keys.length;
@@ -62,7 +62,7 @@ const serializeInstruction = (
  * | accounts        | `accounts_length` * (32 + 1 + 1) | Accounts to be passed to the program    |
  * | data            |                        remaining | Data to be passed to the program        |
  */
-const deserializeInstruction = (
+export const deserializeLzInstruction = (
   targetProgram: web3.PublicKey,
   payload: Buffer
 ): web3.TransactionInstruction => {
@@ -109,7 +109,7 @@ export const convertInstructionToLzGovernanceSolanaPayload = (
   originCaller: Buffer,
   instruction: web3.TransactionInstruction
 ): Buffer => {
-  const serializedInstruction = serializeInstruction(instruction);
+  const serializedInstruction = serializeLzInstruction(instruction);
   const payload = Buffer.alloc(
     LZ_GOV_MESSAGE_HEADER_LEN + serializedInstruction.length
   );
@@ -171,7 +171,7 @@ export const convertLzGovernanceSolanaPayloadToInstruction = (
   const serializedInstruction = payload.subarray(LZ_GOV_MESSAGE_HEADER_LEN);
   
   // Deserialize instruction
-  const instruction = deserializeInstruction(targetProgram, serializedInstruction);
+  const instruction = deserializeLzInstruction(targetProgram, serializedInstruction);
 
   // Derive the execution context address
   const executionContextAddress = deriveExecutionContextAddress(payerKey);
