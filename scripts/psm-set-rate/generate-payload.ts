@@ -3,7 +3,6 @@
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  convertInstructionToLzGovernanceSolanaPayload,
   createSetRatesInstruction,
   serializeLzInstruction,
   SOLANA_PSM_PROGRAM_ID,
