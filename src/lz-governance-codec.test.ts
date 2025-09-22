@@ -1,10 +1,17 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
-import { convertInstructionToLzGovernanceSolanaPayload, convertLzGovernanceSolanaPayloadToInstruction, deriveExecutionContextAddress, LZ_CONTEXT_PLACEHOLDER, LZ_CPI_AUTHORITY_PLACEHOLDER, LZ_PAYER_PLACEHOLDER } from "./lz-governance-codec";
+import {
+  convertInstructionToLzGovernanceSolanaPayload,
+  convertLzGovernanceSolanaPayloadToInstruction,
+  deriveExecutionContextAddress,
+  LZ_CONTEXT_PLACEHOLDER,
+  LZ_CPI_AUTHORITY_PLACEHOLDER,
+  LZ_PAYER_PLACEHOLDER,
+  serializeLzInstruction,
+} from "./lz-governance-codec";
 
 describe("lz-governance-codec", () => {
   it("should (de)serialize successfully", () => {
-    const originCaller = web3.PublicKey.unique();
     const data = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
     const programId = web3.PublicKey.unique();
     const accounts: web3.AccountMeta[] = [
@@ -35,10 +42,7 @@ describe("lz-governance-codec", () => {
       data,
     });
 
-    const serializedInstruction = convertInstructionToLzGovernanceSolanaPayload(
-      originCaller.toBuffer(),
-      instruction
-    );
+    const serializedInstruction = serializeLzInstruction(instruction);
 
     const cpiAuthority = web3.PublicKey.unique();
     const payer = web3.PublicKey.unique();
@@ -64,8 +68,9 @@ describe("lz-governance-codec", () => {
     const deserializedInstruction =
       convertLzGovernanceSolanaPayloadToInstruction(
         serializedInstruction,
+        programId,
         cpiAuthority,
-        payer,
+        payer
       );
     assert.deepEqual(deserializedInstruction, expectedInstruction);
   });

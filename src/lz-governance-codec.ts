@@ -93,6 +93,11 @@ export const deserializeLzInstruction = (
 /**
  * Given a TransactionInstruction, convert it to a LZ governance payload for Solana.
  * General purpose governance message to call arbitrary instructions on a governed program.
+ * 
+ * NOTE: this is not needed for payload generation as the EVM
+ * contract will add the governance header (ORIGIN_CALLER, TARGET).
+ * `serializeLzInstruction` can be used for the message payload to 
+ * be hardcoded into the EVM call.
  *
  * The wire format for this message is:
  * | field           |                     size (bytes) | description                             |
@@ -153,25 +158,17 @@ export const deriveExecutionContextAddress = (
 };
 
 /**
- * Deserialize a LZ Governance payload by stripping the message header,
- * deserializing the underlying instruction, and replacing the
- * sentinel keys with proper values.
+ * Deserialize a LZ Governance payload by adding the target program
+ * to the deserialized instruction.
  */
 export const convertLzGovernanceSolanaPayloadToInstruction = (
   payload: Buffer,
-  cpi_authority: web3.PublicKey,
+  targetProgram: web3.PublicKey,
+  cpiAuthority: web3.PublicKey,
   payerKey: web3.PublicKey
 ) => {
-
-  // Get the target program for header
-  const targetProgramBytes = payload.subarray(ORIGIN_CALLER_LEN, ORIGIN_CALLER_LEN + TARGET_LEN);
-  const targetProgram = new web3.PublicKey(targetProgramBytes);
-
-  // Remove the Gov Message header
-  const serializedInstruction = payload.subarray(LZ_GOV_MESSAGE_HEADER_LEN);
-  
   // Deserialize instruction
-  const instruction = deserializeLzInstruction(targetProgram, serializedInstruction);
+  const instruction = deserializeLzInstruction(targetProgram, payload);
 
   // Derive the execution context address
   const executionContextAddress = deriveExecutionContextAddress(payerKey);
@@ -179,7 +176,7 @@ export const convertLzGovernanceSolanaPayloadToInstruction = (
   // Replace placeholder keys with provider values
   instruction.keys = instruction.keys.map((accountMeta) => {
     if (accountMeta.pubkey.equals(LZ_CPI_AUTHORITY_PLACEHOLDER)) {
-      accountMeta.pubkey = cpi_authority;
+      accountMeta.pubkey = cpiAuthority;
     } else if (accountMeta.pubkey.equals(LZ_PAYER_PLACEHOLDER)) {
       accountMeta.pubkey = payerKey;
     } else if (accountMeta.pubkey.equals(LZ_CONTEXT_PLACEHOLDER)) {
