@@ -152,6 +152,7 @@ export const deriveExecutionContextAddress = (
   return executionContextAddress;
 };
 
+// TODO need to fix this as the header is no longer part of the payload
 /**
  * Deserialize a LZ Governance payload by stripping the message header,
  * deserializing the underlying instruction, and replacing the

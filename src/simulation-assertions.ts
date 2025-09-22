@@ -11,6 +11,11 @@ export const assertNoAccountChanges = (
   accountInfoBefore: web3.AccountInfo<Buffer> | null,
   simulatedAccountInfoAfter: web3.SimulatedTransactionAccountInfo | null
 ) => {
+  if (!accountInfoBefore && !simulatedAccountInfoAfter) {
+    // Neither exists, so we consider them equal
+    return;
+  }
+
   // Convert both account data to Uint8Array for comparison
   const dataAfter = Buffer.from(simulatedAccountInfoAfter.data[0], "base64");
   const bytesBefore = new Uint8Array(accountInfoBefore.data.buffer);
