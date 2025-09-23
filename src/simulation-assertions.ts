@@ -1,4 +1,4 @@
-// Assertions for AccountInfo and SimulatedTransactionAccountInfo
+// Assertions for AccountInfo
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 

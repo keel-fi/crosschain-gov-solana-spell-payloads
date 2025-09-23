@@ -3,7 +3,6 @@ import { web3 } from "@coral-xyz/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
 import { publicKey, u128, u64 } from "@solana/buffer-layout-utils";
 
-// TODO update to the mainnet program ID when deployed
 export const SOLANA_PSM_PROGRAM_ID = new web3.PublicKey(
   "PSMi4nPG9aB2cKksv5LoxVS1RufH1bew59vr6bxdDYH"
 );
