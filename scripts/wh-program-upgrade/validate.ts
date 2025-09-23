@@ -74,18 +74,14 @@ const main = async () => {
 
   // Extract ProgramData account after simulation
   const programDataResp = resp[PROGRAM_DATA.toString()];
-  const programDataAfter = Buffer.from(programDataResp.after.data[0], "base64");
 
   // Slice out only the ELF code sections
   const newDataBufferResp = resp[NEW_DATA_BUFFER.toString()];
   const bufferCodeBefore = getBufferCode(newDataBufferResp.before.data);
-  const programCodeAfter = getProgramDataCode(programDataAfter);
+  const programCodeAfter = getProgramDataCode(programDataResp.after.data);
 
   // Assert program data changed
-  assert.notDeepEqual(
-    new Uint8Array(programDataAfter),
-    new Uint8Array(programDataResp.before.data)
-  );
+  assert.notDeepEqual(programDataResp.after.data, programDataResp.before.data);
 
   // Assert the new ProgramData code begins with exactly the bytes from the Buffer
   assert.deepEqual(

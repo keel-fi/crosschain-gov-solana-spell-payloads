@@ -3,6 +3,7 @@ import assert from "assert";
 import path from "path";
 import { web3 } from "@coral-xyz/anchor";
 import {
+  assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
   createLiteSvmWithInstructionAccounts,
   simulateInstructionsWithLiteSVM,
@@ -34,9 +35,20 @@ const PAYLOAD = Buffer.from([
   64, 232, 167,
 ]);
 
+const utf8Encode = new TextEncoder();
+
 const NTT_PROGRAM_ID = new web3.PublicKey(
   "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
 );
+// Config account for the above NTT Manager program
+const NTT_CONFIG = web3.PublicKey.findProgramAddressSync(
+  [utf8Encode.encode("config")],
+  NTT_PROGRAM_ID
+)[0];
+const TOKEN_AUTHORITY = web3.PublicKey.findProgramAddressSync(
+  [Buffer.from("token_authority")],
+  NTT_PROGRAM_ID
+)[0];
 // Config owner, must be the payer in transferMintAuthority.
 // This is typically the deployer of the NTT program.
 // Mainnet: 66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj
@@ -85,6 +97,23 @@ const main = async () => {
   );
 
   const resp = simulateInstructionsWithLiteSVM(svm, PAYER, [instruction]);
+
+  // Previous authority should not change
+  const prevAuthority = resp[TOKEN_AUTHORITY.toString()];
+  assertNoAccountChanges(prevAuthority?.before, prevAuthority?.after);
+
+  // Assert new authority did not change
+  const newAuthorityResp = resp[NEW_MINT_AUTHORITY.toString()];
+  assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
+
+  // NTT config should not change
+  const nttConfig = resp[NTT_CONFIG.toString()];
+  assertNoAccountChanges(nttConfig.before, nttConfig.after);
+
+  // NTT config owner should not change, except for Lamports
+  // as the TX payer
+  const nttConfigOwner = resp[NTT_CONFIG_OWNER.toString()];
+  assertNoAccountChanges(nttConfigOwner.before, nttConfigOwner.after, true);
 
   // check mint values
   const mintResp = resp[TOKEN_MINT.toString()];

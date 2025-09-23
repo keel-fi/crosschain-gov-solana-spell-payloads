@@ -51,11 +51,8 @@ const main = async () => {
 
   // check rates updated
   const tokenSwapResp = resp[PSM_SWAP_POOL];
-  const dataAfter = Buffer.from(tokenSwapResp.after.data[0], "base64");
-  const bytesBefore = new Uint8Array(tokenSwapResp.before.data);
-  const bytesAfter = new Uint8Array(dataAfter);
-  const tokenSwapBefore = TokenSwapLayout.decode(bytesBefore);
-  const tokenSwapAfter = TokenSwapLayout.decode(bytesAfter);
+  const tokenSwapBefore = TokenSwapLayout.decode(tokenSwapResp.before.data);
+  const tokenSwapAfter = TokenSwapLayout.decode(tokenSwapResp.after.data);
   // Assert curve parameters matches our expected changes
   const redemptionCurveBefore = RedemptionRateCurveLayout.decode(
     tokenSwapBefore.curveParameters

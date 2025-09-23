@@ -1,16 +1,11 @@
 import { web3 } from "@coral-xyz/anchor";
 import { FailedTransactionMetadata, LiteSVM } from "litesvm";
-import { getUniquePublicKeysFromInstructions } from "./utils";
+import {
+  convertSimulationToAccountInfo,
+  getUniquePublicKeysFromInstructions,
+} from "./utils";
 
 type SimulateResponse = Record<
-  string,
-  {
-    before: web3.AccountInfo<Buffer> | null;
-    after: web3.SimulatedTransactionAccountInfo | null;
-  }
->;
-
-type SimulateLiteSvmResponse = Record<
   string,
   {
     before: web3.AccountInfo<Buffer> | null;
@@ -64,7 +59,7 @@ export const simulateInstructions = async (
   return accountKeyList.reduce((acc, key, i) => {
     acc[key.toString()] = {
       before: preTxAccountState[i],
-      after: resp.accounts[i],
+      after: convertSimulationToAccountInfo(resp.accounts[i]),
     };
     return acc;
   }, {} as SimulateResponse);
@@ -83,7 +78,7 @@ export const simulateInstructionsWithLiteSVM = (
   svm: LiteSVM,
   payer: web3.PublicKey,
   instructions: web3.TransactionInstruction[]
-): SimulateLiteSvmResponse => {
+): SimulateResponse => {
   const accountKeyList = getUniquePublicKeysFromInstructions(instructions);
   const preTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
 
@@ -103,7 +98,7 @@ export const simulateInstructionsWithLiteSVM = (
   }
   const postTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
 
-  const ret: SimulateLiteSvmResponse = {};
+  const ret: SimulateResponse = {};
   for (let i = 0; i < accountKeyList.length; i++) {
     const pubkey = accountKeyList[i];
 

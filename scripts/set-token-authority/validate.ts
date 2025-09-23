@@ -2,7 +2,6 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertSimulationToAccountInfo,
   convertWhGovernanceSolanaPayloadToInstruction,
   simulateInstructions,
 } from "../../src";
@@ -59,10 +58,7 @@ const main = async () => {
   // check mint values
   const mintResp = resp[TOKEN_MINT.toString()];
   const mintBefore = unpackMint(TOKEN_MINT, mintResp.before);
-  const mintAfter = unpackMint(
-    TOKEN_MINT,
-    convertSimulationToAccountInfo(mintResp.after)
-  );
+  const mintAfter = unpackMint(TOKEN_MINT, mintResp.after);
 
   // Assert values other than freeze authority did not change
   assert.equal(mintAfter.decimals, mintBefore.decimals);

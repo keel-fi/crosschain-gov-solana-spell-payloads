@@ -12,13 +12,13 @@ const utf8Encode = new TextEncoder();
 const RPC_URL = "https://api.devnet.solana.com";
 
 // Mainnet: STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn
-const NTT_MANAGER_ADDRESS = new web3.PublicKey(
+const NTT_PROGRAM_ID = new web3.PublicKey(
   "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
 );
 // Config account for the above NTT Manager program
 const NTT_CONFIG = web3.PublicKey.findProgramAddressSync(
   [utf8Encode.encode("config")],
-  NTT_MANAGER_ADDRESS
+  NTT_PROGRAM_ID
 )[0];
 
 // Config owner, must be the payer in transferMintAuthority.
@@ -38,6 +38,11 @@ const NEW_MINT_AUTHORITY = new web3.PublicKey(
   "N7qfnBZgt4GcCgpa8mUPGCZEG9sCESDizWDFamwvv8v"
 );
 
+const TOKEN_AUTHORITY = web3.PublicKey.findProgramAddressSync(
+  [Buffer.from("token_authority")],
+  NTT_PROGRAM_ID
+)[0];
+
 // hack around Anchor's wonky types by fixing the IDL as
 // a constant, but typing it as mutable.
 type Mutable<T> = {
@@ -48,14 +53,9 @@ const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 const printSpell2TransferMintAuthorityPayload = async () => {
   const connection = new web3.Connection(RPC_URL);
 
-  const nttProgram = new Program<typeof NTT_IDL>(NTT_IDL, NTT_MANAGER_ADDRESS, {
+  const nttProgram = new Program<typeof NTT_IDL>(NTT_IDL, NTT_PROGRAM_ID, {
     connection,
   });
-
-  const token_authority = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("token_authority")],
-    NTT_MANAGER_ADDRESS
-  )[0];
 
   const transferMintAuthorityInstruction = await nttProgram.methods
     .transferMintAuthority({
@@ -64,7 +64,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
     .accountsStrict({
       payer: NTT_CONFIG_OWNER,
       config: NTT_CONFIG,
-      tokenAuthority: token_authority,
+      tokenAuthority: TOKEN_AUTHORITY,
       mint: TOKEN_MINT,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
