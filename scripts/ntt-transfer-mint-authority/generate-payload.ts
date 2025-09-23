@@ -7,39 +7,49 @@ import {
 } from "../../src";
 import { _NTT_IDL } from "./idl";
 
+const utf8Encode = new TextEncoder();
+
 const RPC_URL = "https://api.devnet.solana.com";
 
+// Mainnet: STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn
 const NTT_MANAGER_ADDRESS = new web3.PublicKey(
-  "STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn"
+  "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
 );
 // Config account for the above NTT Manager program
-const NTT_CONFIG = new web3.PublicKey(
-  "DCWd3ygRyr9qESyRfPRCMQ6o1wAsPu2niPUc48ixWeY9"
-);
-// Config owner, must be the payer in transferMintAuthority
+const NTT_CONFIG = web3.PublicKey.findProgramAddressSync(
+  [utf8Encode.encode("config")],
+  NTT_MANAGER_ADDRESS
+)[0];
+
+// Config owner, must be the payer in transferMintAuthority.
+// This is typically the deployer of the NTT program.
+// Mainnet: 66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj
 const NTT_CONFIG_OWNER = new web3.PublicKey(
-  "66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj"
+  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
 );
+// Mainnet: USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA
 const TOKEN_MINT = new web3.PublicKey(
-  "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA"
+  "HUEf4eo1utbchf6ZVvLcVRtV9iEpsqLVrXAbPSdHXafj"
 );
 
 // TODO update with the appropriate key for the LZ OFT
 // Program
-const NEW_MINT_AUTHORITY = new web3.PublicKey("N7qfnBZgt4GcCgpa8mUPGCZEG9sCESDizWDFamwvv8v");
+const NEW_MINT_AUTHORITY = new web3.PublicKey(
+  "N7qfnBZgt4GcCgpa8mUPGCZEG9sCESDizWDFamwvv8v"
+);
 
 // hack around Anchor's wonky types by fixing the IDL as
 // a constant, but typing it as mutable.
 type Mutable<T> = {
   -readonly [K in keyof T]: Mutable<T[K]>;
 };
+const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
 const printSpell2TransferMintAuthorityPayload = async () => {
   const connection = new web3.Connection(RPC_URL);
-  
-  const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
+
   const nttProgram = new Program<typeof NTT_IDL>(NTT_IDL, NTT_MANAGER_ADDRESS, {
-    connection
+    connection,
   });
 
   const token_authority = web3.PublicKey.findProgramAddressSync(
@@ -67,8 +77,8 @@ const printSpell2TransferMintAuthorityPayload = async () => {
     );
 
   fs.writeFileSync(
-      "output.json",
-      JSON.stringify(transferMintAuthorityGovernancePayload.toJSON().data)
+    "output.json",
+    JSON.stringify(transferMintAuthorityGovernancePayload.toJSON().data)
   );
 
   console.log(

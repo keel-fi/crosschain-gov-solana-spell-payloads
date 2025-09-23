@@ -8,16 +8,16 @@ import {
 } from "../../src";
 
 const PROGRAM_ADDRESS = new web3.PublicKey(
-  "H3BpbuheXwBnfxjb2L66mxZ9nFhRmUentYwQDspd6yJ9"
+  "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
 );
 const PROGRAM_DATA_ADDRESS = new web3.PublicKey(
-  "G9PGxifnjuhcJHtVV4XMgRMY3ZsWyvyQsKHqVnMf4XRB"
+  "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4"
 );
 const PROGRAM_UPGRADE_AUTHORITY = new web3.PublicKey(
   "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
 );
 const NEW_PROGRAM_BUFFER = new web3.PublicKey(
-  "UGrgktHeUccU3dujEWrEfYaEv9x79K77uooEdadkUVD"
+  "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta"
 );
 
 const printSpellUpgradePayload = () => {

@@ -1,4 +1,5 @@
 import { web3 } from "@coral-xyz/anchor";
+import { LiteSVM } from "litesvm";
 
 /**
  * Convert a SimulatedTransactionAccountInfo to AccountInfo
@@ -13,4 +14,65 @@ export const convertSimulationToAccountInfo = (
     data: Buffer.from(sim.data[0], "base64"),
     rentEpoch: sim.rentEpoch,
   };
+};
+
+/**
+ * Return a set of de-duplicated keys from a list of instructions.
+ * @param instructions
+ * @returns
+ */
+export const getUniquePublicKeysFromInstructions = (
+  instructions: web3.TransactionInstruction[]
+): web3.PublicKey[] => {
+  const accountPubkeyListNonUnique = instructions
+    .map((ix) => ix.keys.map((meta) => meta.pubkey.toString()))
+    .flat();
+  const accountKeySet = new Set(accountPubkeyListNonUnique);
+  return Array.from(accountKeySet, (k, _) => new web3.PublicKey(k));
+};
+
+/**
+ * Seed a LiteSVM environment with all accounts used within a set
+ * of instructions from their state on the supplied connection.
+ * @param connection
+ * @param instructions
+ * @param excludedAddresses
+ * @returns
+ */
+export const createLiteSvmWithInstructionAccounts = async (
+  connection: web3.Connection,
+  instructions: web3.TransactionInstruction[],
+  excludedAddresses: string[]
+) => {
+  // Get all Accounts needed for environment
+  const dedupedAddresses = getUniquePublicKeysFromInstructions(instructions);
+  const filteredkeys = dedupedAddresses.filter(
+    (a) => !excludedAddresses.includes(a.toString())
+  );
+
+  // Fetch accounts from the connection
+  const allAccounts = await connection.getMultipleAccountsInfo(filteredkeys);
+
+  // Create LiteSVM environment
+  const svm = new LiteSVM();
+  // Set Accounts from connection in LiteSVM
+  allAccounts.forEach((acctInfo, i) => {
+    if (!acctInfo) {
+      return;
+    }
+    const pubkey = filteredkeys[i];
+    const fixedAcctInfo = {
+      ...acctInfo,
+      // The RPC sends back a rentEpoch greater than u64::MAX::MAX.
+      // So we detect such a number and resolve to an arbitrarily high
+      // epoch number.
+      rentEpoch:
+        acctInfo.rentEpoch === 18_446_744_073_709_552_000
+          ? 999_999_999_999_999
+          : acctInfo.rentEpoch,
+    };
+    svm.setAccount(pubkey, fixedAcctInfo);
+  });
+
+  return svm;
 };

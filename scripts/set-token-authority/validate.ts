@@ -6,7 +6,7 @@ import {
   convertWhGovernanceSolanaPayloadToInstruction,
   simulateInstructions,
 } from "../../src";
-import { MintLayout, unpackMint } from "@solana/spl-token";
+import { unpackMint } from "@solana/spl-token";
 
 const RPC_URL = "https://api.devnet.solana.com";
 
