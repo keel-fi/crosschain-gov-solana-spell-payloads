@@ -35,9 +35,6 @@ const PAYLOAD = Buffer.from([
 const PAYER = new web3.PublicKey(
   "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
 );
-const PROGRAM_ID = new web3.PublicKey(
-  "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
-);
 const UPGRADE_AUTHORITY = new web3.PublicKey(
   "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
 );
