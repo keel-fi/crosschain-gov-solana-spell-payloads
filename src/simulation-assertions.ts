@@ -1,4 +1,4 @@
-// Assertions for AccountInfo and SimulatedTransactionAccountInfo
+// Assertions for AccountInfo
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 
@@ -6,38 +6,44 @@ import { web3 } from "@coral-xyz/anchor";
  * Asserts no data on the account has changed.
  * Used for validating accounts that should be
  * readonly in a transaction.
+ * @param accountInfoBefore - AccountInfo state before TX
+ * @param accountInfoAfter - AccountInfo state after TX
+ * @param allowLamportChange - Skip assertion on lamport values in the scenario this Account is the payer of the TX.
  */
 export const assertNoAccountChanges = (
   accountInfoBefore: web3.AccountInfo<Buffer> | null,
-  simulatedAccountInfoAfter: web3.SimulatedTransactionAccountInfo | null
+  accountInfoAfter: web3.AccountInfo<Buffer> | null,
+  allowLamportChange = false
 ) => {
-  if (!accountInfoBefore && !simulatedAccountInfoAfter) {
+  if (!accountInfoBefore && !accountInfoAfter) {
     // Neither exists, so we consider them equal
     return;
   }
 
-  // Convert both account data to Uint8Array for comparison
-  const dataAfter = Buffer.from(simulatedAccountInfoAfter.data[0], "base64");
-  const bytesBefore = new Uint8Array(accountInfoBefore.data.buffer);
-  const bytesAfter = new Uint8Array(dataAfter.buffer);
-  assert.deepEqual(bytesAfter, bytesBefore, "Data changed");
-  assert.equal(
-    simulatedAccountInfoAfter.lamports,
-    accountInfoBefore.lamports,
-    "Lamport value changed"
+  assert.deepEqual(
+    accountInfoAfter.data,
+    accountInfoBefore.data,
+    "Data changed"
   );
+  if (!allowLamportChange) {
+    assert.equal(
+      accountInfoAfter.lamports,
+      accountInfoBefore.lamports,
+      "Lamport value changed"
+    );
+  }
   assert.equal(
-    simulatedAccountInfoAfter.executable,
+    accountInfoAfter.executable,
     accountInfoBefore.executable,
     "Executable value changed"
   );
   assert.equal(
-    simulatedAccountInfoAfter.rentEpoch,
+    accountInfoAfter.rentEpoch,
     accountInfoBefore.rentEpoch,
     "rentEpoch value changed"
   );
   assert.equal(
-    simulatedAccountInfoAfter.owner.toString(),
+    accountInfoAfter.owner.toString(),
     accountInfoBefore.owner.toString(),
     "owner value changed"
   );
