@@ -46,9 +46,6 @@ const main = async () => {
     PAYER
   );
 
-  console.log("instruction keys", instruction.keys);
-  console.log(instruction.programId);
-
   const resp = await simulateInstructions(connection, PAYER, [instruction]);
 
   // Program data account should have the space increased by the correct amount
@@ -61,12 +58,9 @@ const main = async () => {
   const programAccount = resp[PROGRAM_ADDRESS.toString()];
   assertNoAccountChanges(programAccount?.before, programAccount?.after);
 
-  // Payer should have balance reduced
+  // Payer should have only lamports changed
   const payerAccount = resp[PAYER.toString()];
-  assert.ok(
-    payerAccount.after.lamports < payerAccount.before.lamports,
-    "Payer account should have payed for extending program"
-  );
+  assertNoAccountChanges(payerAccount.before, payerAccount.after, true)
 }
 
 main()
