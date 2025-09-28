@@ -2,17 +2,16 @@
 
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
+import { LZ_PAYER_PLACEHOLDER, serializeLzInstruction } from "../../src";
+import { address, createNoopSigner } from "@solana/kit";
+import { fromLegacyPublicKey } from "@solana/compat";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   getManagePermissionInstruction,
-  LZ_PAYER_PLACEHOLDER,
   PermissionStatus,
-  serializeLzInstruction,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-} from "../../src";
-import { address, createNoopSigner } from "@solana/kit";
-import { fromLegacyPublicKey } from "@solana/compat";
+} from "@keel-fi/svm-alm-controller";
 
 // Controller that the Permissions apply to
 const CONTROLLER = address("TODO");
