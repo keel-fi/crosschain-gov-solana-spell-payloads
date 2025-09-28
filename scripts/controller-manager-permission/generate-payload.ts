@@ -2,7 +2,11 @@
 
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
-import { LZ_PAYER_PLACEHOLDER, serializeLzInstruction } from "../../src";
+import {
+  convertKitInstructionToWeb3Js,
+  LZ_PAYER_PLACEHOLDER,
+  serializeLzInstruction,
+} from "../../src";
 import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
@@ -55,7 +59,9 @@ const printControllerManagePermissionPayload = async () => {
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     ...PERMISSIONS,
   });
-  const payload = serializeLzInstruction(instruction);
+  const payload = serializeLzInstruction(
+    convertKitInstructionToWeb3Js(instruction)
+  );
 
   fs.writeFileSync("output.json", JSON.stringify(payload.toJSON().data));
 

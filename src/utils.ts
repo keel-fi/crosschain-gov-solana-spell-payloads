@@ -1,4 +1,5 @@
 import { web3 } from "@coral-xyz/anchor";
+import { Instruction, isInstructionWithAccounts, isSignerRole, isWritableRole } from "@solana/kit";
 import { LiteSVM } from "litesvm";
 
 /**
@@ -76,3 +77,30 @@ export const createLiteSvmWithInstructionAccounts = async (
 
   return svm;
 };
+
+/**
+ * Convert a @solana/kit instruction to a web3.js instruction.
+ * For the conversion the other way, use @solana/compat.
+ * @param kitInstruction 
+ * @returns 
+ */
+export function convertKitInstructionToWeb3Js(
+  kitInstruction: Instruction
+): web3.TransactionInstruction {
+  const keys: web3.AccountMeta[] = [];
+  if (isInstructionWithAccounts(kitInstruction)) {
+    for (const account of kitInstruction.accounts) {
+      keys.push({
+        pubkey: new web3.PublicKey(account.address),
+        isSigner: isSignerRole(account.role),
+        isWritable: isWritableRole(account.role),
+      });
+    }
+  }
+
+  return new web3.TransactionInstruction({
+    keys: keys,
+    programId: new web3.PublicKey(kitInstruction.programAddress),
+    data: Buffer.from(kitInstruction.data || new Uint8Array()),
+  });
+}
