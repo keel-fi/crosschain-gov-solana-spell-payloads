@@ -18,6 +18,11 @@ export const assertNoAccountChanges = (
   if (!accountInfoBefore && !accountInfoAfter) {
     // Neither exists, so we consider them equal
     return;
+  } else if (!accountInfoBefore) {
+    // NOTE: Simulation will return non-null AccountInfo for empty account.
+    // So we assert the after simulation value is empty.
+    assertAccountEmpty(accountInfoAfter);
+    return;
   }
 
   assert.deepEqual(
@@ -47,4 +52,26 @@ export const assertNoAccountChanges = (
     accountInfoBefore.owner.toString(),
     "owner value changed"
   );
+};
+
+/**
+ * Assert that the Account is empty.
+ *
+ * NOTE: Simulation response will return non-null values for
+ * AccountInfo (rentEpoch will be max val).
+ */
+export const assertAccountEmpty = (
+  accountInfo: web3.AccountInfo<Buffer> | null
+) => {
+  if (!accountInfo) {
+    return;
+  }
+  // Assert empty data
+  assert.equal(accountInfo.data.length, 0);
+  // Assert owned by SystemProgram
+  assert.equal(accountInfo.owner.toString(), web3.PublicKey.default.toString());
+  // Assert not executable
+  assert.equal(accountInfo.executable, false);
+  // Assert Lamports 0
+  assert.equal(accountInfo.lamports, 0);
 };
