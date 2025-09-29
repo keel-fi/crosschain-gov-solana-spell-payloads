@@ -18,11 +18,11 @@ import {
 } from "@keel-fi/svm-alm-controller";
 
 // Controller that the Permissions apply to
-const CONTROLLER = address("TODO");
+const CONTROLLER = address("4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6");
 // Authority where Permissions will be created/updated
-const AUTHORITY = address("TODO");
+const AUTHORITY = address("PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2");
 // Super Authority that has the ability to ManagePermissions
-const SUPER_AUTHORITY = address("TODO");
+const SUPER_AUTHORITY = address("JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75");
 
 const PAYER = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
@@ -32,7 +32,7 @@ const PERMISSIONS = {
   canManagePermissions: false,
   canInvokeExternalTransfer: false,
   canExecuteSwap: false,
-  canReallocate: false,
+  canReallocate: true,
   canFreezeController: false,
   canUnfreezeController: false,
   canManageReservesAndIntegrations: false,
