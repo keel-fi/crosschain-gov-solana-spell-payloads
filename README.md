@@ -12,6 +12,13 @@ Current spell directories:
 - `scripts/wh-program-upgrade/`
 - `scripts/ntt-transfer-mint-authority/`
 
+## Installation
+
+Before running the scripts, download depdencies with:
+```
+yarn install
+```
+
 ## Usage
 
 To generate and validate a payload for a spell:
