@@ -104,9 +104,13 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@keel-fi/svm-alm-controller@link:../svm-alm-controller/clients/ts":
-  version "0.0.0"
-  uid ""
+"@keel-fi/svm-alm-controller@1.0.0-rc.1":
+  version "1.0.0-rc.1"
+  resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.0-rc.1.tgz#b7b993cf0aac3c8f112e5a0f5aab6be7b9d2e697"
+  integrity sha512-fQSIC8GlZkiYbSlpZbRr1sYxw3Qz62N8VHB71Z+AwJjpZD2dlO2litbm2q+iP0FFvz1CfXHutwimoimc0lEN6Q==
+  dependencies:
+    "@solana/kit" "^3.0.3"
+    ws "^8.18.3"
 
 "@noble/curves@^1.4.2":
   version "1.9.7"
@@ -1659,7 +1663,7 @@ ws@^7.5.10:
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.10.tgz#58b5c20dc281633f6c19113f39b349bd8bd558d9"
   integrity sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ==
 
-ws@^8.5.0:
+ws@^8.18.3, ws@^8.5.0:
   version "8.18.3"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.3.tgz#b56b88abffde62791c639170400c93dcb0c95472"
   integrity sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==
