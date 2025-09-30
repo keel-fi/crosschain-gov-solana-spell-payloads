@@ -1,65 +1,4 @@
-import { Program, web3 } from "@coral-xyz/anchor-29";
-import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor-29/dist/cjs/utils/token";
-import {
-  convertInstructionToWhGovernanceSolanaPayload,
-  SKY_WH_GOVERNANCE_PROGRAM_ID,
-  WH_PAYER_SENTINEL_KEY,
-} from "../src";
-
-const NTT_MANAGER_ADDRESS = new web3.PublicKey(
-  "STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn"
-);
-// Config account for the above NTT Manager program
-const NTT_CONFIG = new web3.PublicKey(
-  "DCWd3ygRyr9qESyRfPRCMQ6o1wAsPu2niPUc48ixWeY9"
-);
-// NTT Manager Token Authority
-const NTT_TOKEN_AUTHORITY = new web3.PublicKey(
-  "Bjui9tuxKGsiF5FDwosfUsRUXg9RZCKidbThfm6CRtRt"
-);
-const TOKEN_MINT = new web3.PublicKey(
-  "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA"
-);
-
-// TODO update with the appropriate key for the LZ OFT
-// Program
-const NEW_MINT_AUTHORITY = new web3.PublicKey("TODO");
-
-const printSpell2TransferMintAuthorityPayload = async () => {
-  const nttProgram = new Program<typeof NTT_IDL>(NTT_IDL, NTT_MANAGER_ADDRESS);
-  const transferMintAuthorityInstruction = await nttProgram.methods
-    .transferMintAuthority({
-      newAuthority: NEW_MINT_AUTHORITY,
-    })
-    .accountsStrict({
-      payer: WH_PAYER_SENTINEL_KEY,
-      config: NTT_CONFIG,
-      tokenAuthority: NTT_TOKEN_AUTHORITY,
-      mint: TOKEN_MINT,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .instruction();
-
-  const transferMintAuthorityGovernancePayload =
-    convertInstructionToWhGovernanceSolanaPayload(
-      SKY_WH_GOVERNANCE_PROGRAM_ID,
-      transferMintAuthorityInstruction
-    );
-  console.log(
-    "Transfer Mint Authority Instruction Payload: ",
-    transferMintAuthorityGovernancePayload
-  );
-};
-
-printSpell2TransferMintAuthorityPayload();
-
-// hack around Anchor's wonky types by fixing the IDL as
-// a constant, but typing it as mutable.
-type Mutable<T> = {
-  -readonly [K in keyof T]: Mutable<T[K]>;
-};
-
-const _NTT_IDL = {
+export const _NTT_IDL = {
   version: "2.0.0",
   name: "example_native_token_transfers",
   instructions: [
@@ -2026,5 +1965,3 @@ const _NTT_IDL = {
     },
   ],
 } as const;
-
-const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;

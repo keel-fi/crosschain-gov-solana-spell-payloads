@@ -3,12 +3,24 @@
   "version": "0.0.1",
   "main": "index.ts",
   "license": "MIT",
+  "scripts": {
+    "test": "mocha"
+  },
   "devDependencies": {
+    "@solana/compat": "^3.0.3",
+    "@solana/kit": "^3.0.3",
+    "@types/mocha": "^10.0.10",
+    "mocha": "^11.7.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
-    "@coral-xyz/anchor-29": "npm:@coral-xyz/anchor@0.29.0"
+    "@coral-xyz/anchor": "0.31.1",
+    "@coral-xyz/anchor-29": "npm:@coral-xyz/anchor@0.29.0",
+    "@keel-fi/svm-alm-controller": "1.0.0-rc.1",
+    "@solana/buffer-layout": "^4.0.1",
+    "@solana/buffer-layout-utils": "^0.2.0",
+    "@solana/spl-token": "^0.4.14",
+    "litesvm": "^0.3.3"
   }
 }

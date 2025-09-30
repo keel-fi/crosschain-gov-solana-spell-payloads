@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "target": "es2020",
     "noImplicitAny": true,
     "removeComments": true,
-    "preserveConstEnums": true
+    "preserveConstEnums": true,
+    "types": ["mocha", "node"],
+    "esModuleInterop": true
   }
 }
