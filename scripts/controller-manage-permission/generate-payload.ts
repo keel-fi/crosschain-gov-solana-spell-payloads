@@ -1,4 +1,4 @@
-// Generates a payload for updating the Solana PSM SSR via crosschain governance message.
+// Generates a payload for creating/updating a ALM Controller Permission account
 
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
