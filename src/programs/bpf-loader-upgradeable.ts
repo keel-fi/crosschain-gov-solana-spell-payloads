@@ -29,27 +29,3 @@ export const getUpgradeInstruction = (
 
   return ix;
 };
-
-const EXTEND_DISCRIMINATOR = 6;
-export const getExtendProgramInstruction = (
-  programAddress: web3.PublicKey,
-  programDataAccount: web3.PublicKey,
-  payer: web3.PublicKey,
-  additionalBytes: number
-) => {
-  const data = Buffer.alloc(4 + 4);
-  data.writeUInt32LE(EXTEND_DISCRIMINATOR, 0);   // discriminator
-  data.writeUInt32LE(additionalBytes, 4);       // payload
-  const ix = new web3.TransactionInstruction({
-    keys: [
-      { pubkey: programDataAccount, isWritable: true, isSigner: false },
-      { pubkey: programAddress, isWritable: true, isSigner: false },
-      { pubkey: web3.SystemProgram.programId, isWritable: false, isSigner: false },
-      { pubkey: payer, isWritable: true, isSigner: true },
-    ],
-    programId: LOADER_V3_PROGRAM_ADDRESS,
-    data: data,
-  });
-
-  return ix;
-};
