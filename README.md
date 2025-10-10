@@ -43,3 +43,6 @@ ts-node ./scripts/wh-program-upgrade/validate.ts
 
 ## @solana/web3.js vs @solana/kit
 This tool is currently using both of the main Solana TS SDKs. The reasoning for this is that some programs use anchor (i.e. WH's NTT program) and therefore it's easier to interact with the program using Anchor's SDK which uses @solana/web3.js. However, other programs like the SVM ALM Controller using Codama generated SDKs use the newer @solana/kit. This should have no impact on the Scripts in this repository, but it's worth noting that script authors should use whichever SDK makes it easiest to interact with the program(s) they're building for.
+
+## Generated SDKs
+The tool uses Codama to generate SDKs for some protocols such as the Metaplex Token Metadata program. For verification, others may regenerate these generated SDKs using `yarn generate-clients`.
