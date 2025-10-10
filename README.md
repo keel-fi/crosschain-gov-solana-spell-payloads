@@ -46,3 +46,5 @@ This tool is currently using both of the main Solana TS SDKs. The reasoning for 
 
 ## Generated SDKs
 The tool uses Codama to generate SDKs for some protocols such as the Metaplex Token Metadata program. For verification, others may regenerate these generated SDKs using `yarn generate-clients`.
+
+NOTE: we currently leave all generated files in for completeness, but would be open to trimming down the generated files if requested.
