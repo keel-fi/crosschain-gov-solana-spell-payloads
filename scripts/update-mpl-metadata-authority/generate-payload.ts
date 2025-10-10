@@ -2,7 +2,9 @@ import fs from "fs";
 import {
   convertInstructionToWhGovernanceSolanaPayload,
   convertKitInstructionToWeb3Js,
+  SKY_WH_GOVERNANCE_AUTHORITY,
   SKY_WH_GOVERNANCE_PROGRAM_ID,
+  USDS_TOKEN_MINT,
   WH_PAYER_SENTINEL_KEY,
 } from "../../src";
 import {
@@ -21,15 +23,8 @@ import {
   getProgramDerivedAddress,
 } from "@solana/kit";
 
-// WH governance authority
-const CURRENT_AUTHORITY = address(
-  "66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj"
-);
-const TOKEN_MINT = address("USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA");
 // TODO update with LZ Governance Authority
-const NEW_AUTHORITY = address(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
+const NEW_AUTHORITY = address("3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr");
 
 const generatePayload = async () => {
   const addressCodec = getAddressCodec();
@@ -38,7 +33,7 @@ const generatePayload = async () => {
     seeds: [
       "metadata",
       addressCodec.encode(MPL_TOKEN_METADATA_PROGRAM_ADDRESS),
-      addressCodec.encode(TOKEN_MINT),
+      USDS_TOKEN_MINT.toBuffer(),
     ],
   });
   const args = updateArgs("AsUpdateAuthorityV2", {
@@ -54,9 +49,11 @@ const generatePayload = async () => {
     authorizationData: null,
   });
   const kitInstruction = getUpdateInstruction({
-    authority: createNoopSigner(CURRENT_AUTHORITY),
+    authority: createNoopSigner(
+      address(SKY_WH_GOVERNANCE_AUTHORITY.toString())
+    ),
     metadata: METADATA,
-    mint: TOKEN_MINT,
+    mint: address(USDS_TOKEN_MINT.toString()),
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),
     updateArgs: args,
   });

@@ -3,6 +3,8 @@ import {
   assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
   simulateInstructions,
+  SKY_WH_GOVERNANCE_AUTHORITY,
+  USDS_TOKEN_MINT,
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
 import {
@@ -47,20 +49,13 @@ const PAYLOAD = Buffer.from([
 const utf8Encode = new TextEncoder();
 
 const PAYER = new web3.PublicKey("PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2");
-// WH governance authority
-const CURRENT_AUTHORITY = new web3.PublicKey(
-  "66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj"
-);
-const TOKEN_MINT = new web3.PublicKey(
-  "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA"
-);
 const [METADATA_ADDRESS] = web3.PublicKey.findProgramAddressSync(
   [
     utf8Encode.encode("metadata"),
     new web3.PublicKey(
       MPL_TOKEN_METADATA_PROGRAM_ADDRESS.toString()
     ).toBuffer(),
-    TOKEN_MINT.toBuffer(),
+    USDS_TOKEN_MINT.toBuffer(),
   ],
   new web3.PublicKey(MPL_TOKEN_METADATA_PROGRAM_ADDRESS.toString())
 );
@@ -74,17 +69,17 @@ const main = async () => {
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
     PAYER,
-    CURRENT_AUTHORITY
+    SKY_WH_GOVERNANCE_AUTHORITY
   );
 
   const resp = await simulateInstructions(connection, PAYER, [instruction]);
 
   // Token Mint should not change
-  const tokenMintResp = resp[TOKEN_MINT.toString()];
+  const tokenMintResp = resp[USDS_TOKEN_MINT.toString()];
   assertNoAccountChanges(tokenMintResp.before, tokenMintResp.after);
 
   // Current Authority should not change
-  const currentAuthResp = resp[CURRENT_AUTHORITY.toString()];
+  const currentAuthResp = resp[SKY_WH_GOVERNANCE_AUTHORITY.toString()];
   assertNoAccountChanges(currentAuthResp?.before, currentAuthResp?.after);
 
   // New Authority should not change
