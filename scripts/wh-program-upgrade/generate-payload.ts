@@ -4,31 +4,46 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertInstructionToWhGovernanceSolanaPayload,
   getUpgradeInstruction,
+  Network,
+  readAndValidateNetworkConfig,
   SKY_WH_GOVERNANCE_PROGRAM_ID,
 } from "../../src";
 
-const PROGRAM_ADDRESS = new web3.PublicKey(
-  "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
-);
-const PROGRAM_DATA_ADDRESS = new web3.PublicKey(
-  "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4"
-);
-const PROGRAM_UPGRADE_AUTHORITY = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const NEW_PROGRAM_BUFFER = new web3.PublicKey(
-  "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta"
-);
+type ProgramUpgrade = {
+  programAddress: string;
+  programDataAddress: string;
+  programUpgradeAuthority: string;
+  newProgramBuffer: string;
+  payer: string;
+};
+
+export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
+  devnet: {
+    programAddress: "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc",
+    programDataAddress: "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4",
+    programUpgradeAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    newProgramBuffer: "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta",
+    payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+  },
+  mainnet: {
+    programAddress: "",
+    programDataAddress: "",
+    programUpgradeAuthority: "",
+    newProgramBuffer: "",
+    payer: "",
+  },
+};
 
 const printSpellUpgradePayload = () => {
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const upgradeInstruction = getUpgradeInstruction(
-    PROGRAM_ADDRESS,
-    PROGRAM_DATA_ADDRESS,
-    NEW_PROGRAM_BUFFER,
-    PROGRAM_UPGRADE_AUTHORITY,
+    new web3.PublicKey(config.programAddress),
+    new web3.PublicKey(config.programDataAddress),
+    new web3.PublicKey(config.newProgramBuffer),
+    new web3.PublicKey(config.programUpgradeAuthority),
     // Use the authority as the "spill" account for
     // excess lamports
-    PROGRAM_UPGRADE_AUTHORITY
+    new web3.PublicKey(config.programUpgradeAuthority)
   );
 
   const upgradeGovernancePayload =
@@ -41,7 +56,7 @@ const printSpellUpgradePayload = () => {
     "output.json",
     JSON.stringify(upgradeGovernancePayload.toJSON().data)
   );
-  
+
   console.log("Upgrade Instruction Payload: ", upgradeGovernancePayload);
 };
 

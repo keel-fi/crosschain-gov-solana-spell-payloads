@@ -7,6 +7,46 @@ import {
 } from "@solana/kit";
 import { LiteSVM } from "litesvm";
 
+export type Network = "devnet" | "mainnet";
+
+export type NetworkConfig<T> = Record<Network, T>;
+
+/**
+ * The Network (devnet|mainnet) must be the second argument of the script.
+ */
+export const readAndValidateNetworkConfig = <T>(
+  configs: NetworkConfig<T>
+): { network: Network; config: T } => {
+  const network = process.env.NETWORK;
+  if (network !== "devnet" && network !== "mainnet") {
+    throw new Error("Invalid network argument.");
+  }
+  const networkConfig = configs[network];
+  Object.entries(configs[network]).forEach(([key, val]) => {
+    if (!val) {
+      throw new Error(`${network} is missing ${key}`);
+    }
+  });
+
+  return { network, config: networkConfig };
+};
+
+/**
+ * RPC endpoint string based on the NETWORK env var.
+ * Defaults to devnet.
+ */
+export const getRpcEndpoint = () => {
+  const network = process.env.NETWORK;
+  if (network !== "devnet" && network !== "mainnet") {
+    throw new Error("Invalid network argument.");
+  }
+  if (network === "mainnet") {
+    return "https://api.mainnet-beta.solana.com";
+  }
+
+  return "https://api.devnet.solana.com";
+};
+
 /**
  * Convert a SimulatedTransactionAccountInfo to AccountInfo
  */

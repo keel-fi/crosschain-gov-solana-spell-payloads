@@ -3,11 +3,13 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   convertWhGovernanceSolanaPayloadToInstruction,
+  getRpcEndpoint,
+  readAndValidateNetworkConfig,
   simulateInstructions,
 } from "../../src";
+import { NETWORK_CONFIGS } from "./generate-payload";
 
-const RPC_URL = "https://api.devnet.solana.com";
-
+// TODO read from
 // Copied from the output.json
 const PAYLOAD = Buffer.from([
   0, 0, 0, 0, 0, 0, 0, 0, 71, 101, 110, 101, 114, 97, 108, 80, 117, 114, 112,
@@ -32,19 +34,6 @@ const PAYLOAD = Buffer.from([
   68, 24, 132, 119, 1, 0, 0, 4, 3, 0, 0, 0,
 ]);
 
-const PAYER = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const UPGRADE_AUTHORITY = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const PROGRAM_DATA = new web3.PublicKey(
-  "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4"
-);
-const NEW_DATA_BUFFER = new web3.PublicKey(
-  "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta"
-);
-
 // the layout of `UpgradeableLoaderState` can be found here:
 // https://bonfida.github.io/doc-dex-program/solana_program/bpf_loader_upgradeable/enum.UpgradeableLoaderState.html
 
@@ -59,21 +48,27 @@ const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
 const main = async () => {
-  const connection = new web3.Connection(RPC_URL);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const rpcUrl = getRpcEndpoint();
+  const connection = new web3.Connection(rpcUrl);
+
+  const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
-    PAYER,
-    PAYER // owner does not matter here
+    payerPubkey,
+    payerPubkey // owner does not matter here
   );
 
   // Simulate the upgrade instruction execution
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   // Extract ProgramData account after simulation
-  const programDataResp = resp[PROGRAM_DATA.toString()];
+  const programDataResp = resp[config.programDataAddress];
 
   // Slice out only the ELF code sections
-  const newDataBufferResp = resp[NEW_DATA_BUFFER.toString()];
+  const newDataBufferResp = resp[config.newProgramBuffer];
   const bufferCodeBefore = getBufferCode(newDataBufferResp.before.data);
   const programCodeAfter = getProgramDataCode(programDataResp.after.data);
 
@@ -93,10 +88,10 @@ const main = async () => {
   );
 
   // Assert buffer was closed (balance is 0)
-  assert.equal(resp[NEW_DATA_BUFFER.toString()].after.lamports, 0);
+  assert.equal(newDataBufferResp.after.lamports, 0);
 
   // Assert spill account got lamports from closed buffer
-  const spillResp = resp[UPGRADE_AUTHORITY.toString()];
+  const spillResp = resp[config.programUpgradeAuthority];
   assert.ok(
     spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
