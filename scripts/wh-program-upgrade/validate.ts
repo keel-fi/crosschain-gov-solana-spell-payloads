@@ -3,10 +3,11 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   convertWhGovernanceSolanaPayloadToInstruction,
+  getRpcEndpoint,
+  readAndValidateNetworkConfig,
   simulateInstructions,
 } from "../../src";
-
-const RPC_URL = "https://api.devnet.solana.com";
+import { NETWORK_CONFIGS } from "./config";
 
 // Copied from the output.json
 const PAYLOAD = Buffer.from([
@@ -21,29 +22,15 @@ const PAYLOAD = Buffer.from([
   198, 83, 179, 77, 253, 83, 250, 151, 199, 241, 246, 159, 243, 33, 27, 96, 188,
   149, 134, 149, 164, 87, 22, 171, 207, 0, 1, 128, 220, 211, 153, 156, 200, 99,
   220, 65, 193, 211, 103, 118, 58, 225, 231, 61, 106, 169, 166, 209, 38, 252,
-  60, 205, 32, 17, 164, 162, 199, 107, 27, 0, 1, 37, 249, 146, 67, 177, 163,
-  234, 226, 85, 154, 57, 97, 164, 16, 202, 67, 147, 213, 244, 142, 190, 63, 92,
-  141, 154, 197, 50, 67, 68, 24, 132, 119, 0, 1, 6, 167, 213, 23, 25, 44, 92,
-  81, 33, 140, 201, 76, 61, 74, 241, 127, 88, 218, 238, 8, 155, 161, 253, 68,
-  227, 219, 217, 138, 0, 0, 0, 0, 0, 0, 6, 167, 213, 23, 24, 199, 116, 201, 40,
-  86, 99, 152, 105, 29, 94, 182, 139, 94, 184, 163, 155, 75, 109, 92, 115, 85,
-  91, 33, 0, 0, 0, 0, 0, 0, 37, 249, 146, 67, 177, 163, 234, 226, 85, 154, 57,
-  97, 164, 16, 202, 67, 147, 213, 244, 142, 190, 63, 92, 141, 154, 197, 50, 67,
-  68, 24, 132, 119, 1, 0, 0, 4, 3, 0, 0, 0,
+  60, 205, 32, 17, 164, 162, 199, 107, 27, 0, 1, 111, 119, 110, 101, 114, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  1, 6, 167, 213, 23, 25, 44, 92, 81, 33, 140, 201, 76, 61, 74, 241, 127, 88,
+  218, 238, 8, 155, 161, 253, 68, 227, 219, 217, 138, 0, 0, 0, 0, 0, 0, 6, 167,
+  213, 23, 24, 199, 116, 201, 40, 86, 99, 152, 105, 29, 94, 182, 139, 94, 184,
+  163, 155, 75, 109, 92, 115, 85, 91, 33, 0, 0, 0, 0, 0, 0, 111, 119, 110, 101,
+  114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 1, 0, 0, 4, 3, 0, 0, 0,
 ]);
-
-const PAYER = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const UPGRADE_AUTHORITY = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const PROGRAM_DATA = new web3.PublicKey(
-  "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4"
-);
-const NEW_DATA_BUFFER = new web3.PublicKey(
-  "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta"
-);
 
 // the layout of `UpgradeableLoaderState` can be found here:
 // https://bonfida.github.io/doc-dex-program/solana_program/bpf_loader_upgradeable/enum.UpgradeableLoaderState.html
@@ -59,21 +46,27 @@ const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
 const main = async () => {
-  const connection = new web3.Connection(RPC_URL);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const rpcUrl = getRpcEndpoint();
+  const connection = new web3.Connection(rpcUrl);
+
+  const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
-    PAYER,
-    PAYER // owner does not matter here
+    payerPubkey,
+    new web3.PublicKey(config.programUpgradeAuthority)
   );
 
   // Simulate the upgrade instruction execution
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   // Extract ProgramData account after simulation
-  const programDataResp = resp[PROGRAM_DATA.toString()];
+  const programDataResp = resp[config.programDataAddress];
 
   // Slice out only the ELF code sections
-  const newDataBufferResp = resp[NEW_DATA_BUFFER.toString()];
+  const newDataBufferResp = resp[config.newProgramBuffer];
   const bufferCodeBefore = getBufferCode(newDataBufferResp.before.data);
   const programCodeAfter = getProgramDataCode(programDataResp.after.data);
 
@@ -93,10 +86,10 @@ const main = async () => {
   );
 
   // Assert buffer was closed (balance is 0)
-  assert.equal(resp[NEW_DATA_BUFFER.toString()].after.lamports, 0);
+  assert.equal(newDataBufferResp.after.lamports, 0);
 
   // Assert spill account got lamports from closed buffer
-  const spillResp = resp[UPGRADE_AUTHORITY.toString()];
+  const spillResp = resp[config.programUpgradeAuthority];
   assert.ok(
     spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"

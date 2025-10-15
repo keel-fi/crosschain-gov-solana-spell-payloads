@@ -2,7 +2,7 @@ import { web3 } from "@coral-xyz/anchor";
 import { FailedTransactionMetadata, LiteSVM } from "litesvm";
 import {
   convertSimulationToAccountInfo,
-  getUniquePublicKeysFromInstructions,
+  getUniquePublicKeysFromInstructionsAndPayer,
 } from "./utils";
 
 type SimulateResponse = Record<
@@ -27,10 +27,12 @@ export const simulateInstructions = async (
   payer: web3.PublicKey,
   instructions: web3.TransactionInstruction[]
 ): Promise<SimulateResponse> => {
-  const accountKeyList = getUniquePublicKeysFromInstructions(instructions);
-  const preTxAccountState = await connection.getMultipleAccountsInfo(
-    accountKeyList
+  const accountKeyList = getUniquePublicKeysFromInstructionsAndPayer(
+    instructions,
+    payer
   );
+  const preTxAccountState =
+    await connection.getMultipleAccountsInfo(accountKeyList);
 
   // Construct TX
   const blockhash = await connection.getLatestBlockhash();
@@ -79,7 +81,10 @@ export const simulateInstructionsWithLiteSVM = (
   payer: web3.PublicKey,
   instructions: web3.TransactionInstruction[]
 ): SimulateResponse => {
-  const accountKeyList = getUniquePublicKeysFromInstructions(instructions);
+  const accountKeyList = getUniquePublicKeysFromInstructionsAndPayer(
+    instructions,
+    payer
+  );
   const preTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
 
   // Construct TX
@@ -93,7 +98,7 @@ export const simulateInstructionsWithLiteSVM = (
 
   const resp = svm.sendTransaction(transaction);
   if (resp instanceof FailedTransactionMetadata) {
-    console.log("logs: ", resp.meta().logs);
+    console.log("logs: ", resp.meta().logs());
     throw new Error(resp.err().toString());
   }
   const postTxAccountState = accountKeyList.map((key) => svm.getAccount(key));

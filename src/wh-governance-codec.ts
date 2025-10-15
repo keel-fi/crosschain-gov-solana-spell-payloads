@@ -8,9 +8,8 @@ import {
 
 // NOTE: we could use buffer-layout if we're ok with more deps.
 
-const utf8Encode = new TextEncoder();
 // "GeneralPurposeGovernance" in bytes
-const GENERAL_PURPOSE_GOVERNANCE_BYTES = utf8Encode.encode(
+const GENERAL_PURPOSE_GOVERNANCE_BYTES = Buffer.from(
   "GeneralPurposeGovernance"
 );
 // 0 padded "GeneralPurposeGovernance" in bytes

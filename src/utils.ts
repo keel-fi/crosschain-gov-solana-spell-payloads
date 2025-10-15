@@ -7,6 +7,46 @@ import {
 } from "@solana/kit";
 import { LiteSVM } from "litesvm";
 
+export type Network = "devnet" | "mainnet";
+
+export type NetworkConfig<T> = Record<Network, T>;
+
+/**
+ * The Network (devnet|mainnet) must be the second argument of the script.
+ */
+export const readAndValidateNetworkConfig = <T>(
+  configs: NetworkConfig<T>
+): { network: Network; config: T } => {
+  const network = process.env.NETWORK;
+  if (network !== "devnet" && network !== "mainnet") {
+    throw new Error("Invalid network argument.");
+  }
+  const networkConfig = configs[network];
+  Object.entries(configs[network]).forEach(([key, val]) => {
+    if (!val) {
+      throw new Error(`${network} is missing ${key}`);
+    }
+  });
+
+  return { network, config: networkConfig };
+};
+
+/**
+ * RPC endpoint string based on the NETWORK env var.
+ * Defaults to devnet.
+ */
+export const getRpcEndpoint = () => {
+  const network = process.env.NETWORK;
+  if (network !== "devnet" && network !== "mainnet") {
+    throw new Error("Invalid network argument.");
+  }
+  if (network === "mainnet") {
+    return "https://api.mainnet-beta.solana.com";
+  }
+
+  return "https://api.devnet.solana.com";
+};
+
 /**
  * Convert a SimulatedTransactionAccountInfo to AccountInfo
  */
@@ -30,13 +70,17 @@ export const convertSimulationToAccountInfo = (
  * @param instructions
  * @returns
  */
-export const getUniquePublicKeysFromInstructions = (
-  instructions: web3.TransactionInstruction[]
+export const getUniquePublicKeysFromInstructionsAndPayer = (
+  instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey
 ): web3.PublicKey[] => {
   const accountPubkeyListNonUnique = instructions
     .map((ix) => ix.keys.map((meta) => meta.pubkey.toString()))
     .flat();
-  const accountKeySet = new Set(accountPubkeyListNonUnique);
+  const accountKeySet = new Set([
+    ...accountPubkeyListNonUnique,
+    payer.toString(),
+  ]);
   return Array.from(accountKeySet, (k, _) => new web3.PublicKey(k));
 };
 
@@ -51,10 +95,14 @@ export const getUniquePublicKeysFromInstructions = (
 export const createLiteSvmWithInstructionAccounts = async (
   connection: web3.Connection,
   instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey,
   excludedAddresses: string[]
 ) => {
   // Get all Accounts needed for environment
-  const dedupedAddresses = getUniquePublicKeysFromInstructions(instructions);
+  const dedupedAddresses = getUniquePublicKeysFromInstructionsAndPayer(
+    instructions,
+    payer
+  );
   const filteredkeys = dedupedAddresses.filter(
     (a) => !excludedAddresses.includes(a.toString())
   );

@@ -6,11 +6,10 @@ import {
   SERIALIZED_ACCOUNT_LEN,
 } from "./shared-governance-codec";
 
-const utf8Encode = new TextEncoder();
 const EXECUTOR_ID = new web3.PublicKey(
   "6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn"
 );
-const EXECUTION_CONTEXT_SEED = utf8Encode.encode("ExecutionContext");
+const EXECUTION_CONTEXT_SEED = Buffer.from("ExecutionContext");
 const EXECUTION_CONTEXT_VERSION_1 = 1;
 const EXECUTION_CONTEXT_VERSION_SEED = Buffer.from([
   EXECUTION_CONTEXT_VERSION_1,
@@ -18,12 +17,11 @@ const EXECUTION_CONTEXT_VERSION_SEED = Buffer.from([
 
 // Origin caller address as bytes32
 const ORIGIN_CALLER_LEN = 32;
-// Target address as bytes32 
+// Target address as bytes32
 const TARGET_LEN = 32;
 
 // ORIGIN_CALLER + TARGET
 const LZ_GOV_MESSAGE_HEADER_LEN = ORIGIN_CALLER_LEN + TARGET_LEN;
-
 
 /**
  * Serialize TransactionInstruction to the following format.
@@ -93,10 +91,10 @@ export const deserializeLzInstruction = (
 /**
  * Given a TransactionInstruction, convert it to a LZ governance payload for Solana.
  * General purpose governance message to call arbitrary instructions on a governed program.
- * 
+ *
  * NOTE: this is not needed for payload generation as the EVM
  * contract will add the governance header (ORIGIN_CALLER, TARGET).
- * `serializeLzInstruction` can be used for the message payload to 
+ * `serializeLzInstruction` can be used for the message payload to
  * be hardcoded into the EVM call.
  *
  * The wire format for this message is:

@@ -4,36 +4,26 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertInstructionToWhGovernanceSolanaPayload,
   getUpgradeInstruction,
-  SKY_WH_GOVERNANCE_PROGRAM_ID,
+  readAndValidateNetworkConfig,
+  WH_OWNER_SENTINEL_KEY,
 } from "../../src";
-
-const PROGRAM_ADDRESS = new web3.PublicKey(
-  "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc"
-);
-const PROGRAM_DATA_ADDRESS = new web3.PublicKey(
-  "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4"
-);
-const PROGRAM_UPGRADE_AUTHORITY = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const NEW_PROGRAM_BUFFER = new web3.PublicKey(
-  "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta"
-);
+import { NETWORK_CONFIGS } from "./config";
 
 const printSpellUpgradePayload = () => {
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const upgradeInstruction = getUpgradeInstruction(
-    PROGRAM_ADDRESS,
-    PROGRAM_DATA_ADDRESS,
-    NEW_PROGRAM_BUFFER,
-    PROGRAM_UPGRADE_AUTHORITY,
+    new web3.PublicKey(config.programAddress),
+    new web3.PublicKey(config.programDataAddress),
+    new web3.PublicKey(config.newProgramBuffer),
+    WH_OWNER_SENTINEL_KEY,
     // Use the authority as the "spill" account for
     // excess lamports
-    PROGRAM_UPGRADE_AUTHORITY
+    WH_OWNER_SENTINEL_KEY
   );
 
   const upgradeGovernancePayload =
     convertInstructionToWhGovernanceSolanaPayload(
-      SKY_WH_GOVERNANCE_PROGRAM_ID,
+      new web3.PublicKey(config.governanceProgramId),
       upgradeInstruction
     );
 
@@ -41,8 +31,8 @@ const printSpellUpgradePayload = () => {
     "output.json",
     JSON.stringify(upgradeGovernancePayload.toJSON().data)
   );
-  
-  console.log("Upgrade Instruction Payload: ", upgradeGovernancePayload);
+
+  console.log("Instruction Payload: ", upgradeGovernancePayload);
 };
 
 printSpellUpgradePayload();

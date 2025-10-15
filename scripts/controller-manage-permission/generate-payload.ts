@@ -5,6 +5,7 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
+  readAndValidateNetworkConfig,
   serializeLzInstruction,
 } from "../../src";
 import { address, createNoopSigner } from "@solana/kit";
@@ -13,49 +14,35 @@ import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   getManagePermissionInstruction,
-  PermissionStatus,
-  SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
-
-// Controller that the Permissions apply to
-const CONTROLLER = address("4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6");
-// Authority where Permissions will be created/updated
-const AUTHORITY = address("PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2");
-// Super Authority that has the ability to ManagePermissions
-const SUPER_AUTHORITY = address("JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75");
-
-const PAYER = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
-
-// Permissions matrix
-const PERMISSIONS = {
-  status: PermissionStatus.Active,
-  canManagePermissions: false,
-  canInvokeExternalTransfer: false,
-  canExecuteSwap: false,
-  canReallocate: true,
-  canFreezeController: false,
-  canUnfreezeController: false,
-  canManageReservesAndIntegrations: false,
-  canSuspendPermissions: false,
-  canLiquidate: false,
-};
+import { NETWORK_CONFIGS, PERMISSIONS } from "./config";
 
 const printControllerManagePermissionPayload = async () => {
-  const controllerAuthority = await deriveControllerAuthorityPda(CONTROLLER);
-  const permissionPda = await derivePermissionPda(CONTROLLER, AUTHORITY);
-  const superPermissionPda = await derivePermissionPda(
-    CONTROLLER,
-    SUPER_AUTHORITY
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const controllerAuthority = await deriveControllerAuthorityPda(
+    address(config.controller)
   );
+  const permissionPda = await derivePermissionPda(
+    address(config.controller),
+    address(config.authority)
+  );
+  const superPermissionPda = await derivePermissionPda(
+    address(config.controller),
+    // NOTE: cannot use sentinel here as it breaks the PDA.
+    address(config.superAuthority)
+  );
+  const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
   const instruction = getManagePermissionInstruction({
-    payer: createNoopSigner(PAYER),
-    controller: CONTROLLER,
+    payer: createNoopSigner(lzPayerSentinel),
+    controller: address(config.controller),
     controllerAuthority: controllerAuthority,
-    superAuthority: createNoopSigner(SUPER_AUTHORITY),
+    // NOTE: we do not use sentinel here because it cannot be used
+    // above for PDA derivation.
+    superAuthority: createNoopSigner(address(config.superAuthority)),
     superPermission: superPermissionPda,
-    authority: AUTHORITY,
+    authority: address(config.authority),
     permission: permissionPda,
-    programId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
+    programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     ...PERMISSIONS,
   });
@@ -65,7 +52,7 @@ const printControllerManagePermissionPayload = async () => {
 
   fs.writeFileSync("output.json", JSON.stringify(payload.toJSON().data));
 
-  console.log("Upgrade Instruction Payload: ", payload);
+  console.log("Instruction Payload: ", payload);
 };
 
 printControllerManagePermissionPayload();

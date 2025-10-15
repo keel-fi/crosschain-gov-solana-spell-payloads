@@ -3,19 +3,17 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   convertLzGovernanceSolanaPayloadToInstruction,
-  LZ_CPI_AUTHORITY_PLACEHOLDER,
+  getRpcEndpoint,
+  readAndValidateNetworkConfig,
   simulateInstructions,
 } from "../../src";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   getPermissionCodec,
-  PermissionStatus,
-  SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
-
-const RPC_URL = "https://api.devnet.solana.com";
+import { NETWORK_CONFIGS, PERMISSIONS as EXPECTED_PERMISSIONS } from "./config";
 
 const PAYLOAD = Buffer.from([
   0, 9, 112, 97, 121, 101, 114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -37,57 +35,43 @@ const PAYLOAD = Buffer.from([
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0,
 ]);
 
-const PAYER = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-
-const CONTROLLER = "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6";
-const AUTHORITY = "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2";
-const SUPER_AUTHORITY = "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75";
-const EXPECTED_PERMISSIONS = {
-  status: PermissionStatus.Active,
-  canManagePermissions: false,
-  canInvokeExternalTransfer: false,
-  canExecuteSwap: false,
-  canReallocate: true,
-  canFreezeController: false,
-  canUnfreezeController: false,
-  canManageReservesAndIntegrations: false,
-  canSuspendPermissions: false,
-  canLiquidate: false,
-};
-
 const main = async () => {
-  const connection = new web3.Connection(RPC_URL);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const rpcUrl = getRpcEndpoint();
+  const connection = new web3.Connection(rpcUrl);
+
+  const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
-    new web3.PublicKey(SVM_ALM_CONTROLLER_PROGRAM_ADDRESS),
-    LZ_CPI_AUTHORITY_PLACEHOLDER,
-    PAYER
+    new web3.PublicKey(config.controllerProgramId),
+    new web3.PublicKey(config.superAuthority),
+    payerPubkey
   );
 
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   const permissionPda = await derivePermissionPda(
-    address(CONTROLLER),
-    address(AUTHORITY)
+    address(config.controller),
+    address(config.authority)
   );
   const superPermissionPda = await derivePermissionPda(
-    address(CONTROLLER),
-    address(SUPER_AUTHORITY)
+    address(config.controller),
+    address(config.superAuthority)
   );
 
   // Assert payer does not change, except for lamports
-  const payerResp = resp[PAYER.toString()];
+  const payerResp = resp[config.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert controller does not change
-  const controllerResp = resp[CONTROLLER];
+  const controllerResp = resp[config.controller];
   assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(CONTROLLER)
+    address(config.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -96,11 +80,11 @@ const main = async () => {
   );
 
   // Assert authority does not change
-  const authorityResp = resp[AUTHORITY];
+  const authorityResp = resp[config.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
 
   // Assert super authority does not change
-  const superAuthorityResp = resp[SUPER_AUTHORITY];
+  const superAuthorityResp = resp[config.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
   // Assert super permission does not change when different

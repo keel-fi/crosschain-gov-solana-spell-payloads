@@ -2,13 +2,10 @@ import fs from "fs";
 import {
   convertInstructionToWhGovernanceSolanaPayload,
   convertKitInstructionToWeb3Js,
-  SKY_WH_GOVERNANCE_AUTHORITY,
-  SKY_WH_GOVERNANCE_PROGRAM_ID,
-  USDS_TOKEN_MINT,
+  readAndValidateNetworkConfig,
   WH_PAYER_SENTINEL_KEY,
 } from "../../src";
 import {
-  MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   collectionDetailsToggle,
   collectionToggle,
   getUpdateInstruction,
@@ -22,22 +19,22 @@ import {
   getAddressCodec,
   getProgramDerivedAddress,
 } from "@solana/kit";
-
-// TODO update with LZ Governance Authority
-const NEW_AUTHORITY = address("3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr");
+import { web3 } from "@coral-xyz/anchor";
+import { NETWORK_CONFIGS } from "./config";
 
 const generatePayload = async () => {
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const addressCodec = getAddressCodec();
-  const [METADATA] = await getProgramDerivedAddress({
-    programAddress: MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+  const [metadataAddress] = await getProgramDerivedAddress({
+    programAddress: address(config.mplProgramAddress),
     seeds: [
       "metadata",
-      addressCodec.encode(MPL_TOKEN_METADATA_PROGRAM_ADDRESS),
-      USDS_TOKEN_MINT.toBuffer(),
+      addressCodec.encode(address(config.mplProgramAddress)),
+      addressCodec.encode(address(config.tokenMint)),
     ],
   });
   const args = updateArgs("AsUpdateAuthorityV2", {
-    newUpdateAuthority: NEW_AUTHORITY,
+    newUpdateAuthority: address(config.newAuthority),
     data: null,
     primarySaleHappened: null,
     isMutable: null,
@@ -49,16 +46,14 @@ const generatePayload = async () => {
     authorizationData: null,
   });
   const kitInstruction = getUpdateInstruction({
-    authority: createNoopSigner(
-      address(SKY_WH_GOVERNANCE_AUTHORITY.toString())
-    ),
-    metadata: METADATA,
-    mint: address(USDS_TOKEN_MINT.toString()),
+    authority: createNoopSigner(address(config.authority)),
+    metadata: metadataAddress,
+    mint: address(config.tokenMint),
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),
     updateArgs: args,
   });
   const payload = convertInstructionToWhGovernanceSolanaPayload(
-    SKY_WH_GOVERNANCE_PROGRAM_ID,
+    new web3.PublicKey(config.governanceProgramId),
     convertKitInstructionToWeb3Js(kitInstruction)
   );
 
