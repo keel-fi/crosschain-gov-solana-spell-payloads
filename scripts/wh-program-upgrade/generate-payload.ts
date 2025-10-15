@@ -9,7 +9,7 @@ import {
 } from "../../src";
 import { NETWORK_CONFIGS } from "./config";
 
-const printSpellUpgradePayload = () => {
+const generateUpgradeAuthorityPayload = () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const upgradeInstruction = getUpgradeInstruction(
     new web3.PublicKey(config.programAddress),
@@ -35,4 +35,4 @@ const printSpellUpgradePayload = () => {
   console.log("Instruction Payload: ", upgradeGovernancePayload);
 };
 
-printSpellUpgradePayload();
+generateUpgradeAuthorityPayload();

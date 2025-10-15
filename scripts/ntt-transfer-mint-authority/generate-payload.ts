@@ -17,7 +17,7 @@ type Mutable<T> = {
 };
 const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
-const printSpell2TransferMintAuthorityPayload = async () => {
+const generateTransferMintAuthorityPayload = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
@@ -64,4 +64,4 @@ const printSpell2TransferMintAuthorityPayload = async () => {
   console.log("Instruction Payload: ", transferMintAuthorityGovernancePayload);
 };
 
-printSpell2TransferMintAuthorityPayload();
+generateTransferMintAuthorityPayload();
