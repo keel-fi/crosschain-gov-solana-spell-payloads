@@ -70,13 +70,17 @@ export const convertSimulationToAccountInfo = (
  * @param instructions
  * @returns
  */
-export const getUniquePublicKeysFromInstructions = (
-  instructions: web3.TransactionInstruction[]
+export const getUniquePublicKeysFromInstructionsAndPayer = (
+  instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey
 ): web3.PublicKey[] => {
   const accountPubkeyListNonUnique = instructions
     .map((ix) => ix.keys.map((meta) => meta.pubkey.toString()))
     .flat();
-  const accountKeySet = new Set(accountPubkeyListNonUnique);
+  const accountKeySet = new Set([
+    ...accountPubkeyListNonUnique,
+    payer.toString(),
+  ]);
   return Array.from(accountKeySet, (k, _) => new web3.PublicKey(k));
 };
 
@@ -91,10 +95,14 @@ export const getUniquePublicKeysFromInstructions = (
 export const createLiteSvmWithInstructionAccounts = async (
   connection: web3.Connection,
   instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey,
   excludedAddresses: string[]
 ) => {
   // Get all Accounts needed for environment
-  const dedupedAddresses = getUniquePublicKeysFromInstructions(instructions);
+  const dedupedAddresses = getUniquePublicKeysFromInstructionsAndPayer(
+    instructions,
+    payer
+  );
   const filteredkeys = dedupedAddresses.filter(
     (a) => !excludedAddresses.includes(a.toString())
   );
