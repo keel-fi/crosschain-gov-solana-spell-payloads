@@ -18,7 +18,7 @@ const printSpellUpgradePayload = () => {
     WH_OWNER_SENTINEL_KEY,
     // Use the authority as the "spill" account for
     // excess lamports
-    WH_OWNER_SENTINEL_KEY
+    new web3.PublicKey(config.spillAccount)
   );
 
   const upgradeGovernancePayload =
