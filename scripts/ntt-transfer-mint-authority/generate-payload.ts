@@ -39,7 +39,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
 
   const transferMintAuthorityInstruction = await nttProgram.methods
     .transferMintAuthority({
-      newMintAuthority: new web3.PublicKey(config.newAuthority),
+      newMintAuthority: new web3.PublicKey(config.newMintAuthority),
     })
     .accountsStrict({
       payer: WH_OWNER_SENTINEL_KEY,

@@ -46,7 +46,7 @@ const main = async () => {
   assertNoAccountChanges(prevAuthority.before, prevAuthority.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[config.newAuthority];
+  const newAuthorityResp = resp[config.newFreezeAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // check mint values
@@ -66,7 +66,7 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert freeze authority changed as expected
-  assert.equal(mintAfter.freezeAuthority.toString(), config.newAuthority);
+  assert.equal(mintAfter.freezeAuthority.toString(), config.newFreezeAuthority);
 };
 
 main();

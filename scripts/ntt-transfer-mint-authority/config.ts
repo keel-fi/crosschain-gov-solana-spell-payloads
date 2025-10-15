@@ -5,7 +5,7 @@ type NttTransferMintAuthority = {
   nttProgramId: string;
   authority: string;
   tokenMint: string;
-  newAuthority: string;
+  newMintAuthority: string;
   payer: string;
 };
 
@@ -15,7 +15,7 @@ export const NETWORK_CONFIGS: Record<Network, NttTransferMintAuthority> = {
     nttProgramId: "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc",
     authority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
     tokenMint: "HUEf4eo1utbchf6ZVvLcVRtV9iEpsqLVrXAbPSdHXafj",
-    newAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    newMintAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
     payer: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
   },
   mainnet: {
@@ -25,7 +25,7 @@ export const NETWORK_CONFIGS: Record<Network, NttTransferMintAuthority> = {
     tokenMint: USDS_TOKEN_MINT,
     // TODO [POST LZ GOV OAPP DEPLOY] update the newAuthority to
     // oapp governance authority.
-    newAuthority: "",
+    newMintAuthority: "",
     payer: "",
   },
 };

@@ -5,20 +5,20 @@ import {
   USDS_TOKEN_MINT,
 } from "../../src";
 
-type SetTokenAuthority = {
+type SetFreezeTokenAuthority = {
   governanceProgramId: string;
   authority: string;
   tokenMint: string;
-  newAuthority: string;
+  newFreezeAuthority: string;
   payer: string;
 };
 
-export const NETWORK_CONFIGS: Record<Network, SetTokenAuthority> = {
+export const NETWORK_CONFIGS: Record<Network, SetFreezeTokenAuthority> = {
   devnet: {
     governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
     authority: "5h5TjxxZRoD2rtLkqCtt4uTmFVXjsdpEydqa2B5TZJVU",
     tokenMint: "C71h4tuPk6f72bAM2D8L2nwH3XtJB6awsw7H6xmNDo3E",
-    newAuthority: "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75",
+    newFreezeAuthority: "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75",
     payer: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
   },
   mainnet: {
@@ -27,7 +27,7 @@ export const NETWORK_CONFIGS: Record<Network, SetTokenAuthority> = {
     tokenMint: USDS_TOKEN_MINT,
     // TODO [POST LZ GOV OAPP DEPLOY] update the newAuthority to
     // oapp governance authority.
-    newAuthority: "",
+    newFreezeAuthority: "",
     payer: "",
   },
 };

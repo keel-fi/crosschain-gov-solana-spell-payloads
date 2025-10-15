@@ -12,13 +12,13 @@ import {
 } from "../../src";
 import { NETWORK_CONFIGS } from "./config";
 
-const generateSetTokenAuthorityPayload = () => {
+const generatePayload = () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const setAuthorityInstruction = createSetAuthorityInstruction(
     new web3.PublicKey(config.tokenMint),
     WH_OWNER_SENTINEL_KEY,
     AuthorityType.FreezeAccount,
-    new web3.PublicKey(config.newAuthority),
+    new web3.PublicKey(config.newFreezeAuthority),
     [],
     TOKEN_PROGRAM_ID
   );
@@ -33,4 +33,4 @@ const generateSetTokenAuthorityPayload = () => {
   console.log("Instruction Payload: ", payload);
 };
 
-generateSetTokenAuthorityPayload();
+generatePayload();

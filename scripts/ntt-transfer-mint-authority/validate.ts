@@ -86,7 +86,7 @@ const main = async () => {
   assertNoAccountChanges(prevAuthority?.before, prevAuthority?.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[config.newAuthority];
+  const newAuthorityResp = resp[config.newMintAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // NTT config should not change
@@ -114,7 +114,7 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert mint authority changed as expected
-  assert.equal(mintAfter.mintAuthority.toString(), config.newAuthority);
+  assert.equal(mintAfter.mintAuthority.toString(), config.newMintAuthority);
 };
 
 main();
