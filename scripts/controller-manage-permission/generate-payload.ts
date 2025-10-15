@@ -6,7 +6,9 @@ import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
   readAndValidateNetworkConfig,
+  readArgs,
   serializeLzInstruction,
+  writeOutputFile,
 } from "../../src";
 import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -18,7 +20,8 @@ import {
 import { NETWORK_CONFIGS, PERMISSIONS } from "./config";
 
 const printControllerManagePermissionPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs();
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
   );
@@ -50,9 +53,7 @@ const printControllerManagePermissionPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  fs.writeFileSync("output.json", JSON.stringify(payload.toJSON().data));
-
-  console.log("Instruction Payload: ", payload);
+  writeOutputFile(args.file, network, payload);
 };
 
 printControllerManagePermissionPayload();

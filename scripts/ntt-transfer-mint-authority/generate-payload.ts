@@ -5,7 +5,9 @@ import {
   convertInstructionToWhGovernanceSolanaPayload,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
+  readArgs,
   WH_OWNER_SENTINEL_KEY,
+  writeOutputFile,
 } from "../../src";
 import { _NTT_IDL } from "./idl";
 import { NETWORK_CONFIGS } from "./config";
@@ -18,7 +20,8 @@ type Mutable<T> = {
 const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
 const printSpell2TransferMintAuthorityPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs();
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
 
@@ -56,12 +59,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
       transferMintAuthorityInstruction
     );
 
-  fs.writeFileSync(
-    "output.json",
-    JSON.stringify(transferMintAuthorityGovernancePayload.toJSON().data)
-  );
-
-  console.log("Instruction Payload: ", transferMintAuthorityGovernancePayload);
+  writeOutputFile(args.file, network, transferMintAuthorityGovernancePayload);
 };
 
 printSpell2TransferMintAuthorityPayload();

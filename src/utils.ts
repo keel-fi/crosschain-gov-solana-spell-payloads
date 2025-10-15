@@ -1,3 +1,4 @@
+import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   Instruction,
@@ -6,6 +7,7 @@ import {
   isWritableRole,
 } from "@solana/kit";
 import { LiteSVM } from "litesvm";
+import { parseArgs } from "util";
 
 export type Network = "devnet" | "mainnet";
 
@@ -45,6 +47,53 @@ export const getRpcEndpoint = () => {
   }
 
   return "https://api.devnet.solana.com";
+};
+
+/**
+ * Read the payload file argument
+ */
+export const readArgs = () => {
+  const args = parseArgs({
+    options: {
+      file: {
+        type: "string",
+        short: "f",
+        default: "output",
+      },
+    },
+  }).values;
+
+  if (!args.file) {
+    throw new Error("Must include file prefix '--file [FILE_NAME]'");
+  }
+
+  return args;
+};
+
+/**
+ * Read payload from previously generated hex file.
+ */
+export const readPayloadFile = (file: string, network: Network): Buffer => {
+  const fileName = `${file}-${network}.txt`;
+  const payloadString = fs.readFileSync(fileName, {
+    encoding: "utf-8",
+  });
+  return Buffer.from(payloadString, "hex");
+};
+
+/**
+ * After generating instruction, write to file and pring where the payload
+ * was written.
+ */
+export const writeOutputFile = (
+  file: string,
+  network: Network,
+  payload: Buffer
+) => {
+  const fileName = `${file}-${network}.txt`;
+  fs.writeFileSync(fileName, payload.toString("hex"));
+
+  console.log(`Payload generated at ${fileName}`);
 };
 
 /**
