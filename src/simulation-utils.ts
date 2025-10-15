@@ -28,9 +28,8 @@ export const simulateInstructions = async (
   instructions: web3.TransactionInstruction[]
 ): Promise<SimulateResponse> => {
   const accountKeyList = getUniquePublicKeysFromInstructions(instructions);
-  const preTxAccountState = await connection.getMultipleAccountsInfo(
-    accountKeyList
-  );
+  const preTxAccountState =
+    await connection.getMultipleAccountsInfo(accountKeyList);
 
   // Construct TX
   const blockhash = await connection.getLatestBlockhash();
@@ -93,7 +92,7 @@ export const simulateInstructionsWithLiteSVM = (
 
   const resp = svm.sendTransaction(transaction);
   if (resp instanceof FailedTransactionMetadata) {
-    console.log("logs: ", resp.meta().logs);
+    console.log("logs: ", resp.meta().logs());
     throw new Error(resp.err().toString());
   }
   const postTxAccountState = accountKeyList.map((key) => svm.getAccount(key));

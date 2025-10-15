@@ -42,12 +42,10 @@ export const deserializeAccountFromBytes = (
   };
 };
 
-const utf8Encode = new TextEncoder();
-
 /** Create "Sentinel" PublicKey to match WH governance placeholder keys */
 export const generateSentinelPubkey = (name: string) => {
   const buf = Buffer.alloc(32);
-  const nameBytes = utf8Encode.encode(name);
+  const nameBytes = Buffer.from(name);
   buf.set(nameBytes);
   return new web3.PublicKey(buf);
 };

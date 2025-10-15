@@ -2,17 +2,13 @@ import assert from "assert";
 import {
   assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
+  getRpcEndpoint,
+  readAndValidateNetworkConfig,
   simulateInstructions,
-  SKY_WH_GOVERNANCE_AUTHORITY,
-  USDS_TOKEN_MINT,
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
-import {
-  getMetadataDecoder,
-  MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
-} from "../../src/programs/metaplex-token-metadata";
-
-const RPC_URL = "https://api.mainnet-beta.solana.com";
+import { getMetadataDecoder } from "../../src/programs/metaplex-token-metadata";
+import { NETWORK_CONFIGS } from "./config";
 
 const PAYLOAD = Buffer.from([
   0, 0, 0, 0, 0, 0, 0, 0, 71, 101, 110, 101, 114, 97, 108, 80, 117, 114, 112,
@@ -46,44 +42,41 @@ const PAYLOAD = Buffer.from([
   24, 132, 119, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]);
 
-const utf8Encode = new TextEncoder();
-
-const PAYER = new web3.PublicKey("PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2");
-const [METADATA_ADDRESS] = web3.PublicKey.findProgramAddressSync(
-  [
-    utf8Encode.encode("metadata"),
-    new web3.PublicKey(
-      MPL_TOKEN_METADATA_PROGRAM_ADDRESS.toString()
-    ).toBuffer(),
-    USDS_TOKEN_MINT.toBuffer(),
-  ],
-  new web3.PublicKey(MPL_TOKEN_METADATA_PROGRAM_ADDRESS.toString())
-);
-// TODO update with LZ Governance Authority
-const NEW_AUTHORITY = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-
 const main = async () => {
-  const connection = new web3.Connection(RPC_URL);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const rpcUrl = getRpcEndpoint();
+  const connection = new web3.Connection(rpcUrl);
+
+  const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
-    PAYER,
-    SKY_WH_GOVERNANCE_AUTHORITY
+    payerPubkey,
+    new web3.PublicKey(config.authority)
   );
 
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const [METADATA_ADDRESS] = web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      new web3.PublicKey(config.mplProgramAddress).toBuffer(),
+      new web3.PublicKey(config.tokenMint).toBuffer(),
+    ],
+    new web3.PublicKey(config.mplProgramAddress)
+  );
+
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   // Token Mint should not change
-  const tokenMintResp = resp[USDS_TOKEN_MINT.toString()];
+  const tokenMintResp = resp[config.tokenMint];
   assertNoAccountChanges(tokenMintResp.before, tokenMintResp.after);
 
   // Current Authority should not change
-  const currentAuthResp = resp[SKY_WH_GOVERNANCE_AUTHORITY.toString()];
+  const currentAuthResp = resp[config.authority];
   assertNoAccountChanges(currentAuthResp?.before, currentAuthResp?.after);
 
   // New Authority should not change
-  const newAuthResp = resp[NEW_AUTHORITY.toString()];
+  const newAuthResp = resp[config.newAuthority];
   assertNoAccountChanges(newAuthResp?.before, newAuthResp?.after);
 
   // Metadata authority should have changed
@@ -91,10 +84,7 @@ const main = async () => {
   const metadataDecoder = getMetadataDecoder();
   const metadataBefore = metadataDecoder.decode(metadataResp.before.data);
   const metadataAfter = metadataDecoder.decode(metadataResp.after.data);
-  assert.equal(
-    metadataAfter.updateAuthority.toString(),
-    NEW_AUTHORITY.toString()
-  );
+  assert.equal(metadataAfter.updateAuthority.toString(), config.newAuthority);
 
   // Other Metdata values should remain unchanged
   assert.deepEqual(metadataAfter.collection, metadataBefore.collection);

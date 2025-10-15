@@ -3,11 +3,12 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
+  getRpcEndpoint,
+  readAndValidateNetworkConfig,
   simulateInstructions,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
-
-const RPC_URL = "https://api.devnet.solana.com";
+import { NETWORK_CONFIGS } from "./config";
 
 const PAYLOAD = Buffer.from([
   0, 0, 0, 0, 0, 0, 0, 0, 71, 101, 110, 101, 114, 97, 108, 80, 117, 114, 112,
@@ -17,48 +18,42 @@ const PAYLOAD = Buffer.from([
   215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237,
   95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169, 0, 2, 164, 250, 210,
   120, 92, 92, 54, 29, 152, 56, 87, 230, 68, 80, 111, 192, 142, 156, 49, 67,
-  248, 15, 253, 239, 227, 228, 149, 171, 104, 164, 160, 233, 0, 1, 69, 179, 6,
-  49, 101, 155, 184, 159, 227, 246, 178, 126, 34, 103, 108, 82, 61, 233, 148,
-  174, 95, 247, 171, 97, 57, 32, 251, 194, 69, 218, 94, 247, 1, 0, 0, 35, 6, 1,
-  1, 255, 193, 161, 53, 8, 52, 143, 122, 143, 211, 169, 219, 249, 88, 172, 134,
-  35, 28, 115, 30, 133, 210, 76, 252, 137, 107, 244, 56, 111, 146, 20, 136,
+  248, 15, 253, 239, 227, 228, 149, 171, 104, 164, 160, 233, 0, 1, 111, 119,
+  110, 101, 114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 1, 0, 0, 35, 6, 1, 1, 255, 193, 161, 53, 8, 52, 143, 122,
+  143, 211, 169, 219, 249, 88, 172, 134, 35, 28, 115, 30, 133, 210, 76, 252,
+  137, 107, 244, 56, 111, 146, 20, 136,
 ]);
 
-const PAYER = new web3.PublicKey(
-  "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr"
-);
-const TOKEN_MINT = new web3.PublicKey(
-  "C71h4tuPk6f72bAM2D8L2nwH3XtJB6awsw7H6xmNDo3E"
-);
-const CURRENT_AUTHORITY = new web3.PublicKey(
-  "5h5TjxxZRoD2rtLkqCtt4uTmFVXjsdpEydqa2B5TZJVU"
-);
-const EXPECTED_AUTHORITY = new web3.PublicKey(
-  "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75"
-);
-
 const main = async () => {
-  const connection = new web3.Connection(RPC_URL);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const rpcUrl = getRpcEndpoint();
+  const connection = new web3.Connection(rpcUrl);
+
+  const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(
     PAYLOAD,
-    PAYER,
-    CURRENT_AUTHORITY
+    payerPubkey,
+    new web3.PublicKey(config.authority)
   );
 
-  const resp = await simulateInstructions(connection, PAYER, [instruction]);
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   // Previous authority should not change
-  const prevAuthority = resp[CURRENT_AUTHORITY.toString()];
+  const prevAuthority = resp[config.authority];
   assertNoAccountChanges(prevAuthority.before, prevAuthority.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[EXPECTED_AUTHORITY.toString()];
+  const newAuthorityResp = resp[config.newAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // check mint values
-  const mintResp = resp[TOKEN_MINT.toString()];
-  const mintBefore = unpackMint(TOKEN_MINT, mintResp.before);
-  const mintAfter = unpackMint(TOKEN_MINT, mintResp.after);
+  const mintResp = resp[config.tokenMint];
+  const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
+  const mintBefore = unpackMint(tokenMintPubkey, mintResp.before);
+  const mintAfter = unpackMint(tokenMintPubkey, mintResp.after);
 
   // Assert values other than freeze authority did not change
   assert.equal(mintAfter.decimals, mintBefore.decimals);
@@ -71,10 +66,7 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert freeze authority changed as expected
-  assert.equal(
-    mintAfter.freezeAuthority.toString(),
-    EXPECTED_AUTHORITY.toString()
-  );
+  assert.equal(mintAfter.freezeAuthority.toString(), config.newAuthority);
 };
 
 main();

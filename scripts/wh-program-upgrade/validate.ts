@@ -7,9 +7,8 @@ import {
   readAndValidateNetworkConfig,
   simulateInstructions,
 } from "../../src";
-import { NETWORK_CONFIGS } from "./generate-payload";
+import { NETWORK_CONFIGS } from "./config";
 
-// TODO read from
 // Copied from the output.json
 const PAYLOAD = Buffer.from([
   0, 0, 0, 0, 0, 0, 0, 0, 71, 101, 110, 101, 114, 97, 108, 80, 117, 114, 112,
