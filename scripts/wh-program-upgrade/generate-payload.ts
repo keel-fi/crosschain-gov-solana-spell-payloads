@@ -5,6 +5,7 @@ import {
   convertInstructionToWhGovernanceSolanaPayload,
   getUpgradeInstruction,
   readAndValidateNetworkConfig,
+  WH_OWNER_SENTINEL_KEY,
 } from "../../src";
 import { NETWORK_CONFIGS } from "./config";
 
@@ -14,10 +15,10 @@ const printSpellUpgradePayload = () => {
     new web3.PublicKey(config.programAddress),
     new web3.PublicKey(config.programDataAddress),
     new web3.PublicKey(config.newProgramBuffer),
-    new web3.PublicKey(config.programUpgradeAuthority),
+    WH_OWNER_SENTINEL_KEY,
     // Use the authority as the "spill" account for
     // excess lamports
-    new web3.PublicKey(config.programUpgradeAuthority)
+    WH_OWNER_SENTINEL_KEY
   );
 
   const upgradeGovernancePayload =
