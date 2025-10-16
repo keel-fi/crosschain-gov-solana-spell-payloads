@@ -15,12 +15,9 @@ export const assertNoAccountChanges = (
   accountInfoAfter: web3.AccountInfo<Buffer> | null,
   allowLamportChange = false
 ) => {
-  if (!accountInfoBefore && !accountInfoAfter) {
-    // Neither exists, so we consider them equal
-    return;
-  } else if (!accountInfoBefore) {
-    // NOTE: Simulation will return non-null AccountInfo for empty account.
-    // So we assert the after simulation value is empty.
+  if (!accountInfoBefore || !accountInfoAfter) {
+    // One of the two accounts has no data, so we validate emptiness
+    assertAccountEmpty(accountInfoBefore);
     assertAccountEmpty(accountInfoAfter);
     return;
   }

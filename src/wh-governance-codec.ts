@@ -109,7 +109,11 @@ const deserializeInstruction = (
 
   const dataLen = payload.readUInt16BE(offset);
   offset += 2;
-  const data = payload.subarray(offset, offset + dataLen);
+  const endOffset = offset + dataLen;
+  if (payload.length < endOffset) {
+    throw new Error("Payload does not have enough data");
+  }
+  const data = payload.subarray(offset, endOffset);
 
   return new web3.TransactionInstruction({
     keys: accounts,

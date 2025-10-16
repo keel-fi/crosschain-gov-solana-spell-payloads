@@ -31,6 +31,10 @@ const main = async () => {
     instruction,
   ]);
 
+  // Assert payer does not change aside from lamports
+  const payerResp = resp[config.payer];
+  assertNoAccountChanges(payerResp.before, payerResp.after, true);
+
   // Previous authority should not change
   const prevAuthority = resp[config.authority];
   assertNoAccountChanges(prevAuthority.before, prevAuthority.after);

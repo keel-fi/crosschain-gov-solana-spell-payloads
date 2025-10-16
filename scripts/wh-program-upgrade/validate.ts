@@ -3,6 +3,7 @@ import assert from "assert";
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
+  assertNoAccountChanges,
   convertWhGovernanceSolanaPayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
@@ -43,6 +44,14 @@ const main = async () => {
   const resp = await simulateInstructions(connection, payerPubkey, [
     instruction,
   ]);
+
+  // Assert payer does not change aside from lamports
+  const payerResp = resp[config.payer];
+  assertNoAccountChanges(payerResp.before, payerResp.after, true);
+
+  // Assert program account does not change
+  const programResp = resp[config.programAddress];
+  assertNoAccountChanges(programResp.before, programResp.after);
 
   // Extract ProgramData account after simulation
   const programDataResp = resp[config.programDataAddress];
