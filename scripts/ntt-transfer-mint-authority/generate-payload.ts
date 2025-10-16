@@ -10,7 +10,7 @@ import {
   writeOutputFile,
 } from "../../src";
 import { _NTT_IDL } from "./idl";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 // Hack around Anchor's wonky types by fixing the IDL as
 // a constant, but typing it as mutable.
@@ -20,8 +20,8 @@ type Mutable<T> = {
 const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
 const printSpell2TransferMintAuthorityPayload = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const args = readArgs();
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
 
@@ -59,7 +59,7 @@ const printSpell2TransferMintAuthorityPayload = async () => {
       transferMintAuthorityInstruction
     );
 
-  writeOutputFile(args.file, network, transferMintAuthorityGovernancePayload);
+  writeOutputFile(args.file, transferMintAuthorityGovernancePayload);
 };
 
 printSpell2TransferMintAuthorityPayload();

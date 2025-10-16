@@ -12,11 +12,11 @@ import {
   WH_OWNER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const generatePayload = () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const args = readArgs();
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const setAuthorityInstruction = createSetAuthorityInstruction(
     new web3.PublicKey(config.tokenMint),
     WH_OWNER_SENTINEL_KEY,
@@ -31,7 +31,7 @@ const generatePayload = () => {
     setAuthorityInstruction
   );
 
-  writeOutputFile(args.file, network, payload);
+  writeOutputFile(args.file, payload);
 };
 
 generatePayload();

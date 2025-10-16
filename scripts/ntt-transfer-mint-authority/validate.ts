@@ -13,18 +13,18 @@ import {
   simulateInstructionsWithLiteSVM,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 // NOTE: Due to the sequencing of the NTT upgrade transaction
 // and NTT TransferMintAuthority, we must simulate in LiteSVM
 // as Solana mainnet will not have a state possible where we may
 // simulate the TransferMintAuthority prior to spell execution.
 const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs();
-  const payload = readPayloadFile(args.file, network);
+  const args = readArgs(ACTION);
+  const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const authorityPubkey = new web3.PublicKey(config.authority);

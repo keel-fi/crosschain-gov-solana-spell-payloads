@@ -17,11 +17,11 @@ import {
   derivePermissionPda,
   getManagePermissionInstruction,
 } from "@keel-fi/svm-alm-controller";
-import { NETWORK_CONFIGS, PERMISSIONS } from "./config";
+import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
 
 const printControllerManagePermissionPayload = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const args = readArgs();
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
   );
@@ -53,7 +53,7 @@ const printControllerManagePermissionPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, network, payload);
+  writeOutputFile(args.file, payload);
 };
 
 printControllerManagePermissionPayload();

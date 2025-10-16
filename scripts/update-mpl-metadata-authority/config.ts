@@ -6,6 +6,8 @@ import {
   USDS_TOKEN_MINT,
 } from "../../src";
 
+export const ACTION = "update-mpl-metadata-authority";
+
 type UpdateMplTokenMetadataAuthority = {
   authority: string;
   governanceProgramId: string;

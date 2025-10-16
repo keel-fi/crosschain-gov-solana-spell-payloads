@@ -1,4 +1,12 @@
-import { Network, SKY_WH_GOVERNANCE_AUTHORITY, SKY_WH_GOVERNANCE_PROGRAM_ID, USDS_TOKEN_MINT, USDS_WH_NTT_PROGRAM_ID } from "../../src";
+import {
+  Network,
+  SKY_WH_GOVERNANCE_AUTHORITY,
+  SKY_WH_GOVERNANCE_PROGRAM_ID,
+  USDS_TOKEN_MINT,
+  USDS_WH_NTT_PROGRAM_ID,
+} from "../../src";
+
+export const ACTION = "ntt-transfer-mint-authority";
 
 type NttTransferMintAuthority = {
   governanceProgramId: string;

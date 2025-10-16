@@ -22,11 +22,11 @@ import {
   getProgramDerivedAddress,
 } from "@solana/kit";
 import { web3 } from "@coral-xyz/anchor";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const generatePayload = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const args = readArgs();
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const addressCodec = getAddressCodec();
   const [metadataAddress] = await getProgramDerivedAddress({
     programAddress: address(config.mplProgramAddress),
@@ -60,7 +60,7 @@ const generatePayload = async () => {
     convertKitInstructionToWeb3Js(kitInstruction)
   );
 
-  writeOutputFile(args.file, network, payload);
+  writeOutputFile(args.file, payload);
 };
 
 generatePayload();

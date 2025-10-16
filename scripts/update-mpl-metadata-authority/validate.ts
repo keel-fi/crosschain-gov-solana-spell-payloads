@@ -10,14 +10,14 @@ import {
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
 import { getMetadataDecoder } from "../../src/programs/metaplex-token-metadata";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs();
-  const payload = readPayloadFile(args.file, network);
+  const args = readArgs(ACTION);
+  const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertWhGovernanceSolanaPayloadToInstruction(

@@ -9,11 +9,11 @@ import {
   WH_OWNER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const printSpellUpgradePayload = () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const args = readArgs();
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const upgradeInstruction = getUpgradeInstruction(
     new web3.PublicKey(config.programAddress),
     new web3.PublicKey(config.programDataAddress),
@@ -30,7 +30,7 @@ const printSpellUpgradePayload = () => {
       upgradeInstruction
     );
 
-  writeOutputFile(args.file, network, upgradeGovernancePayload);
+  writeOutputFile(args.file, upgradeGovernancePayload);
 };
 
 printSpellUpgradePayload();

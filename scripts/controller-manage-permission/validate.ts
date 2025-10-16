@@ -15,14 +15,18 @@ import {
   getPermissionCodec,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
-import { NETWORK_CONFIGS, PERMISSIONS as EXPECTED_PERMISSIONS } from "./config";
+import {
+  NETWORK_CONFIGS,
+  PERMISSIONS as EXPECTED_PERMISSIONS,
+  ACTION,
+} from "./config";
 
 const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs();
-  const payload = readPayloadFile(args.file, network);
+  const args = readArgs(ACTION);
+  const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzGovernanceSolanaPayloadToInstruction(
