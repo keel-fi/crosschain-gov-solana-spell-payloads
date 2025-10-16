@@ -97,6 +97,15 @@ export const writeOutputFile = (file: string, payload: Buffer) => {
 };
 
 /**
+ * Handle success response.
+ */
+export const validateSuccess = (file: string) => {
+  const network = readNetwork();
+
+  console.log(`Payload ${file} successfully validated against ${network}`);
+};
+
+/**
  * Convert a SimulatedTransactionAccountInfo to AccountInfo
  */
 export const convertSimulationToAccountInfo = (

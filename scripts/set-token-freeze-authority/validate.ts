@@ -9,6 +9,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  validateSuccess,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, NETWORK_CONFIGS } from "./config";
@@ -61,6 +62,8 @@ const main = async () => {
 
   // Assert freeze authority changed as expected
   assert.equal(mintAfter.freezeAuthority.toString(), config.newFreezeAuthority);
+
+  validateSuccess(args.file);
 };
 
 main();
