@@ -119,8 +119,8 @@ const deserializeInstruction = (
 };
 
 /**
- * Given a TransactionInstruction, convert it to a WH governance payload for Solana.
- * General purpose governance message to call arbitrary instructions on a governed program.
+ * Given a TransactionInstruction, convert it to a WH governance VAA (Verified Action Approvals) payload for Solana.
+ * This will be deserialized to a GovernanceMessage when received by the Solana governance program.
  *
  * This message adheres to the Wormhole governance packet standard:
  * https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0002_governance_messaging.md

@@ -11,7 +11,7 @@ import {
 } from "../../src";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
-const printSpellUpgradePayload = () => {
+const generateUpgradeAuthorityPayload = () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const upgradeInstruction = getUpgradeInstruction(
@@ -33,4 +33,4 @@ const printSpellUpgradePayload = () => {
   writeOutputFile(args.file, upgradeGovernancePayload);
 };
 
-printSpellUpgradePayload();
+generateUpgradeAuthorityPayload();

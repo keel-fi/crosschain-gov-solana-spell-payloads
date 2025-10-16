@@ -19,7 +19,7 @@ type Mutable<T> = {
 };
 const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
-const printSpell2TransferMintAuthorityPayload = async () => {
+const generateTransferMintAuthorityPayload = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const rpcUrl = getRpcEndpoint();
@@ -62,4 +62,4 @@ const printSpell2TransferMintAuthorityPayload = async () => {
   writeOutputFile(args.file, transferMintAuthorityGovernancePayload);
 };
 
-printSpell2TransferMintAuthorityPayload();
+generateTransferMintAuthorityPayload();

@@ -58,7 +58,7 @@ const main = async () => {
   const metadataAfter = metadataDecoder.decode(metadataResp.after.data);
   assert.equal(metadataAfter.updateAuthority.toString(), config.newAuthority);
 
-  // Other Metdata values should remain unchanged
+  // Other Metadata values should remain unchanged
   assert.deepEqual(metadataAfter.collection, metadataBefore.collection);
   assert.deepEqual(
     metadataAfter.collectionDetails,
