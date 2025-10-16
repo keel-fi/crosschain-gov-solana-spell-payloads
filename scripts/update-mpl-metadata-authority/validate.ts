@@ -39,6 +39,10 @@ const main = async () => {
     instruction,
   ]);
 
+  // Assert payer does not change aside from lamports
+  const payerResp = resp[config.payer];
+  assertNoAccountChanges(payerResp.before, payerResp.after, true);
+
   // Token Mint should not change
   const tokenMintResp = resp[config.tokenMint];
   assertNoAccountChanges(tokenMintResp.before, tokenMintResp.after);

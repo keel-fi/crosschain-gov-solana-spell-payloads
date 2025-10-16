@@ -33,6 +33,9 @@ export const serializeAccountToBytes = (
 export const deserializeAccountFromBytes = (
   payload: Buffer
 ): web3.AccountMeta => {
+  if (payload.length !== SERIALIZED_ACCOUNT_LEN) {
+    throw new Error("Invalid serialized Account length");
+  }
   const pubkeyBytes = payload.subarray(0, 32);
 
   return {
@@ -44,6 +47,9 @@ export const deserializeAccountFromBytes = (
 
 /** Create "Sentinel" PublicKey to match WH governance placeholder keys */
 export const generateSentinelPubkey = (name: string) => {
+  if (name.length > 32) {
+    throw new Error("Sentinel key name must be 32 bytes or less");
+  }
   const buf = Buffer.alloc(32);
   const nameBytes = Buffer.from(name);
   buf.set(nameBytes);
