@@ -3,7 +3,9 @@ import {
   convertInstructionToWhGovernanceSolanaPayload,
   convertKitInstructionToWeb3Js,
   readAndValidateNetworkConfig,
+  readArgs,
   WH_PAYER_SENTINEL_KEY,
+  writeOutputFile,
 } from "../../src";
 import {
   collectionDetailsToggle,
@@ -20,10 +22,11 @@ import {
   getProgramDerivedAddress,
 } from "@solana/kit";
 import { web3 } from "@coral-xyz/anchor";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const generatePayload = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const addressCodec = getAddressCodec();
   const [metadataAddress] = await getProgramDerivedAddress({
     programAddress: address(config.mplProgramAddress),
@@ -33,7 +36,7 @@ const generatePayload = async () => {
       addressCodec.encode(address(config.tokenMint)),
     ],
   });
-  const args = updateArgs("AsUpdateAuthorityV2", {
+  const instructionArgs = updateArgs("AsUpdateAuthorityV2", {
     newUpdateAuthority: address(config.newAuthority),
     data: null,
     primarySaleHappened: null,
@@ -50,16 +53,14 @@ const generatePayload = async () => {
     metadata: metadataAddress,
     mint: address(config.tokenMint),
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),
-    updateArgs: args,
+    updateArgs: instructionArgs,
   });
   const payload = convertInstructionToWhGovernanceSolanaPayload(
     new web3.PublicKey(config.governanceProgramId),
     convertKitInstructionToWeb3Js(kitInstruction)
   );
 
-  fs.writeFileSync("output.json", JSON.stringify(payload.toJSON().data));
-
-  console.log("Instruction Payload: ", payload);
+  writeOutputFile(args.file, payload);
 };
 
 generatePayload();

@@ -1,5 +1,7 @@
 import { Network, SKY_WH_GOVERNANCE_PROGRAM_ID } from "../../src";
 
+export const ACTION = "wh-program-upgrade";
+
 type ProgramUpgrade = {
   governanceProgramId: string;
   programAddress: string;

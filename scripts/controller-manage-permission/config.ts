@@ -4,6 +4,8 @@ import {
 } from "@keel-fi/svm-alm-controller";
 import { Network } from "../../src";
 
+export const ACTION = "controller-manage-permission";
+
 type ControllerManagePermission = {
   controllerProgramId: string;
   // Controller that the Permissions apply to

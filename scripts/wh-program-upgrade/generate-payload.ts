@@ -5,12 +5,15 @@ import {
   convertInstructionToWhGovernanceSolanaPayload,
   getUpgradeInstruction,
   readAndValidateNetworkConfig,
+  readArgs,
   WH_OWNER_SENTINEL_KEY,
+  writeOutputFile,
 } from "../../src";
-import { NETWORK_CONFIGS } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const printSpellUpgradePayload = () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
   const upgradeInstruction = getUpgradeInstruction(
     new web3.PublicKey(config.programAddress),
     new web3.PublicKey(config.programDataAddress),
@@ -27,12 +30,7 @@ const printSpellUpgradePayload = () => {
       upgradeInstruction
     );
 
-  fs.writeFileSync(
-    "output.json",
-    JSON.stringify(upgradeGovernancePayload.toJSON().data)
-  );
-
-  console.log("Instruction Payload: ", upgradeGovernancePayload);
+  writeOutputFile(args.file, upgradeGovernancePayload);
 };
 
 printSpellUpgradePayload();

@@ -1,3 +1,4 @@
+import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   Instruction,
@@ -6,21 +7,30 @@ import {
   isWritableRole,
 } from "@solana/kit";
 import { LiteSVM } from "litesvm";
+import { parseArgs } from "util";
 
 export type Network = "devnet" | "mainnet";
 
 export type NetworkConfig<T> = Record<Network, T>;
 
 /**
- * The Network (devnet|mainnet) must be the second argument of the script.
+ * Read and validate the NETWORK env var
  */
-export const readAndValidateNetworkConfig = <T>(
-  configs: NetworkConfig<T>
-): { network: Network; config: T } => {
+export const readNetwork = (): Network => {
   const network = process.env.NETWORK;
   if (network !== "devnet" && network !== "mainnet") {
     throw new Error("Invalid network argument.");
   }
+  return network;
+};
+
+/**
+ * Given the NETWORK, return the configuration.
+ */
+export const readAndValidateNetworkConfig = <T>(
+  configs: NetworkConfig<T>
+): { network: Network; config: T } => {
+  const network = readNetwork();
   const networkConfig = configs[network];
   Object.entries(configs[network]).forEach(([key, val]) => {
     if (!val) {
@@ -36,15 +46,54 @@ export const readAndValidateNetworkConfig = <T>(
  * Defaults to devnet.
  */
 export const getRpcEndpoint = () => {
-  const network = process.env.NETWORK;
-  if (network !== "devnet" && network !== "mainnet") {
-    throw new Error("Invalid network argument.");
-  }
+  const network = readNetwork();
   if (network === "mainnet") {
     return "https://api.mainnet-beta.solana.com";
   }
 
   return "https://api.devnet.solana.com";
+};
+
+/**
+ * Read the payload file argument
+ */
+export const readArgs = (action: string) => {
+  const network = readNetwork();
+  const args = parseArgs({
+    options: {
+      file: {
+        type: "string",
+        short: "f",
+        default: `${action}-${network}.txt`,
+      },
+    },
+  }).values;
+
+  if (!args.file) {
+    throw new Error("Must include file prefix '--file [FILE_NAME]'");
+  }
+
+  return args;
+};
+
+/**
+ * Read payload from previously generated hex file.
+ */
+export const readPayloadFile = (file: string): Buffer => {
+  const payloadString = fs.readFileSync(file, {
+    encoding: "utf-8",
+  });
+  return Buffer.from(payloadString, "hex");
+};
+
+/**
+ * After generating instruction, write to file and pring where the payload
+ * was written.
+ */
+export const writeOutputFile = (file: string, payload: Buffer) => {
+  fs.writeFileSync(file, payload.toString("hex"));
+
+  console.log(`Payload generated at ${file}`);
 };
 
 /**

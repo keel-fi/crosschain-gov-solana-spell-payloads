@@ -5,6 +5,8 @@ import {
   USDS_TOKEN_MINT,
 } from "../../src";
 
+export const ACTION = "set-token-freeze-authority";
+
 type SetFreezeTokenAuthority = {
   governanceProgramId: string;
   authority: string;
