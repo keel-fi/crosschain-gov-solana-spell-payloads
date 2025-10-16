@@ -7,6 +7,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  validateSuccess,
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
 import { getMetadataDecoder } from "../../src/programs/metaplex-token-metadata";
@@ -79,6 +80,8 @@ const main = async () => {
   );
   assert.deepEqual(metadataAfter.tokenStandard, metadataBefore.tokenStandard);
   assert.deepEqual(metadataAfter.uses, metadataBefore.uses);
+
+  validateSuccess(args.file);
 };
 
 main();

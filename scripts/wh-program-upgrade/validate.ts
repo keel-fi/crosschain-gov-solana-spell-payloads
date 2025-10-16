@@ -9,6 +9,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  validateSuccess,
 } from "../../src";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
@@ -76,6 +77,8 @@ const main = async () => {
     spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
   );
+
+  validateSuccess(args.file);
 };
 
 main();

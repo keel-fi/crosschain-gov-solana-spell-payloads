@@ -11,6 +11,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructionsWithLiteSVM,
+  validateSuccess,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, NETWORK_CONFIGS } from "./config";
@@ -97,6 +98,8 @@ const main = async () => {
 
   // Assert mint authority changed as expected
   assert.equal(mintAfter.mintAuthority.toString(), config.newMintAuthority);
+
+  validateSuccess(args.file);
 };
 
 main();

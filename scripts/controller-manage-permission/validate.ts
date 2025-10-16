@@ -8,6 +8,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  validateSuccess,
 } from "../../src";
 import {
   deriveControllerAuthorityPda,
@@ -143,6 +144,8 @@ const main = async () => {
     permissionAfter.canUnfreezeController,
     EXPECTED_PERMISSIONS.canUnfreezeController
   );
+
+  validateSuccess(args.file);
 };
 
 main();
