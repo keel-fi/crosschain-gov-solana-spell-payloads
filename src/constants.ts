@@ -7,6 +7,8 @@ export const SKY_WH_GOVERNANCE_AUTHORITY =
   "66xDajRZ7MTrgePf27NdugVwDBFhKCCY9EYZ7B9CdDWj";
 export const USDS_WH_NTT_PROGRAM_ID =
   "STTUVCMPuNbk21y1J6nqEGXSQ8HKvFmFBKnCvKHTrWn";
+  export const USDS_WH_NTT_PROGRAM_DATA =
+  "CKKGtQ2m1t4gHUz2tECGQNqaaFtGsoc9eBjzm61qqV2Q";
 export const USDS_WH_NTT_MINT_AUTHORITY =
   "Bjui9tuxKGsiF5FDwosfUsRUXg9RZCKidbThfm6CRtRt";
 /* Post migration constants */
