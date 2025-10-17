@@ -45,7 +45,7 @@ const generateTransferMintAuthorityPayload = async () => {
       newMintAuthority: new web3.PublicKey(config.newMintAuthority),
     })
     .accountsStrict({
-      payer: WH_OWNER_SENTINEL_KEY,
+      owner: WH_OWNER_SENTINEL_KEY,
       config: nttConfig,
       tokenAuthority: tokenAuthority,
       mint: new web3.PublicKey(config.tokenMint),
