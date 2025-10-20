@@ -4,6 +4,7 @@ import {
   convertKitInstructionToWeb3Js,
   readAndValidateNetworkConfig,
   readArgs,
+  WH_OWNER_SENTINEL_KEY,
   WH_PAYER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
@@ -49,7 +50,7 @@ const generatePayload = async () => {
     authorizationData: null,
   });
   const kitInstruction = getUpdateInstruction({
-    authority: createNoopSigner(address(config.authority)),
+    authority: createNoopSigner(address(WH_OWNER_SENTINEL_KEY.toString())),
     metadata: metadataAddress,
     mint: address(config.tokenMint),
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),

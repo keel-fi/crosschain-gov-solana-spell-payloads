@@ -66,6 +66,13 @@ const main = async () => {
   const programResp = resp[config.programAddress];
   assertNoAccountChanges(programResp.before, programResp.after);
 
+  // Assert program authority does not change
+  const programUpgradeAuthority = resp[config.programUpgradeAuthority];
+  assertNoAccountChanges(
+    programUpgradeAuthority.before,
+    programUpgradeAuthority.after
+  );
+
   // Extract ProgramData account after simulation
   const programDataResp = resp[config.programDataAddress];
 
