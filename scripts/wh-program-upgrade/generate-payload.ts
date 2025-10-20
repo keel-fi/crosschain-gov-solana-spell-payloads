@@ -2,7 +2,7 @@
 import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  convertInstructionToWhGovernanceSolanaPayload,
+  convertInstructionToWhSolanaGovernancePayload,
   getUpgradeInstruction,
   readAndValidateNetworkConfig,
   readArgs,
@@ -25,7 +25,7 @@ const generateUpgradeAuthorityPayload = () => {
   );
 
   const upgradeGovernancePayload =
-    convertInstructionToWhGovernanceSolanaPayload(
+    convertInstructionToWhSolanaGovernancePayload(
       new web3.PublicKey(config.governanceProgramId),
       upgradeInstruction
     );

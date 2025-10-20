@@ -4,7 +4,7 @@ import path from "path";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertWhGovernanceSolanaPayloadToInstruction,
+  convertWhSolanaGovernancePayloadToInstruction,
   createLiteSvmWithInstructionAccounts,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
@@ -31,7 +31,7 @@ const main = async () => {
   const authorityPubkey = new web3.PublicKey(config.authority);
   const nttProgramIdPubkey = new web3.PublicKey(config.nttProgramId);
   const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
-  const instruction = convertWhGovernanceSolanaPayloadToInstruction(
+  const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
     authorityPubkey

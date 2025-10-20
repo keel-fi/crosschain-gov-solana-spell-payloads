@@ -1,8 +1,8 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  convertInstructionToWhGovernanceSolanaPayload,
-  convertWhGovernanceSolanaPayloadToInstruction,
+  convertInstructionToWhSolanaGovernancePayload,
+  convertWhSolanaGovernancePayloadToInstruction,
   WH_OWNER_SENTINEL_KEY,
   WH_PAYER_SENTINEL_KEY,
 } from "./wh-governance-codec";
@@ -35,7 +35,7 @@ describe("wh-governance-codec", () => {
       data,
     });
 
-    const serializedInstruction = convertInstructionToWhGovernanceSolanaPayload(
+    const serializedInstruction = convertInstructionToWhSolanaGovernancePayload(
       governanceProgramId,
       instruction
     );
@@ -57,7 +57,7 @@ describe("wh-governance-codec", () => {
       ],
     };
     const deserializedInstruction =
-      convertWhGovernanceSolanaPayloadToInstruction(
+      convertWhSolanaGovernancePayloadToInstruction(
         serializedInstruction,
         payer,
         owner

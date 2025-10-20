@@ -1,6 +1,6 @@
 import fs from "fs";
 import {
-  convertInstructionToWhGovernanceSolanaPayload,
+  convertInstructionToWhSolanaGovernancePayload,
   convertKitInstructionToWeb3Js,
   readAndValidateNetworkConfig,
   readArgs,
@@ -56,7 +56,7 @@ const generatePayload = async () => {
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),
     updateArgs: instructionArgs,
   });
-  const payload = convertInstructionToWhGovernanceSolanaPayload(
+  const payload = convertInstructionToWhSolanaGovernancePayload(
     new web3.PublicKey(config.governanceProgramId),
     convertKitInstructionToWeb3Js(kitInstruction)
   );

@@ -143,7 +143,7 @@ const deserializeInstruction = (
  * | data_length     |                                2 | Length of the data                      |
  * | data            |                    `data_length` | Data to be passed to the program        |
  */
-export const convertInstructionToWhGovernanceSolanaPayload = (
+export const convertInstructionToWhSolanaGovernancePayload = (
   governanceProgramId: web3.PublicKey,
   instruction: web3.TransactionInstruction
 ): Buffer => {
@@ -176,7 +176,7 @@ export const WH_OWNER_SENTINEL_KEY = generateSentinelPubkey("owner");
  * deserializing the underlying instruction, and replacing the
  * sentinel keys with proper values.
  */
-export const convertWhGovernanceSolanaPayloadToInstruction = (
+export const convertWhSolanaGovernancePayloadToInstruction = (
   payload: Buffer,
   payerKey: web3.PublicKey,
   ownerKey: web3.PublicKey
