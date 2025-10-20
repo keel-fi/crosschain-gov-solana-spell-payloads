@@ -24,10 +24,10 @@ yarn install
 
 ## Usage
 
-|         | Type      | Description                                                    |
-| ------- | --------- | -------------------------------------------------------------- |
-| NETWORK | env       | Sets config values                                             |
-| --file  | parameter | OPTNIOALPrefix of file name, will be appended with the network |
+|         | Type      | Description                                                     |
+| ------- | --------- | --------------------------------------------------------------- |
+| NETWORK | env       | Sets config values                                              |
+| --file  | parameter | OPTIONAL Prefix of file name, will be appended with the network |
 
 To generate and validate a payload for a spell:
 
