@@ -24,29 +24,29 @@ yarn install
 
 ## Usage
 
-|         | Type      | Description                                            |
-| ------- | --------- | ------------------------------------------------------ |
-| NETWORK | env       | Sets config values                                     |
-| --file  | parameter | Prefix of file name, will be appended with the network |
+|         | Type      | Description                                                     |
+| ------- | --------- | --------------------------------------------------------------- |
+| NETWORK | env       | Sets config values                                              |
+| --file  | parameter | OPTIONAL Prefix of file name, will be appended with the network |
 
 To generate and validate a payload for a spell:
 
 1. **Generate the payload**
 
    ```bash
-   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/generate-payload.ts --file manage-permissions
+   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/generate-payload.ts --file manage-permissions.txt
    ```
 
 2. **Validate the payload**
    ```bash
-   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/validate.ts --file manage-permissions
+   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/validate.ts --file manage-permissions.txt
    ```
 
 Swap `controller-manage-permission` for other spells, e.g.:
 
 ```bash
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/generate-payload.ts --file program-upgrade
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/validate.ts --file program-upgrade
+NETWORK=devnet ts-node ./scripts/wh-program-upgrade/generate-payload.ts --file program-upgrade.txt
+NETWORK=devnet ts-node ./scripts/wh-program-upgrade/validate.ts --file program-upgrade.txt
 ```
 
 ## @solana/web3.js vs @solana/kit
