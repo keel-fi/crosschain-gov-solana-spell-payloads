@@ -70,7 +70,9 @@ const main = async () => {
   const programUpgradeAuthority = resp[config.programUpgradeAuthority];
   assertNoAccountChanges(
     programUpgradeAuthority.before,
-    programUpgradeAuthority.after
+    programUpgradeAuthority.after,
+    // allow lamport changes only if the authority is the spill account
+    config.programUpgradeAuthority === config.spillAccount
   );
 
   // Extract ProgramData account after simulation
