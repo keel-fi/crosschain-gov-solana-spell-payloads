@@ -7,7 +7,7 @@ import {
   LZ_PAYER_PLACEHOLDER,
   readAndValidateNetworkConfig,
   readArgs,
-  serializeLzInstruction,
+  convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
 import { address, createNoopSigner } from "@solana/kit";
@@ -49,7 +49,7 @@ const printControllerManagePermissionPayload = async () => {
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     ...PERMISSIONS,
   });
-  const payload = serializeLzInstruction(
+  const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
   );
 

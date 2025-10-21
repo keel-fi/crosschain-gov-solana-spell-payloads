@@ -2,7 +2,7 @@ import fs from "fs";
 import { Program, web3 } from "@coral-xyz/anchor-29";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor-29/dist/cjs/utils/token";
 import {
-  convertInstructionToWhGovernanceSolanaPayload,
+  convertInstructionToWhSolanaGovernancePayload,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
@@ -54,7 +54,7 @@ const generateTransferMintAuthorityPayload = async () => {
     .instruction();
 
   const transferMintAuthorityGovernancePayload =
-    convertInstructionToWhGovernanceSolanaPayload(
+    convertInstructionToWhSolanaGovernancePayload(
       new web3.PublicKey(config.governanceProgramId),
       transferMintAuthorityInstruction
     );

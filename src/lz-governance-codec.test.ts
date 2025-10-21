@@ -1,12 +1,12 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  convertLzGovernanceSolanaPayloadToInstruction,
+  convertLzSolanaGovernancePayloadToInstruction,
   deriveExecutionContextAddress,
   LZ_CONTEXT_PLACEHOLDER,
   LZ_CPI_AUTHORITY_PLACEHOLDER,
   LZ_PAYER_PLACEHOLDER,
-  serializeLzInstruction,
+  convertInstructionToSolanaGovernancePayload,
 } from "./lz-governance-codec";
 
 describe("lz-governance-codec", () => {
@@ -41,7 +41,7 @@ describe("lz-governance-codec", () => {
       data,
     });
 
-    const serializedInstruction = serializeLzInstruction(instruction);
+    const serializedInstruction = convertInstructionToSolanaGovernancePayload(instruction);
 
     const cpiAuthority = web3.PublicKey.unique();
     const payer = web3.PublicKey.unique();
@@ -65,7 +65,7 @@ describe("lz-governance-codec", () => {
       ],
     };
     const deserializedInstruction =
-      convertLzGovernanceSolanaPayloadToInstruction(
+      convertLzSolanaGovernancePayloadToInstruction(
         serializedInstruction,
         programId,
         cpiAuthority,

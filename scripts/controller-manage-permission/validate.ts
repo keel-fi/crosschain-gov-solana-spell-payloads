@@ -2,7 +2,7 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertLzGovernanceSolanaPayloadToInstruction,
+  convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
@@ -30,7 +30,7 @@ const main = async () => {
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzGovernanceSolanaPayloadToInstruction(
+  const instruction = convertLzSolanaGovernancePayloadToInstruction(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     new web3.PublicKey(config.superAuthority),

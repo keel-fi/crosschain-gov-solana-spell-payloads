@@ -4,7 +4,7 @@ import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertWhGovernanceSolanaPayloadToInstruction,
+  convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
@@ -47,7 +47,7 @@ const main = async () => {
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertWhGovernanceSolanaPayloadToInstruction(
+  const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
     new web3.PublicKey(config.programUpgradeAuthority)
@@ -65,6 +65,15 @@ const main = async () => {
   // Assert program account does not change
   const programResp = resp[config.programAddress];
   assertNoAccountChanges(programResp.before, programResp.after);
+
+  // Assert program authority does not change
+  const programUpgradeAuthority = resp[config.programUpgradeAuthority];
+  assertNoAccountChanges(
+    programUpgradeAuthority.before,
+    programUpgradeAuthority.after,
+    // allow lamport changes only if the authority is the spill account
+    config.programUpgradeAuthority === config.spillAccount
+  );
 
   // Extract ProgramData account after simulation
   const programDataResp = resp[config.programDataAddress];

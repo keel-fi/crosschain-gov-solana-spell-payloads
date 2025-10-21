@@ -3,7 +3,7 @@ import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertWhGovernanceSolanaPayloadToInstruction,
+  convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
@@ -22,7 +22,7 @@ const main = async () => {
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertWhGovernanceSolanaPayloadToInstruction(
+  const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
     new web3.PublicKey(config.authority)

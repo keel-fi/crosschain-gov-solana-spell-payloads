@@ -6,7 +6,7 @@ import {
   createSetAuthorityInstruction,
 } from "@solana/spl-token";
 import {
-  convertInstructionToWhGovernanceSolanaPayload,
+  convertInstructionToWhSolanaGovernancePayload,
   readAndValidateNetworkConfig,
   readArgs,
   WH_OWNER_SENTINEL_KEY,
@@ -26,7 +26,7 @@ const generatePayload = () => {
     TOKEN_PROGRAM_ID
   );
 
-  const payload = convertInstructionToWhGovernanceSolanaPayload(
+  const payload = convertInstructionToWhSolanaGovernancePayload(
     new web3.PublicKey(config.governanceProgramId),
     setAuthorityInstruction
   );
