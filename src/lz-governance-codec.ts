@@ -94,7 +94,7 @@ export const deserializeLzInstruction = (
  *
  * NOTE: this is not needed for payload generation as the EVM
  * contract will add the governance header (ORIGIN_CALLER, TARGET).
- * `serializeLzInstruction` can be used for the message payload to
+ * `convertInstructionToSolanaGovernancePayload` can be used for the message payload to
  * be hardcoded into the EVM call.
  *
  * The wire format for this message is:
