@@ -1,6 +1,5 @@
 // Simulates an example upgrade transaction and asserts value changes
 import assert from "assert";
-import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,

@@ -1,6 +1,5 @@
 // Generates a payload for creating/updating a ALM Controller Permission account
 
-import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
