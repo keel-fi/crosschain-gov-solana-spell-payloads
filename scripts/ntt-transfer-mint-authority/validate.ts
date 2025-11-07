@@ -21,7 +21,7 @@ import { ACTION, NETWORK_CONFIGS } from "./config";
 // as Solana mainnet will not have a state possible where we may
 // simulate the TransferMintAuthority prior to spell execution.
 const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
@@ -59,7 +59,7 @@ const main = async () => {
   svm.withSigverify(false);
   svm.addProgramFromFile(
     nttProgramIdPubkey,
-    path.resolve(__dirname, "./fixtures/ntt.so")
+    path.resolve(__dirname, `./fixtures/ntt-${network}.so`)
   );
 
   const resp = simulateInstructionsWithLiteSVM(svm, payerPubkey, [instruction]);

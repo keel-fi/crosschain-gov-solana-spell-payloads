@@ -1,4 +1,3 @@
-import fs from "fs";
 import {
   convertInstructionToWhSolanaGovernancePayload,
   convertKitInstructionToWeb3Js,
