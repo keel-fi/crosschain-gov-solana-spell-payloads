@@ -1,9 +1,9 @@
 import {
   KEEL_DEPLOYER,
   Network,
-  SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
   SKY_WH_GOVERNANCE_AUTHORITY,
   SKY_WH_GOVERNANCE_PROGRAM_ID,
+  USDS_LZ_OFT_STORE,
   USDS_TOKEN_MINT,
   USDS_WH_NTT_PROGRAM_ID,
 } from "../../src";
@@ -33,7 +33,7 @@ export const NETWORK_CONFIGS: Record<Network, NttTransferMintAuthority> = {
     nttProgramId: USDS_WH_NTT_PROGRAM_ID,
     authority: SKY_WH_GOVERNANCE_AUTHORITY,
     tokenMint: USDS_TOKEN_MINT,
-    newMintAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
+    newMintAuthority: USDS_LZ_OFT_STORE,
     payer: KEEL_DEPLOYER,
   },
 };

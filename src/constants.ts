@@ -18,6 +18,9 @@ export const SKY_LZ_GOVERNANCE_ACCOUNT =
   "8vXXGiaXFrKFUDw21H5Z57ex552Lh8WP9rVd2ktzmcCy";
 export const SKY_LZ_GOVERNANCE_CPI_AUTHORITY =
   "AYPtjx4Hc8us1ikULUedkmZ3wtiD6tmL7gK3qe4V3oHt";
+// USDS' OFT mint authority
+export const USDS_LZ_OFT_STORE =
+  "BEvTHkTyXooyaJzP8egDUC7WQK8cyRrq5WvERZNWhuah";
 
 /* Other constants */
 export const KEEL_DEPLOYER = "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2";
