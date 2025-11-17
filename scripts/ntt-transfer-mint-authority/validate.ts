@@ -1,27 +1,21 @@
 // Simulates an example upgrade transaction and asserts value changes
 import assert from "assert";
-import path from "path";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
-  createLiteSvmWithInstructionAccounts,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
-  simulateInstructionsWithLiteSVM,
+  simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
-// NOTE: Due to the sequencing of the NTT upgrade transaction
-// and NTT TransferMintAuthority, we must simulate in LiteSVM
-// as Solana mainnet will not have a state possible where we may
-// simulate the TransferMintAuthority prior to spell execution.
 const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
@@ -47,22 +41,9 @@ const main = async () => {
     nttProgramIdPubkey
   )[0];
 
-  // Create SVM environment for simulation with upgraded
-  // NTT Program.
-  const excludedAddresses = [config.nttProgramId];
-  const svm = await createLiteSvmWithInstructionAccounts(
-    connection,
-    [instruction],
-    payerPubkey,
-    excludedAddresses
-  );
-  svm.withSigverify(false);
-  svm.addProgramFromFile(
-    nttProgramIdPubkey,
-    path.resolve(__dirname, `./fixtures/ntt-${network}.so`)
-  );
-
-  const resp = simulateInstructionsWithLiteSVM(svm, payerPubkey, [instruction]);
+  const resp = await simulateInstructions(connection, payerPubkey, [
+    instruction,
+  ]);
 
   // Assert payer does not change aside from lamports
   const payerResp = resp[config.payer];
