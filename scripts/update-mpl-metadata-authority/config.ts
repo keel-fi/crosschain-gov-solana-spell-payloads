@@ -1,6 +1,8 @@
 import {
+  KEEL_DEPLOYER,
   MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   Network,
+  SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
   SKY_WH_GOVERNANCE_AUTHORITY,
   SKY_WH_GOVERNANCE_PROGRAM_ID,
   USDS_TOKEN_MINT,
@@ -32,9 +34,7 @@ export const NETWORK_CONFIGS: Record<Network, UpdateMplTokenMetadataAuthority> =
       governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
       mplProgramAddress: MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
       tokenMint: USDS_TOKEN_MINT,
-      // TODO [POST LZ GOV OAPP DEPLOY] update the newAuthority to
-      // oapp governance authority.
-      newAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
-      payer: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
+      newAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
+      payer: KEEL_DEPLOYER,
     },
   };

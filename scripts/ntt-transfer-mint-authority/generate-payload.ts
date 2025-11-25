@@ -1,4 +1,3 @@
-import fs from "fs";
 import { Program, web3 } from "@coral-xyz/anchor-29";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor-29/dist/cjs/utils/token";
 import {
