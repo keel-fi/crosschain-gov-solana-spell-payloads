@@ -5,3 +5,4 @@ export * from "./simulation-assertions";
 export * from "./utils";
 export * from "./simulation-utils";
 export * from "./wh-governance-codec";
+export * from "./generated";
