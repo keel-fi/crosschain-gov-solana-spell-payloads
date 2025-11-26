@@ -43,7 +43,7 @@ const main = async () => {
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
     payload,
     ssrOracleProgramId,
-    payerPubkey,
+    new web3.PublicKey(config.dataProviderAuthority),
     payerPubkey
   );
 

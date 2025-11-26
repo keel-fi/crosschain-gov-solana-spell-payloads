@@ -11,7 +11,7 @@ type SsrOracle = {
 export const NETWORK_CONFIGS: Record<Network, SsrOracle> = {
   devnet: {
     oraclePda: "675PeyDo2QAWXP1pX4zUe3f3PX1n5JnwhwP4JyH8EAF6",
-    dataProviderAuthority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
+    dataProviderAuthority: "7hAnDARg8LzUMS3uU7aTTei3C7sSnBMzGE6u8Mbve9EP",
     payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
   },
   // TODO [POST SSR ORACLE DEPLOY] update values
