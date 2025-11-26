@@ -197,6 +197,14 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@keel-fi/ssr-oracle@^1.0.0-rc.1":
+  version "1.0.0-rc.1"
+  resolved "https://registry.yarnpkg.com/@keel-fi/ssr-oracle/-/ssr-oracle-1.0.0-rc.1.tgz#6ff5c3e4fd996be5a55695936132603e79a33a3e"
+  integrity sha512-50qyj47u6hFdiWKzoJX4hvbi/SyfaJsEU60vqXrd97hcsutCFGBrsDrQES1gCYkwtWjBABoCxnCsCqFaWcgBmw==
+  dependencies:
+    "@solana/kit" "^3.0.3"
+    ws "^8.18.3"
+
 "@keel-fi/svm-alm-controller@1.0.0-rc.1":
   version "1.0.0-rc.1"
   resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.0-rc.1.tgz#b7b993cf0aac3c8f112e5a0f5aab6be7b9d2e697"

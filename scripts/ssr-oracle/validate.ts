@@ -3,9 +3,7 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   convertLzSolanaGovernancePayloadToInstruction,
-  deserializeLzInstruction,
   getRpcEndpoint,
-  LZ_PAYER_PLACEHOLDER,
   readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
@@ -14,10 +12,9 @@ import {
 } from "../../src";
 import {
   getSsrOracleCodec,
-  getSsrOracleSize,
+  getUpdateOracleInstructionDataDecoder,
   SSR_ORACLE_PROGRAM_ADDRESS,
-} from "../../src/generated";
-import { getUpdateOracleInstructionDataDecoder } from "../../src/generated/instructions/updateOracle";
+} from "@keel-fi/ssr-oracle";
 import { getU128Decoder } from "@solana/kit";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
@@ -30,8 +27,6 @@ const main = async () => {
 
   // Use the payer from config for simulation
   const payerPubkey = new web3.PublicKey(config.payer);
-  // Use the payer as the CPI authority (data provider authority) for simulation
-  const cpiAuthorityPubkey = new web3.PublicKey(config.payer);
 
   // Deserialize the instruction from the payload
   const ssrOracleProgramId = new web3.PublicKey(SSR_ORACLE_PROGRAM_ADDRESS);
@@ -45,15 +40,12 @@ const main = async () => {
     );
   }
 
-  const instruction = deserializeLzInstruction(ssrOracleProgramId, payload);
-
-  // Replace the LZ_PAYER_PLACEHOLDER with the actual payer
-  instruction.keys = instruction.keys.map((accountMeta) => {
-    if (accountMeta.pubkey.equals(LZ_PAYER_PLACEHOLDER)) {
-      accountMeta.pubkey = payerPubkey;
-    }
-    return accountMeta;
-  });
+  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+    payload,
+    ssrOracleProgramId,
+    payerPubkey,
+    payerPubkey
+  );
 
   // Decode the instruction data to get expected values
   const instructionDataDecoder = getUpdateOracleInstructionDataDecoder();
@@ -61,11 +53,6 @@ const main = async () => {
   const expectedRho = instructionData.rho;
   const expectedChi = instructionData.chi;
   const expectedSsr = instructionData.ssr;
-
-  // Get account addresses from instruction keys
-  // First account is dataProviderAuthority, second is oracle
-  const dataProviderAuthorityPubkey = instruction.keys[0].pubkey;
-  const oraclePubkey = instruction.keys[1].pubkey;
 
   // Simulate the instruction
   const resp = await simulateInstructions(connection, payerPubkey, [
@@ -78,14 +65,14 @@ const main = async () => {
 
   // Assert data provider authority does not change
   const dataProviderAuthorityResp =
-    resp[dataProviderAuthorityPubkey.toString()];
+    resp[config.dataProviderAuthority];
   assertNoAccountChanges(
     dataProviderAuthorityResp.before,
     dataProviderAuthorityResp.after
   );
 
   // Assert oracle account changes correctly
-  const oracleResp = resp[oraclePubkey.toString()];
+  const oracleResp = resp[config.oraclePda];
 
   // Oracle account must exist
   assert.ok(oracleResp.after, "Oracle account must exist after execution");
@@ -131,13 +118,13 @@ const main = async () => {
   // Let's read directly from offset 18 where we found the expected values.
   const oracleBuffer = oracleResp.after.data;
   const u128Decoder = getU128Decoder();
-  
+
   // Read from offset 18 where the unscaled values are actually stored
   // This is 1 byte after where the decoder thinks rho starts (offset 17)
   const actualRhoOffset = 18;
   const actualChiOffset = 34; // 18 + 16
   const actualSsrOffset = 50; // 18 + 32
-  
+
   const [actualRho] = u128Decoder.read(oracleBuffer, actualRhoOffset);
   const [actualChi] = u128Decoder.read(oracleBuffer, actualChiOffset);
   const [actualSsr] = u128Decoder.read(oracleBuffer, actualSsrOffset);
