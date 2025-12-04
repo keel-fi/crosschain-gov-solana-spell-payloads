@@ -27,6 +27,21 @@ const printSsrOraclePayload = async () => {
     ssr: 3 * 1e27,
   });
 
+  // layout:
+  // accounts_length:
+  // [0..2] accounts_length (value: 2u16BE)
+  // accounts:
+  // [2..34] data_provider_authority
+  // [34] is_signer (value: 1u8)
+  // [35] is_writable (value: 0u8)
+  // [36..68] oracle
+  // [68] is_signer (value: 0u8)
+  // [69] is_writable (value: 1u8)
+  // data:
+  // [70] Instruction discriminator (value: 3u8)
+  // [71..87] rho (u128LE)
+  // [87..103] chi (u128LE)
+  // [103..119] ssr (u128LE)
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
   );
