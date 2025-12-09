@@ -25,13 +25,13 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
     superAuthority: "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75",
     payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
   },
-  // TODO [POST CONTROLLER DEPLOY] update controller, authority, superAuthority
   mainnet: {
-    controllerProgramId: "",
-    controller: "",
-    authority: "",
-    superAuthority: "",
-    payer: "",
+    controllerProgramId: "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd",
+    controller: "EeobZr57FSmNvw8Hs719iULJNqv3XLrTB5uPezvC2ND3",
+    // This is a dummy authority. TODO: update to actual authority later.
+    authority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    superAuthority: "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk",
+    payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
   },
 };
 
@@ -40,7 +40,7 @@ export const PERMISSIONS = {
   status: PermissionStatus.Active,
   canManagePermissions: false,
   canInvokeExternalTransfer: false,
-  canExecuteSwap: false,
+  canExecuteSwap: true,
   canReallocate: true,
   canFreezeController: false,
   canUnfreezeController: false,

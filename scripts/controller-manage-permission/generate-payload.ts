@@ -9,31 +9,35 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { address, createNoopSigner } from "@solana/kit";
+import { Address, address, createNoopSigner, getAddressEncoder } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
-  deriveControllerAuthorityPda,
-  derivePermissionPda,
   getManagePermissionInstruction,
 } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
+import { deriveControllerAuthorityPda, derivePermissionPda } from "../../src";
 
 const printControllerManagePermissionPayload = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller)
+    address(config.controller),
+    address(config.controllerProgramId)
   );
   const permissionPda = await derivePermissionPda(
     address(config.controller),
-    address(config.authority)
+    address(config.authority),
+    address(config.controllerProgramId)
   );
+
   const superPermissionPda = await derivePermissionPda(
     address(config.controller),
-    // NOTE: cannot use sentinel here as it breaks the PDA.
-    address(config.superAuthority)
+    address(config.superAuthority),
+    address(config.controllerProgramId)
   );
+  
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
+
   const instruction = getManagePermissionInstruction({
     payer: createNoopSigner(lzPayerSentinel),
     controller: address(config.controller),
@@ -41,7 +45,7 @@ const printControllerManagePermissionPayload = async () => {
     // NOTE: we do not use sentinel here because it cannot be used
     // above for PDA derivation.
     superAuthority: createNoopSigner(address(config.superAuthority)),
-    superPermission: superPermissionPda,
+    superPermission: address(superPermissionPda.toString()),
     authority: address(config.authority),
     permission: permissionPda,
     programId: address(config.controllerProgramId),
