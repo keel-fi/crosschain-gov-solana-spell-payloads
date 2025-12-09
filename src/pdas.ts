@@ -1,8 +1,8 @@
 // We need to redefine our pda functions here because the original ones use the deprecated @keel-fi/svm-alm-controller package.
+// The @keel-fi/svm-alm-controller package uses an old program id to derive PDAs.
 
 import { Address, address, getAddressEncoder, getProgramDerivedAddress } from "@solana/kit";
 
-// The @keel-fi/svm-alm-controller package uses an old program id to derive PDAs.
 export const deriveControllerAuthorityPda = async (controller: Address<string>, controllerProgramId: Address<string>) => {
   const addressEncoder = getAddressEncoder();
   const controllerSeed = addressEncoder.encode(address(controller));
