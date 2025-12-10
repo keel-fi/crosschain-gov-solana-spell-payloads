@@ -7,6 +7,7 @@ import {
   isWritableRole,
 } from "@solana/kit";
 import { parseArgs } from "util";
+import { LiteSVM } from "litesvm";
 
 export type Network = "devnet" | "mainnet";
 
@@ -139,6 +140,56 @@ export const getUniquePublicKeysFromInstructionsAndPayer = (
     payer.toString(),
   ]);
   return Array.from(accountKeySet, (k, _) => new web3.PublicKey(k));
+};
+
+/**
+ * Seed a LiteSVM environment with all accounts used within a set
+ * of instructions from their state on the supplied connection.
+ * @param connection
+ * @param instructions
+ * @param excludedAddresses
+ * @returns
+ */
+export const createLiteSvmWithInstructionAccounts = async (
+  connection: web3.Connection,
+  instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey,
+  excludedAddresses: string[]
+) => {
+  // Get all Accounts needed for environment
+  const dedupedAddresses = getUniquePublicKeysFromInstructionsAndPayer(
+    instructions,
+    payer
+  );
+  const filteredkeys = dedupedAddresses.filter(
+    (a) => !excludedAddresses.includes(a.toString())
+  );
+
+  // Fetch accounts from the connection
+  const allAccounts = await connection.getMultipleAccountsInfo(filteredkeys);
+
+  // Create LiteSVM environment
+  const svm = new LiteSVM();
+  // Set Accounts from connection in LiteSVM
+  allAccounts.forEach((acctInfo, i) => {
+    if (!acctInfo) {
+      return;
+    }
+    const pubkey = filteredkeys[i];
+    const fixedAcctInfo = {
+      ...acctInfo,
+      // The RPC sends back a rentEpoch greater than u64::MAX::MAX.
+      // So we detect such a number and resolve to an arbitrarily high
+      // epoch number.
+      rentEpoch:
+        acctInfo.rentEpoch === 18_446_744_073_709_552_000
+          ? 999_999_999_999_999
+          : acctInfo.rentEpoch,
+    };
+    svm.setAccount(pubkey, fixedAcctInfo);
+  });
+
+  return svm;
 };
 
 /**

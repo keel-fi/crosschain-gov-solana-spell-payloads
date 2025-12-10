@@ -24,8 +24,6 @@ export const SKY_LZ_GOVERNANCE_CPI_AUTHORITY =
 // USDS' OFT mint authority
 export const USDS_LZ_OFT_STORE =
   "BEvTHkTyXooyaJzP8egDUC7WQK8cyRrq5WvERZNWhuah";
-export const USDS_LZ_OFT_PROGRAM_DATA =
-  "9mMCqLCLzWp9hRLqHwrf1b2AajWd1k3gPFdHHSYDKPH6";
 
 /* Other constants */
 export const KEEL_DEPLOYER = "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2";
