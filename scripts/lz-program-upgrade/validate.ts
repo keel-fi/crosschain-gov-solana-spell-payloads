@@ -54,8 +54,8 @@ const main = async () => {
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
     payload,
     bpfLoaderProgramId,
-    payerPubkey,
-    new web3.PublicKey(config.programUpgradeAuthority)
+    new web3.PublicKey(config.programUpgradeAuthority),
+    payerPubkey
   );
 
   // Simulate the upgrade instruction execution
