@@ -43,6 +43,8 @@ const getProgramDataCode = (buf: Buffer) =>
 const main = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
+  // Uncomment to use surfpool
+  //const rpcUrl = "http://127.0.0.1:8899";
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
