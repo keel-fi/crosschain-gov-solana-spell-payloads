@@ -32,11 +32,9 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   },
   mainnet: {
     governanceProgramId: SKY_LZ_GOVERNANCE_PROGRAM_ID,
-    // Program account owned by BPFLoaderUpgradeable (the OFT program itself)
-    programAddress: "SKYTAiJRkgexqQqFoqhXdCANyfziwrVrzjhBaCzdbKW",
-    // Program data account owned by BPFLoaderUpgradeable (contains the program code)
-    programDataAddress: "3mEXzCiHywSPpSpqqfWz4iKuZJbDcmb98eg8ypDeuW5z",
-    programUpgradeAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
+    programAddress: "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd",
+    programDataAddress: "93qn8rcvZPXGaHmetHrPEd6E5KuzGYEDV7bBgiyC31zj",
+    programUpgradeAuthority: "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk",
     // NOTE: ntt-mainnet.so was downloaded with:
     // `solana program dump 43Ggis1nd29QdZFNXQAhhKKj3nxEtwN1DnbNiLf1VfEy ntt-mainnet.so -u m`
     // Dummy account.  TODO: Replace with actual program buffer.
