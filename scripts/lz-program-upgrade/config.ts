@@ -5,6 +5,7 @@ import {
   SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
   USDS_LZ_OFT_PROGRAM_DATA,
   USDS_LZ_OFT_STORE,
+  SKY_LZ_GOVERNANCE_ACCOUNT,
 } from "../../src";
 
 export const ACTION = "lz-program-upgrade";
@@ -38,7 +39,8 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
     programUpgradeAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
     // NOTE: ntt-mainnet.so was downloaded with:
     // `solana program dump 43Ggis1nd29QdZFNXQAhhKKj3nxEtwN1DnbNiLf1VfEy ntt-mainnet.so -u m`
-    newProgramBuffer: "43Ggis1nd29QdZFNXQAhhKKj3nxEtwN1DnbNiLf1VfEy",
+    // Dummy account.  TODO: Replace with actual program buffer.
+    newProgramBuffer: "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta",
     spillAccount: KEEL_DEPLOYER,
     payer: KEEL_DEPLOYER,
   },

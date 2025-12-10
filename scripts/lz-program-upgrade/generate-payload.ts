@@ -18,7 +18,7 @@ const generateUpgradeAuthorityPayload = () => {
     new web3.PublicKey(config.programAddress),
     new web3.PublicKey(config.programDataAddress),
     new web3.PublicKey(config.newProgramBuffer),
-    LZ_CPI_AUTHORITY_PLACEHOLDER,
+    new web3.PublicKey(config.programUpgradeAuthority),
     // Use the authority as the "spill" account for
     // excess lamports
     new web3.PublicKey(config.spillAccount)
