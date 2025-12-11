@@ -22,8 +22,16 @@ export const SKY_LZ_GOVERNANCE_CPI_AUTHORITY =
   "AYPtjx4Hc8us1ikULUedkmZ3wtiD6tmL7gK3qe4V3oHt";
 
 // USDS' OFT mint authority
-export const USDS_LZ_OFT_STORE =
-  "BEvTHkTyXooyaJzP8egDUC7WQK8cyRrq5WvERZNWhuah";
+export const USDS_LZ_OFT_STORE = "BEvTHkTyXooyaJzP8egDUC7WQK8cyRrq5WvERZNWhuah";
 
 /* Other constants */
 export const KEEL_DEPLOYER = "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2";
+
+export const SVM_ALM_CONTROLLER_PROGRAM_ID =
+  "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd";
+
+export const SVM_ALM_CONTROLLER =
+  "EeobZr57FSmNvw8Hs719iULJNqv3XLrTB5uPezvC2ND3";
+
+export const SVM_ALM_SUPER_AUTHORITY =
+  "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk";

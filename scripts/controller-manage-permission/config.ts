@@ -2,7 +2,12 @@ import {
   PermissionStatus,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
-import { Network } from "../../src";
+import {
+  Network,
+  SVM_ALM_CONTROLLER,
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  SVM_ALM_SUPER_AUTHORITY,
+} from "../../src";
 
 export const ACTION = "controller-manage-permission";
 
@@ -26,11 +31,11 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
     payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
   },
   mainnet: {
-    controllerProgramId: "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd",
-    controller: "EeobZr57FSmNvw8Hs719iULJNqv3XLrTB5uPezvC2ND3",
+    controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    controller: SVM_ALM_CONTROLLER,
     // This is a dummy authority. TODO: update to actual authority later.
     authority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
-    superAuthority: "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk",
+    superAuthority: SVM_ALM_SUPER_AUTHORITY,
     payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
   },
 };

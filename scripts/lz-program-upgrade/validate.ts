@@ -3,9 +3,8 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertInstructionToSolanaGovernancePayload,
+  BPF_LOADER_PROGRAM_ID,
   convertLzSolanaGovernancePayloadToInstruction,
-  convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
@@ -50,9 +49,7 @@ const main = async () => {
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const bpfLoaderProgramId = new web3.PublicKey(
-    "BPFLoaderUpgradeab1e11111111111111111111111"
-  );
+  const bpfLoaderProgramId = new web3.PublicKey(BPF_LOADER_PROGRAM_ID);
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
     payload,
     bpfLoaderProgramId,
