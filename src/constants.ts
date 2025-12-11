@@ -35,3 +35,9 @@ export const SVM_ALM_CONTROLLER =
 
 export const SVM_ALM_SUPER_AUTHORITY =
   "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk";
+
+export const SVM_ALM_CONTROLLER_PROGRAM_DATA =
+  "93qn8rcvZPXGaHmetHrPEd6E5KuzGYEDV7bBgiyC31zj";
+
+export const BPF_LOADER_PROGRAM_ID =
+  "BPFLoaderUpgradeab1e11111111111111111111111";
