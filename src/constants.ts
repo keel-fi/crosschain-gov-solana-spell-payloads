@@ -33,7 +33,7 @@ export const SVM_ALM_CONTROLLER_PROGRAM_ID =
 export const SVM_ALM_CONTROLLER =
   "EeobZr57FSmNvw8Hs719iULJNqv3XLrTB5uPezvC2ND3";
 
-export const SVM_ALM_SUPER_AUTHORITY =
+export const KEEL_SUB_PROXY_CPI_AUTHORITY =
   "FDFsoboECfazAq1eLvwBLZXhoxjPvTy4wCzPdbqnk7Zk";
 
 export const SVM_ALM_CONTROLLER_PROGRAM_DATA =

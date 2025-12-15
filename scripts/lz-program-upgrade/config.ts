@@ -4,7 +4,7 @@ import {
   SKY_LZ_GOVERNANCE_PROGRAM_ID,
   SVM_ALM_CONTROLLER_PROGRAM_DATA,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
-  SVM_ALM_SUPER_AUTHORITY,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
 } from "../../src";
 
 export const ACTION = "lz-program-upgrade";
@@ -33,9 +33,9 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
     governanceProgramId: SKY_LZ_GOVERNANCE_PROGRAM_ID,
     programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
     programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
-    programUpgradeAuthority: SVM_ALM_SUPER_AUTHORITY,
-    // Dummy account.  TODO: Replace with actual program buffer.
-    newProgramBuffer: "5tBFpZxv7JA1fwikZftymiMuUopZo3hXPyS5NrKYQvDF",
+    programUpgradeAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    // TODO: Replace with actual program buffer post audit
+    newProgramBuffer: "",
     spillAccount: KEEL_DEPLOYER,
     payer: KEEL_DEPLOYER,
   },
