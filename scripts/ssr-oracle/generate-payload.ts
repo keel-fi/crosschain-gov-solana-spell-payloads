@@ -22,9 +22,9 @@ const printSsrOraclePayload = async () => {
   const instruction = getUpdateOracleInstruction({
     dataProviderAuthority: createNoopSigner(lzDataProviderAuthoritySentinel),
     oracle: address(config.oraclePda),
-    rho: 1735689600,
-    chi: 2,
-    ssr: 3 * 1e27,
+    rho: BigInt(1735689600),
+    chi: BigInt(2),
+    ssr: BigInt(3) * BigInt(1e27),
   });
 
   // layout:
