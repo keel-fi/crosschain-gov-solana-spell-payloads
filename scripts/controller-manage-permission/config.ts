@@ -2,7 +2,12 @@ import {
   PermissionStatus,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
-import { Network } from "../../src";
+import {
+  Network,
+  SVM_ALM_CONTROLLER,
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+} from "../../src";
 
 export const ACTION = "controller-manage-permission";
 
@@ -25,13 +30,13 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
     superAuthority: "JDNDBYaXdNiD7peLgRP3TZKwkeCJ3QEFwYkHk6DWbb75",
     payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
   },
-  // TODO [POST CONTROLLER DEPLOY] update controller, authority, superAuthority
   mainnet: {
-    controllerProgramId: "",
-    controller: "",
+    controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    controller: SVM_ALM_CONTROLLER,
+    // TODO: update to actual authority
     authority: "",
-    superAuthority: "",
-    payer: "",
+    superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
   },
 };
 
@@ -40,7 +45,7 @@ export const PERMISSIONS = {
   status: PermissionStatus.Active,
   canManagePermissions: false,
   canInvokeExternalTransfer: false,
-  canExecuteSwap: false,
+  canExecuteSwap: true,
   canReallocate: true,
   canFreezeController: false,
   canUnfreezeController: false,

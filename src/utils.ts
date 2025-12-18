@@ -6,8 +6,8 @@ import {
   isSignerRole,
   isWritableRole,
 } from "@solana/kit";
-import { LiteSVM } from "litesvm";
 import { parseArgs } from "util";
+import { LiteSVM } from "litesvm";
 
 export type Network = "devnet" | "mainnet";
 
