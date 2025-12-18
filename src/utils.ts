@@ -10,8 +10,11 @@ import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
 
 export type Network = "devnet" | "mainnet";
+export type Stablecoin = "USDG" | "PYUSD" | "CASH";
 
 export type NetworkConfig<T> = Record<Network, T>;
+export type StablecoinConfig<T> = Record<Stablecoin, T>;
+export type NetworkStablecoinConfig<T> = Record<Network, Record<Stablecoin, T>>;
 
 /**
  * Read and validate the NETWORK env var
@@ -22,6 +25,17 @@ export const readNetwork = (): Network => {
     throw new Error("Invalid network argument.");
   }
   return network;
+};
+
+/**
+ * Read and validate the STABLECOIN env var
+ */
+export const readStablecoin = (): Stablecoin => {
+  const stablecoin = process.env.STABLECOIN;
+  if (stablecoin !== "USDG" && stablecoin !== "PYUSD" && stablecoin !== "CASH") {
+    throw new Error("Invalid stablecoin argument. Must be USDG, PYUSD, or CASH.");
+  }
+  return stablecoin;
 };
 
 /**
@@ -42,6 +56,24 @@ export const readAndValidateNetworkConfig = <T>(
 };
 
 /**
+ * Given the NETWORK and STABLECOIN, return the configuration.
+ */
+export const readAndValidateNetworkStablecoinConfig = <T>(
+  configs: NetworkStablecoinConfig<T>
+): { network: Network; stablecoin: Stablecoin; config: T } => {
+  const network = readNetwork();
+  const stablecoin = readStablecoin();
+  const config = configs[network][stablecoin];
+  Object.entries(config).forEach(([key, val]) => {
+    if (!val) {
+      throw new Error(`${network}/${stablecoin} is missing ${key}`);
+    }
+  });
+
+  return { network, stablecoin, config };
+};
+
+/**
  * RPC endpoint string based on the NETWORK env var.
  * Defaults to devnet.
  */
@@ -59,12 +91,16 @@ export const getRpcEndpoint = () => {
  */
 export const readArgs = (action: string) => {
   const network = readNetwork();
+  const stablecoin = process.env.STABLECOIN;
+  const defaultFile = stablecoin
+    ? `${action}-${stablecoin}-${network}.txt`
+    : `${action}-${network}.txt`;
   const args = parseArgs({
     options: {
       file: {
         type: "string",
         short: "f",
-        default: `${action}-${network}.txt`,
+        default: defaultFile,
       },
     },
   }).values;
