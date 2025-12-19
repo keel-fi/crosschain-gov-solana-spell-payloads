@@ -10,6 +10,7 @@ import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
 import { createHash } from "crypto";
 import { IntegrationType, getIntegrationConfigEncoder } from "@keel-fi/svm-alm-controller";
+import createKeccakHash from "keccak";
 
 export type Network = "devnet" | "mainnet";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";
@@ -267,11 +268,10 @@ export const computeIntegrationHash = (
   integrationType: IntegrationType,
   config: any
 ): Uint8Array => {
-  const configEncoder = getIntegrationConfigEncoder();
-  const encodedConfig = configEncoder.encode(config);
-  const hash = createHash("sha256")
-    .update(Buffer.from([integrationType]))
-    .update(Buffer.from(encodedConfig))
-    .digest();
-  return new Uint8Array(hash);
+  let ixBytes: Buffer;
+  let hash: Uint8Array;
+
+  ixBytes = Buffer.from(getIntegrationConfigEncoder().encode(config));
+  hash = createKeccakHash("keccak256").update(ixBytes).digest();
+  return hash;
 };

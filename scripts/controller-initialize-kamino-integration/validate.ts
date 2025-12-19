@@ -56,7 +56,7 @@ const main = async () => {
     reserveLiquidityMint: address(config.reserveLiquidityMint),
     obligation: address(config.obligation),
     obligationId: config.obligationId,
-    padding: new Uint8Array(32), // 32 bytes padding
+    padding: new Uint8Array(32),
   };
   const integrationConfigData = integrationConfig("Kamino", [kaminoConfig]);
   const integrationHash = computeIntegrationHash(

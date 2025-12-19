@@ -54,7 +54,7 @@ const main = async () => {
     subAccountId: config.subAccountId,
     spotMarketIndex: config.spotMarketIndex,
     poolId: config.poolId,
-    padding: new Uint8Array(32), // 32 bytes padding
+    padding: new Uint8Array(219),
   };
   const integrationConfigData = integrationConfig("Drift", [driftConfig]);
   const integrationHash = computeIntegrationHash(

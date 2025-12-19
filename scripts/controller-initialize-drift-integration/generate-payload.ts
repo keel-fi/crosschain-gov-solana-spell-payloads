@@ -98,8 +98,6 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
     config.spotMarketIndex
   );
 
-  // Create drift config
-  const driftConfigEncoder = getDriftConfigEncoder();
   const driftConfig = {
     subAccountId: config.subAccountId,
     spotMarketIndex: config.spotMarketIndex,
