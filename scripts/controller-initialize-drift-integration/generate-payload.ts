@@ -8,36 +8,21 @@ import {
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
+  computeIntegrationHash,
 } from "../../src";
-import { Address, address, createNoopSigner } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getInitializeIntegrationInstruction,
   IntegrationType,
   initializeArgs,
-  getIntegrationConfigEncoder,
   integrationConfig,
   getDriftConfigEncoder,
   deriveControllerAuthorityPda,
   derivePermissionPda,
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
-import { createHash } from "crypto";
 import { ACTION, NETWORK_CONFIGS } from "./config";
-
-// Compute integration hash from integration type and config
-const computeIntegrationHash = (
-  integrationType: IntegrationType,
-  config: any
-): Uint8Array => {
-  const configEncoder = getIntegrationConfigEncoder();
-  const encodedConfig = configEncoder.encode(config);
-  const hash = createHash("sha256")
-    .update(Buffer.from([integrationType]))
-    .update(encodedConfig)
-    .digest();
-  return new Uint8Array(hash);
-};
 
 const printControllerInitializeDriftIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -45,12 +30,10 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
   
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
 
   // Create drift config
@@ -72,7 +55,6 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
     integrationHash,
-    address(config.controllerProgramId)
   );
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);

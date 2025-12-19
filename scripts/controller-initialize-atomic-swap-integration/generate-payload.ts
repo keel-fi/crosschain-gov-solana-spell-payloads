@@ -8,6 +8,7 @@ import {
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
+  computeIntegrationHash,
 } from "../../src";
 import { Address, address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -15,28 +16,12 @@ import {
   getInitializeIntegrationInstruction,
   IntegrationType,
   initializeArgs,
-  getIntegrationConfigEncoder,
   integrationConfig,
   deriveControllerAuthorityPda,
   derivePermissionPda,
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
-import { createHash } from "crypto";
 import { ACTION, NETWORK_CONFIGS } from "./config";
-
-// Compute integration hash from integration type and config
-const computeIntegrationHash = (
-  integrationType: IntegrationType,
-  config: any
-): Uint8Array => {
-  const configEncoder = getIntegrationConfigEncoder();
-  const encodedConfig = configEncoder.encode(config);
-  const hash = createHash("sha256")
-    .update(Buffer.from([integrationType]))
-    .update(Buffer.from(encodedConfig))
-    .digest();
-  return new Uint8Array(hash);
-};
 
 const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);

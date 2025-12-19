@@ -9,6 +9,7 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
+  computeIntegrationHash,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -21,25 +22,8 @@ import {
   deriveIntegrationPda,
   IntegrationType,
   getIntegrationCodec,
-  initializeArgs,
-  getIntegrationConfigEncoder,
   integrationConfig,
 } from "@keel-fi/svm-alm-controller";
-import { createHash } from "crypto";
-
-// Compute integration hash from integration type and config
-const computeIntegrationHash = (
-  integrationType: IntegrationType,
-  config: any
-): Uint8Array => {
-  const configEncoder = getIntegrationConfigEncoder();
-  const encodedConfig = configEncoder.encode(config);
-  const hash = createHash("sha256")
-    .update(Buffer.from([integrationType]))
-    .update(Buffer.from(encodedConfig))
-    .digest();
-  return new Uint8Array(hash);
-};
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);

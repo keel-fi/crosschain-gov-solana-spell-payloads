@@ -15,25 +15,21 @@ import {
   getManagePermissionInstruction,
 } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "../../src";
-
+import { deriveControllerAuthorityPda, derivePermissionPda } from "@keel-fi/svm-alm-controller";
 const printControllerManagePermissionPayload = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
 
   const superPermissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.superAuthority),
-    address(config.controllerProgramId)
   );
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);

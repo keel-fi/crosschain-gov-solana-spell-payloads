@@ -9,6 +9,7 @@ import {
   NetworkStablecoinConfig,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
 } from "../../src";
 
 export const ACTION = "controller-initialize-drift-integration";
@@ -85,8 +86,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Drift Integration for USDG",
@@ -100,8 +100,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Drift Integration for PYUSD",
@@ -115,8 +114,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Drift Integration for CASH",
