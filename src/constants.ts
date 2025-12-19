@@ -43,5 +43,7 @@ export const BPF_LOADER_PROGRAM_ID =
   "BPFLoaderUpgradeab1e11111111111111111111111";
 
 export const USDG_MINT = "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH";
-export const PYUSD_MINT = "E3yZ7Rc1JNznjdGoVMSU5Jdmf5vH6egsi4Tjn9NWUmiy";
+export const PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo";
 export const CASH_MINT = "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH";
+
+export const DRIFT_PROGRAM_ID = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH";
