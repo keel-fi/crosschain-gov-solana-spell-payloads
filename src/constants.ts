@@ -41,3 +41,7 @@ export const SVM_ALM_CONTROLLER_PROGRAM_DATA =
 
 export const BPF_LOADER_PROGRAM_ID =
   "BPFLoaderUpgradeab1e11111111111111111111111";
+
+export const USDG_MINT = "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH";
+export const PYUSD_MINT = "E3yZ7Rc1JNznjdGoVMSU5Jdmf5vH6egsi4Tjn9NWUmiy";
+export const CASH_MINT = "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH";

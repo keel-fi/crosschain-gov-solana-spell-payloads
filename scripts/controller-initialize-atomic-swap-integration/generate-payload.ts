@@ -9,7 +9,7 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { Address, address, createNoopSigner } from "@solana/kit";
+import { Address, address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getInitializeIntegrationInstruction,
@@ -33,7 +33,7 @@ const computeIntegrationHash = (
   const encodedConfig = configEncoder.encode(config);
   const hash = createHash("sha256")
     .update(Buffer.from([integrationType]))
-    .update(encodedConfig)
+    .update(Buffer.from(encodedConfig))
     .digest();
   return new Uint8Array(hash);
 };
@@ -44,16 +44,25 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
-
-  // Create integration config (empty for atomic swap as config is in InitializeArgs)
-  const integrationConfigData = integrationConfig("AtomicSwap", []);
+  
+  const atomicSwapConfig = {
+    inputToken: address(config.inputTokenMint),
+    outputToken: address(config.outputTokenMint),
+    oracle: address(config.oracle),
+    maxStaleness: config.maxStaleness,
+    expiryTimestamp: config.expiryTimestamp,
+    maxSlippageBps: config.maxSlippageBps,
+    inputMintDecimals: config.inputMintDecimals,
+    outputMintDecimals: config.outputMintDecimals,
+    oraclePriceInverted: config.oraclePriceInverted,
+    padding: new Uint8Array(32),
+  };
+  const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
   
   // Compute integration hash
   const integrationHash = computeIntegrationHash(
@@ -64,7 +73,6 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
     integrationHash,
-    address(config.controllerProgramId)
   );
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
@@ -92,6 +100,19 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     rateLimitMaxOutflow: config.rateLimitMaxOutflow,
     permitLiquidation: config.permitLiquidation,
     innerArgs: innerArgs,
+  });
+
+  instruction.accounts.push({
+    address: address(config.inputTokenMint),
+    role: AccountRole.READONLY,
+  });
+  instruction.accounts.push({
+    address: address(config.outputTokenMint),
+    role: AccountRole.READONLY,
+  });
+  instruction.accounts.push({
+    address: address(config.oracle),
+    role: AccountRole.READONLY,
   });
 
   const payload = convertInstructionToSolanaGovernancePayload(

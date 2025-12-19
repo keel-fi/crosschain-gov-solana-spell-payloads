@@ -5,8 +5,11 @@ import {
 import {
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   Network,
+  PYUSD_MINT,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
+  USDG_MINT,
+  CASH_MINT,
 } from "../../src";
 
 export const ACTION = "controller-initialize-reserve";
@@ -70,7 +73,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-      mint: "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+      mint: USDG_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
       rateLimitSlope: 0n, // TODO: update to actual rate limit slope
@@ -80,7 +83,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-      mint: "E3yZ7Rc1JNznjdGoVMSU5Jdmf5vH6egsi4Tjn9NWUmiy",
+      mint: PYUSD_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
       rateLimitSlope: 0n, // TODO: update to actual rate limit slope
@@ -90,7 +93,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-      mint: "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+      mint: CASH_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
       rateLimitSlope: 0n, // TODO: update to actual rate limit slope

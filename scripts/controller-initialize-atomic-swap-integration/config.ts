@@ -9,6 +9,10 @@ import {
   NetworkStablecoinConfig,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  USDG_MINT,
+  PYUSD_MINT,
+  CASH_MINT,
 } from "../../src";
 
 export const ACTION = "controller-initialize-atomic-swap-integration";
@@ -35,6 +39,11 @@ type ControllerInitializeAtomicSwapIntegration = {
   maxStaleness: bigint;
   expiryTimestamp: bigint;
   oraclePriceInverted: boolean;
+  inputTokenMint: string;
+  outputTokenMint: string;
+  oracle: string;
+  inputMintDecimals: number;
+  outputMintDecimals: number;
 };
 
 export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration> = {
@@ -53,6 +62,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // 5 minutes in seconds
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: USDG_MINT,
+      outputTokenMint: USDG_MINT,
+      oracle: "",
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -68,6 +82,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // 5 minutes in seconds
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: USDG_MINT,
+      outputTokenMint: USDG_MINT,
+      oracle: "",
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -83,14 +102,18 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // 5 minutes in seconds
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: USDG_MINT,
+      outputTokenMint: USDG_MINT,
+      oracle: "",
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
   },
   mainnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Atomic Swap Integration for USDG",
@@ -101,12 +124,16 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // TODO: update to actual max staleness
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: USDG_MINT,
+      outputTokenMint: "",
+      oracle: "",
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Atomic Swap Integration for PYUSD",
@@ -117,12 +144,16 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // TODO: update to actual max staleness
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: PYUSD_MINT,
+      outputTokenMint: "",
+      oracle: "",
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
-      // TODO: update to actual authority
-      authority: "",
+      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
       description: "Atomic Swap Integration for CASH",
@@ -133,6 +164,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxStaleness: 300n, // TODO: update to actual max staleness
       expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
+      inputTokenMint: CASH_MINT,
+      outputTokenMint: PYUSD_MINT,
+      oracle: PYUSD_MINT,
+      inputMintDecimals: 6,
+      outputMintDecimals: 6,
     },
   },
 };

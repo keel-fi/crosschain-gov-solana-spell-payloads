@@ -36,7 +36,7 @@ const computeIntegrationHash = (
   const encodedConfig = configEncoder.encode(config);
   const hash = createHash("sha256")
     .update(Buffer.from([integrationType]))
-    .update(encodedConfig)
+    .update(Buffer.from(encodedConfig))
     .digest();
   return new Uint8Array(hash);
 };
@@ -63,11 +63,24 @@ const main = async () => {
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
 
   // Compute integration hash
-  const integrationConfigData = integrationConfig("AtomicSwap", []);
+  // Note: AtomicSwapConfig requires all fields, so we use placeholder values for fields
+  // that are not needed (since the actual config is in InitializeArgs)
+  const atomicSwapConfig = {
+    inputToken: address(web3.SystemProgram.programId.toString()), // Placeholder
+    outputToken: address(web3.SystemProgram.programId.toString()), // Placeholder
+    oracle: address(web3.SystemProgram.programId.toString()), // Placeholder
+    maxStaleness: config.maxStaleness,
+    expiryTimestamp: config.expiryTimestamp,
+    maxSlippageBps: config.maxSlippageBps,
+    inputMintDecimals: 0, // Placeholder
+    outputMintDecimals: 0, // Placeholder
+    oraclePriceInverted: config.oraclePriceInverted,
+    padding: new Uint8Array(32), // 32 bytes padding
+  };
+  const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
   const integrationHash = computeIntegrationHash(
     IntegrationType.AtomicSwap,
     integrationConfigData
@@ -75,7 +88,6 @@ const main = async () => {
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
     integrationHash,
-    address(config.controllerProgramId)
   );
 
   // Assert payer does not change, except for lamports
@@ -89,7 +101,6 @@ const main = async () => {
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -121,7 +132,7 @@ const main = async () => {
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
-  assert.equal(integration.integrationType, IntegrationType.AtomicSwap);
+  assert.equal(integration.config.__kind, "AtomicSwap");
   assert.equal(integration.status, config.status);
 
   validateSuccess(args.file);
