@@ -14,46 +14,35 @@ import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getInitializeReserveInstruction,
   deriveReservePda,
-  ReserveStatus,
+  deriveControllerAuthorityPda,
+  derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { ACTION, NETWORK_CONFIGS } from "./config";
-import { derivePermissionPda, deriveControllerAuthorityPda } from "../../src";
-
-// Derive associated token account address
-const deriveAssociatedTokenAddress = (
-  owner: Address<string>,
-  mint: Address<string>
-): Address<string> => {
-  const ata = getAssociatedTokenAddressSync(
-    new web3.PublicKey(mint),
-    new web3.PublicKey(owner)
-  );
-  return fromLegacyPublicKey(ata);
-};
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 const printControllerInitializeReservePayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
-  
+
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
-    address(config.controllerProgramId)
+    address(config.controller)
   );
   const permissionPda = await derivePermissionPda(
     address(config.controller),
-    address(config.authority),
-    address(config.controllerProgramId)
+    address(config.authority)
   );
   const reservePda = await deriveReservePda(
     address(config.controller),
     address(config.mint)
   );
-  const vaultPda = deriveAssociatedTokenAddress(
-    reservePda,
-    address(config.mint)
+  const vaultPda = getAssociatedTokenAddressSync(
+    new web3.PublicKey(config.mint),
+    new web3.PublicKey(controllerAuthority),
+    true,
+    TOKEN_2022_PROGRAM_ID
   );
-  
+
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const instruction = getInitializeReserveInstruction({
@@ -64,8 +53,9 @@ const printControllerInitializeReservePayload = async () => {
     permission: permissionPda,
     reserve: reservePda,
     mint: address(config.mint),
-    vault: vaultPda,
-    associatedTokenProgram: address("TODO: update to actual associated token program"),
+    vault: address(vaultPda.toString()),
+    tokenProgram: address(TOKEN_2022_PROGRAM_ID.toString()),
+    associatedTokenProgram: address(ASSOCIATED_TOKEN_PROGRAM_ID.toString()),
     programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     status: config.status,

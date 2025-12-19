@@ -65,7 +65,7 @@ export const readAndValidateNetworkStablecoinConfig = <T>(
   const stablecoin = readStablecoin();
   const config = configs[network][stablecoin];
   Object.entries(config).forEach(([key, val]) => {
-    if (!val) {
+    if (val === undefined || val === null) {
       throw new Error(`${network}/${stablecoin} is missing ${key}`);
     }
   });

@@ -4,19 +4,20 @@ import {
   assertNoAccountChanges,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
+  readAndValidateNetworkStablecoinConfig,
   readArgs,
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
+import { NETWORK_CONFIGS, ACTION } from "./config";
 import {
-  NETWORK_CONFIGS,
-  ACTION,
-} from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "../../src";
-
+  deriveControllerAuthorityPda,
+  derivePermissionPda,
+  deriveReservePda,
+  getReserveCodec,
+} from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -39,8 +40,7 @@ const main = async () => {
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
-    address(config.authority),
-    address(config.controllerProgramId)
+    address(config.authority)
   );
 
   // Assert payer does not change, except for lamports
@@ -53,8 +53,7 @@ const main = async () => {
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
-    address(config.controllerProgramId)
+    address(config.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -72,8 +71,6 @@ const main = async () => {
     assertNoAccountChanges(permissionResp.before, permissionResp.after);
   }
 
-  // Assert reserve is created
-  const { deriveReservePda } = await import("@keel-fi/svm-alm-controller");
   const reservePda = await deriveReservePda(
     address(config.controller),
     address(config.mint)
@@ -87,6 +84,21 @@ const main = async () => {
       "Reserve data should change"
     );
   }
+
+  // Validate reserve data matches config
+  const reserveCodec = getReserveCodec();
+  const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
+  assert.equal(reserve.status, config.status, "Reserve status should match config");
+  assert.equal(
+    reserve.rateLimitSlope,
+    config.rateLimitSlope,
+    "Reserve rateLimitSlope should match config"
+  );
+  assert.equal(
+    reserve.rateLimitMaxOutflow,
+    config.rateLimitMaxOutflow,
+    "Reserve rateLimitMaxOutflow should match config"
+  );
 
   validateSuccess(args.file);
 };
