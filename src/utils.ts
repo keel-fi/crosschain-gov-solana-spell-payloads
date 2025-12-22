@@ -136,6 +136,26 @@ export const writeOutputFile = (file: string, payload: Buffer) => {
 };
 
 /**
+ * Write metadata (e.g., expiryTimestamp) to a JSON file alongside the payload file.
+ */
+export const writeMetadataFile = (file: string, metadata: Record<string, any>) => {
+  const metadataFile = file.replace(/\.txt$/, ".meta.json");
+  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
+};
+
+/**
+ * Read metadata from a JSON file alongside the payload file.
+ */
+export const readMetadataFile = (file: string): Record<string, any> | null => {
+  const metadataFile = file.replace(/\.txt$/, ".meta.json");
+  if (!fs.existsSync(metadataFile)) {
+    return null;
+  }
+  const content = fs.readFileSync(metadataFile, { encoding: "utf-8" });
+  return JSON.parse(content);
+};
+
+/**
  * Handle success response.
  */
 export const validateSuccess = (file: string) => {

@@ -10,6 +10,7 @@ import {
   writeOutputFile,
   computeIntegrationHash,
   getRpcEndpoint,
+  writeMetadataFile,
 } from "../../src";
 import { Address, address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -22,22 +23,15 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, getNetworkConfigs } from "./config";
 
 const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  const networkConfigs = await getNetworkConfigs();
+  const { config } = readAndValidateNetworkStablecoinConfig(networkConfigs);
   const args = readArgs(ACTION);
   
-  // Fetch expiryTimestamp from Solana clock
-  //const rpcEndpoint = getRpcEndpoint();
-  const rpcEndpoint = "http://localhost:8899";
-  const connection = new web3.Connection(rpcEndpoint);
-  const slot = await connection.getSlot();
-  const timestamp = await connection.getBlockTime(slot);
-  if (timestamp === null) {
-    throw new Error("Failed to fetch block time from Solana");
-  }
-  const expiryTimestamp = BigInt(timestamp);
+  // Fetch expiryTimestamp from Solana clock (only once)
+  const expiryTimestamp = config.expiryTimestamp;
   
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
@@ -71,6 +65,8 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     address(config.controller),
     integrationHash,
   );
+
+  console.log(integrationPda.toString());
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
@@ -117,6 +113,9 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   );
 
   writeOutputFile(args.file, payload);
+  
+  // Write expiryTimestamp to metadata file so validate.ts can use the same value
+  writeMetadataFile(args.file, { expiryTimestamp: expiryTimestamp.toString() });
 };
 
 printControllerInitializeAtomicSwapIntegrationPayload();

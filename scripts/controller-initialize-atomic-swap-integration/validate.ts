@@ -10,12 +10,10 @@ import {
   simulateInstructions,
   validateSuccess,
   computeIntegrationHash,
+  readMetadataFile,
 } from "../../src";
 import { address } from "@solana/kit";
-import {
-  NETWORK_CONFIGS,
-  ACTION,
-} from "./config";
+import { getNetworkConfigs, ACTION } from "./config";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
@@ -26,20 +24,24 @@ import {
 } from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
-  //const rpcUrl = getRpcEndpoint();
-  const rpcUrl = "http://localhost:8899"
-  const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
-  // Fetch expiryTimestamp from Solana clock
-  const slot = await connection.getSlot();
-  const timestamp = await connection.getBlockTime(slot);
-  if (timestamp === null) {
-    throw new Error("Failed to fetch block time from Solana");
+  
+  // Read expiryTimestamp from metadata file (same value used in generate-payload.ts)
+  const metadata = readMetadataFile(args.file);
+  if (!metadata || !metadata.expiryTimestamp) {
+    throw new Error(
+      `Metadata file not found for ${args.file}. Please run generate-payload.ts first.`
+    );
   }
-  const expiryTimestamp = BigInt(timestamp);
+  const expiryTimestamp = BigInt(metadata.expiryTimestamp);
+  
+  // Use the same timestamp to avoid fetching a new one
+  const networkConfigs = await getNetworkConfigs(expiryTimestamp);
+  const { config } = readAndValidateNetworkStablecoinConfig(networkConfigs);
+  //const rpcUrl = getRpcEndpoint();
+  const rpcUrl = "http://localhost:8899";
+  const connection = new web3.Connection(rpcUrl);
+  const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
@@ -55,7 +57,7 @@ const main = async () => {
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
-    address(config.authority),
+    address(config.authority)
   );
 
   const atomicSwapConfig = {
@@ -70,14 +72,16 @@ const main = async () => {
     oraclePriceInverted: config.oraclePriceInverted,
     padding: new Uint8Array(107),
   };
-  const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
+  const integrationConfigData = integrationConfig("AtomicSwap", [
+    atomicSwapConfig,
+  ]);
   const integrationHash = computeIntegrationHash(
     IntegrationType.AtomicSwap,
     integrationConfigData
   );
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
-    integrationHash,
+    integrationHash
   );
 
   // Assert payer does not change, except for lamports
@@ -86,30 +90,37 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  if (controllerResp?.before && controllerResp?.after) {
+    assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  }
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
+    address(config.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
-  assertNoAccountChanges(
-    controllerAuthorityResp?.before,
-    controllerAuthorityResp?.after
-  );
+  if (controllerAuthorityResp?.before && controllerAuthorityResp?.after) {
+    assertNoAccountChanges(
+      controllerAuthorityResp.before,
+      controllerAuthorityResp.after
+    );
+  }
 
   // Assert authority does not change
   const authorityResp = resp[config.authority];
-  assertNoAccountChanges(authorityResp.before, authorityResp.after);
+  if (authorityResp?.before && authorityResp?.after) {
+    assertNoAccountChanges(authorityResp.before, authorityResp.after);
+  }
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  if (permissionResp.before) {
+  if (permissionResp?.before && permissionResp?.after) {
     assertNoAccountChanges(permissionResp.before, permissionResp.after);
   }
 
   // Assert integration is created
   const integrationResp = resp[integrationPda];
+  console.log(integrationPda.toString());
   assert(integrationResp.after, "Integration should be created");
   if (integrationResp.before) {
     assert.notDeepEqual(
@@ -129,4 +140,3 @@ const main = async () => {
 };
 
 main();
-

@@ -10,9 +10,25 @@ import {
   USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
+  getRpcEndpoint,
 } from "../../src";
+import { web3 } from "@coral-xyz/anchor";
 
 export const ACTION = "controller-initialize-atomic-swap-integration";
+
+/**
+ * Fetches the current expiry timestamp from Solana's clock
+ */
+async function fetchExpiryTimestamp(): Promise<bigint> {
+  const rpcEndpoint = getRpcEndpoint();
+  const connection = new web3.Connection(rpcEndpoint);
+  const slot = await connection.getSlot();
+  const timestamp = await connection.getBlockTime(slot);
+  if (timestamp === null) {
+    throw new Error("Failed to fetch block time from Solana");
+  }
+  return BigInt(timestamp);
+}
 
 type ControllerInitializeAtomicSwapIntegration = {
   controllerProgramId: string;
@@ -34,6 +50,7 @@ type ControllerInitializeAtomicSwapIntegration = {
   // Atomic swap specific args
   maxSlippageBps: number;
   maxStaleness: bigint;
+  expiryTimestamp: bigint;
   oraclePriceInverted: boolean;
   inputTokenMint: string;
   outputTokenMint: string;
@@ -42,7 +59,10 @@ type ControllerInitializeAtomicSwapIntegration = {
   outputMintDecimals: number;
 };
 
-export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration> = {
+/**
+ * Base network configs (expiryTimestamp is fetched dynamically)
+ */
+const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration> = {
   devnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -56,6 +76,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
+      expiryTimestamp: 0n, // Will be set dynamically
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -75,6 +96,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
+      expiryTimestamp: 0n, // Will be set dynamically
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -94,6 +116,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
+      expiryTimestamp: 0n, // Will be set dynamically
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -115,6 +138,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
       maxStaleness: 300n, // TODO: update to actual max staleness
+      expiryTimestamp: 0n, // Will be set dynamically
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: "",
@@ -134,6 +158,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
       maxStaleness: 300n, // TODO: update to actual max staleness
+      expiryTimestamp: 0n, // Will be set dynamically
       oraclePriceInverted: false,
       inputTokenMint: PYUSD_MINT,
       outputTokenMint: "",
@@ -153,13 +178,43 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
       maxStaleness: BigInt(300), // TODO: update to actual max staleness
-      oraclePriceInverted: false,
+      expiryTimestamp: 0n, // Will be set dynamically
+      oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
       inputTokenMint: CASH_MINT,
-      outputTokenMint: PYUSD_MINT,
+      outputTokenMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
       oracle: "63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY",
       inputMintDecimals: 6,
       outputMintDecimals: 6,
     },
   },
 };
+
+/**
+ * Legacy export for backward compatibility (expiryTimestamp will be 0n)
+ * @deprecated Use getNetworkConfigs() instead to get configs with dynamically fetched expiryTimestamp
+ */
+export const NETWORK_CONFIGS = BASE_NETWORK_CONFIGS;
+
+/**
+ * Gets network configs with dynamically fetched expiryTimestamp from Solana's clock
+ * @param expiryTimestamp Optional timestamp to use instead of fetching from Solana
+ */
+export async function getNetworkConfigs(
+  expiryTimestamp?: bigint
+): Promise<NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration>> {
+  const timestamp = expiryTimestamp ?? (await fetchExpiryTimestamp());
+  
+  return {
+    devnet: {
+      USDG: { ...BASE_NETWORK_CONFIGS.devnet.USDG, expiryTimestamp: timestamp },
+      PYUSD: { ...BASE_NETWORK_CONFIGS.devnet.PYUSD, expiryTimestamp: timestamp },
+      CASH: { ...BASE_NETWORK_CONFIGS.devnet.CASH, expiryTimestamp: timestamp },
+    },
+    mainnet: {
+      USDG: { ...BASE_NETWORK_CONFIGS.mainnet.USDG, expiryTimestamp: timestamp },
+      PYUSD: { ...BASE_NETWORK_CONFIGS.mainnet.PYUSD, expiryTimestamp: timestamp },
+      CASH: { ...BASE_NETWORK_CONFIGS.mainnet.CASH, expiryTimestamp: timestamp },
+    },
+  };
+}
 
