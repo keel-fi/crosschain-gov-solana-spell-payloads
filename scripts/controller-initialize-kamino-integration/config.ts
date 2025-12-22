@@ -10,6 +10,8 @@ import {
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   CASH_MINT,
+  PYUSD_MINT,
+  USDG_MINT,
 } from "../../src";
 import { KEEL_SUB_PROXY_CPI_AUTHORITY } from "../../src";
 import { address } from "@solana/kit";
@@ -112,12 +114,12 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         rateLimitSlope: 0n, // TODO: update to actual rate limit slope
         rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
         permitLiquidation: false,
-        obligationId: 0, // TODO: update to actual obligation ID
-        market: "", // TODO: update to actual market address
-        reserve: "", // TODO: update to actual reserve address
-        reserveLiquidityMint: "", // TODO: update to actual reserve liquidity mint
+        obligationId: 0,
+        market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+        reserve: "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp",
+        reserveLiquidityMint: USDG_MINT,
         referrer: KAMINO_LEND_PROGRAM_ID,
-        reserveFarmCollateral: "", // TODO: update to actual reserve farm collateral address
+        reserveFarmCollateral: "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG"
       },
       PYUSD: {
         controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -129,12 +131,12 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         rateLimitSlope: 0n, // TODO: update to actual rate limit slope
         rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
         permitLiquidation: false,
-        obligationId: 0, // TODO: update to actual obligation ID
-        market: "", // TODO: update to actual market address
-        reserve: "", // TODO: update to actual reserve address
-        reserveLiquidityMint: "", // TODO: update to actual reserve liquidity mint
+        obligationId: 0,
+        market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+        reserve: "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN",
+        reserveLiquidityMint: PYUSD_MINT,
         referrer: KAMINO_LEND_PROGRAM_ID,
-        reserveFarmCollateral: "", // TODO: update to actual reserve farm collateral address
+        reserveFarmCollateral: "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku"
       },
       CASH: {
         controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
