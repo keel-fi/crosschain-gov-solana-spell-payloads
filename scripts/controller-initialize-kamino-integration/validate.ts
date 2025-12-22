@@ -24,6 +24,7 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
+import { deriveVanillaObligationAddress } from "./generate-payload";
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -49,14 +50,23 @@ const main = async () => {
     address(config.authority),
   );
 
+  const controllerAuthority = await deriveControllerAuthorityPda(
+    address(config.controller),
+  );
+  const obligation = await deriveVanillaObligationAddress(
+    config.obligationId,
+    address(controllerAuthority),
+    address(config.market)
+  );
+
   // Compute integration hash
   const kaminoConfig = {
     market: address(config.market),
     reserve: address(config.reserve),
     reserveLiquidityMint: address(config.reserveLiquidityMint),
-    obligation: address(config.obligation),
+    obligation: address(obligation),
     obligationId: config.obligationId,
-    padding: new Uint8Array(32),
+    padding: new Uint8Array(95),
   };
   const integrationConfigData = integrationConfig("Kamino", [kaminoConfig]);
   const integrationHash = computeIntegrationHash(
@@ -77,9 +87,6 @@ const main = async () => {
   assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
-  const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
-  );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
     controllerAuthorityResp?.before,
@@ -117,4 +124,3 @@ const main = async () => {
 };
 
 main();
-
