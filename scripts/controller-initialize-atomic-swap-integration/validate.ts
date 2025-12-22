@@ -27,10 +27,19 @@ import {
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
-  const rpcUrl = getRpcEndpoint();
+  //const rpcUrl = getRpcEndpoint();
+  const rpcUrl = "http://localhost:8899"
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
+
+  // Fetch expiryTimestamp from Solana clock
+  const slot = await connection.getSlot();
+  const timestamp = await connection.getBlockTime(slot);
+  if (timestamp === null) {
+    throw new Error("Failed to fetch block time from Solana");
+  }
+  const expiryTimestamp = BigInt(timestamp);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
@@ -49,20 +58,17 @@ const main = async () => {
     address(config.authority),
   );
 
-  // Compute integration hash
-  // Note: AtomicSwapConfig requires all fields, so we use placeholder values for fields
-  // that are not needed (since the actual config is in InitializeArgs)
   const atomicSwapConfig = {
-    inputToken: address(web3.SystemProgram.programId.toString()), // Placeholder
-    outputToken: address(web3.SystemProgram.programId.toString()), // Placeholder
-    oracle: address(web3.SystemProgram.programId.toString()), // Placeholder
+    inputToken: address(config.inputTokenMint),
+    outputToken: address(config.outputTokenMint),
+    oracle: address(config.oracle),
     maxStaleness: config.maxStaleness,
-    expiryTimestamp: config.expiryTimestamp,
+    expiryTimestamp,
     maxSlippageBps: config.maxSlippageBps,
-    inputMintDecimals: 0, // Placeholder
-    outputMintDecimals: 0, // Placeholder
+    inputMintDecimals: config.inputMintDecimals,
+    outputMintDecimals: config.outputMintDecimals,
     oraclePriceInverted: config.oraclePriceInverted,
-    padding: new Uint8Array(32), // 32 bytes padding
+    padding: new Uint8Array(107),
   };
   const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
   const integrationHash = computeIntegrationHash(

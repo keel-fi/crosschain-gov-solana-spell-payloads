@@ -1,11 +1,8 @@
 import {
   IntegrationStatus,
-  IntegrationType,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
 import {
-  Network,
-  Stablecoin,
   NetworkStablecoinConfig,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -37,7 +34,6 @@ type ControllerInitializeAtomicSwapIntegration = {
   // Atomic swap specific args
   maxSlippageBps: number;
   maxStaleness: bigint;
-  expiryTimestamp: bigint;
   oraclePriceInverted: boolean;
   inputTokenMint: string;
   outputTokenMint: string;
@@ -60,7 +56,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -80,7 +75,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -100,7 +94,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // 1% slippage
       maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -122,7 +115,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
       maxStaleness: 300n, // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: "",
@@ -142,7 +134,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
       maxStaleness: 300n, // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // TODO: update to actual expiry
       oraclePriceInverted: false,
       inputTokenMint: PYUSD_MINT,
       outputTokenMint: "",
@@ -161,12 +152,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
       permitLiquidation: false,
       maxSlippageBps: 100, // TODO: update to actual max slippage
-      maxStaleness: 300n, // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // TODO: update to actual expiry
+      maxStaleness: BigInt(300), // TODO: update to actual max staleness
       oraclePriceInverted: false,
       inputTokenMint: CASH_MINT,
       outputTokenMint: PYUSD_MINT,
-      oracle: PYUSD_MINT,
+      oracle: "63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY",
       inputMintDecimals: 6,
       outputMintDecimals: 6,
     },

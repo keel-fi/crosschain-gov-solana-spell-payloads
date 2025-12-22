@@ -92,10 +92,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
   },
   mainnet: {
     USDG: {
+      // USDG Does not exist on Drift, but is necessary for the config
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
-      controller: SVM_ALM_CONTROLLER,
-      authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-      payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+      controller: "",
+      authority: "",
+      payer: "",
       status: IntegrationStatus.Active,
       description: "Drift Integration for USDG",
       rateLimitSlope: 0n, // TODO: update to actual rate limit slope
@@ -103,8 +104,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       permitLiquidation: false,
       mint: USDG_MINT,
       subAccountId: 0, // TODO: update to actual sub account ID
-      spotMarketIndex: 0, // TODO: update to actual spot market index
-      poolId: 0, // TODO: update to actual pool ID
+      spotMarketIndex: 0,
+      poolId: 0,
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,

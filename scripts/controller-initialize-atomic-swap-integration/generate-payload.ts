@@ -9,6 +9,7 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
   computeIntegrationHash,
+  getRpcEndpoint,
 } from "../../src";
 import { Address, address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -27,6 +28,17 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   
+  // Fetch expiryTimestamp from Solana clock
+  //const rpcEndpoint = getRpcEndpoint();
+  const rpcEndpoint = "http://localhost:8899";
+  const connection = new web3.Connection(rpcEndpoint);
+  const slot = await connection.getSlot();
+  const timestamp = await connection.getBlockTime(slot);
+  if (timestamp === null) {
+    throw new Error("Failed to fetch block time from Solana");
+  }
+  const expiryTimestamp = BigInt(timestamp);
+  
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
   );
@@ -40,12 +52,12 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
     maxStaleness: config.maxStaleness,
-    expiryTimestamp: config.expiryTimestamp,
+    expiryTimestamp,
     maxSlippageBps: config.maxSlippageBps,
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,
     oraclePriceInverted: config.oraclePriceInverted,
-    padding: new Uint8Array(32),
+    padding: new Uint8Array(107),
   };
   const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
   
@@ -65,7 +77,7 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const innerArgs = initializeArgs("AtomicSwap", {
     maxSlippageBps: config.maxSlippageBps,
     maxStaleness: config.maxStaleness,
-    expiryTimestamp: config.expiryTimestamp,
+    expiryTimestamp,
     oraclePriceInverted: config.oraclePriceInverted,
   });
 
