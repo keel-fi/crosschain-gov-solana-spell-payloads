@@ -12,6 +12,8 @@ import {
 } from "../../src";
 import {
   getPermissionCodec,
+  derivePermissionPda,
+  deriveControllerAuthorityPda,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
 import {
@@ -19,7 +21,6 @@ import {
   PERMISSIONS as EXPECTED_PERMISSIONS,
   ACTION,
 } from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "../../src";
 
 
 const main = async () => {
@@ -44,12 +45,10 @@ const main = async () => {
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
   const superPermissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.superAuthority),
-    address(config.controllerProgramId)
   );
 
   // Assert payer does not change, except for lamports
@@ -63,7 +62,6 @@ const main = async () => {
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(

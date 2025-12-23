@@ -38,8 +38,7 @@ const main = async () => {
   // Use the same timestamp to avoid fetching a new one
   const networkConfigs = await getNetworkConfigs(expiryTimestamp);
   const { config } = readAndValidateNetworkStablecoinConfig(networkConfigs);
-  //const rpcUrl = getRpcEndpoint();
-  const rpcUrl = "http://localhost:8899";
+  const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(args.file);
 
@@ -60,7 +59,7 @@ const main = async () => {
     address(config.authority)
   );
 
-  const atomicSwapConfig = {
+  const expectedAtomicSwapConfig = {
     inputToken: address(config.inputTokenMint),
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
@@ -73,10 +72,9 @@ const main = async () => {
     padding: new Uint8Array(107),
   };
   const integrationConfigData = integrationConfig("AtomicSwap", [
-    atomicSwapConfig,
+    expectedAtomicSwapConfig,
   ]);
   const integrationHash = computeIntegrationHash(
-    IntegrationType.AtomicSwap,
     integrationConfigData
   );
   const integrationPda = await deriveIntegrationPda(
@@ -120,7 +118,6 @@ const main = async () => {
 
   // Assert integration is created
   const integrationResp = resp[integrationPda];
-  console.log(integrationPda.toString());
   assert(integrationResp.after, "Integration should be created");
   if (integrationResp.before) {
     assert.notDeepEqual(
@@ -135,6 +132,84 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "AtomicSwap");
   assert.equal(integration.status, config.status);
+  
+  // Validate integration-level fields
+  assert.equal(
+    integration.description.toString(),
+    config.description,
+    "Description should match config"
+  );
+  assert.equal(
+    integration.rateLimitSlope.toString(),
+    config.rateLimitSlope.toString(),
+    "Rate limit slope should match config"
+  );
+  assert.equal(
+    integration.rateLimitMaxOutflow.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow should match config"
+  );
+  assert.equal(
+    integration.permitLiquidation,
+    config.permitLiquidation,
+    "Permit liquidation should match config"
+  );
+
+  // Validate AtomicSwap config fields
+  if (integration.config.__kind !== "AtomicSwap") {
+    throw new Error("Expected AtomicSwap config");
+  }
+  const actualAtomicSwapConfig = integration.config.fields[0];
+  assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
+  
+  assert.equal(
+    actualAtomicSwapConfig.maxSlippageBps,
+    config.maxSlippageBps,
+    "Max slippage BPS should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.maxStaleness.toString(),
+    config.maxStaleness.toString(),
+    "Max staleness should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.expiryTimestamp.toString(),
+    expiryTimestamp.toString(),
+    "Expiry timestamp should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.oraclePriceInverted,
+    config.oraclePriceInverted,
+    "Oracle price inverted should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.inputToken.toString(),
+    address(config.inputTokenMint).toString(),
+    "Input token should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.outputToken.toString(),
+    address(config.outputTokenMint).toString(),
+    "Output token should match config"
+  );
+  // Only validate oracle if it's not empty (some configs have empty oracle)
+  if (config.oracle) {
+    assert.equal(
+      actualAtomicSwapConfig.oracle.toString(),
+      address(config.oracle).toString(),
+      "Oracle should match config"
+    );
+  }
+  assert.equal(
+    actualAtomicSwapConfig.inputMintDecimals,
+    config.inputMintDecimals,
+    "Input mint decimals should match config"
+  );
+  assert.equal(
+    actualAtomicSwapConfig.outputMintDecimals,
+    config.outputMintDecimals,
+    "Output mint decimals should match config"
+  );
 
   validateSuccess(args.file);
 };

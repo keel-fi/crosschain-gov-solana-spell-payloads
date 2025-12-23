@@ -58,7 +58,6 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
   
   // Compute integration hash
   const integrationHash = computeIntegrationHash(
-    IntegrationType.Drift,
     integrationConfigData
   );
   

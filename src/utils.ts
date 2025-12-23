@@ -9,7 +9,7 @@ import {
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
 import { createHash } from "crypto";
-import { IntegrationType, getIntegrationConfigEncoder } from "@keel-fi/svm-alm-controller";
+import { IntegrationConfigArgs, IntegrationType, getIntegrationConfigEncoder } from "@keel-fi/svm-alm-controller";
 import createKeccakHash from "keccak";
 
 export type Network = "devnet" | "mainnet";
@@ -285,8 +285,7 @@ export function convertKitInstructionToWeb3Js(
  * @returns
  */
 export const computeIntegrationHash = (
-  integrationType: IntegrationType,
-  config: any
+  config: IntegrationConfigArgs
 ): Uint8Array => {
   let ixBytes: Buffer;
   let hash: Uint8Array;

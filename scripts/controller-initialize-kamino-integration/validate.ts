@@ -70,7 +70,6 @@ const main = async () => {
   };
   const integrationConfigData = integrationConfig("Kamino", [kaminoConfig]);
   const integrationHash = computeIntegrationHash(
-    IntegrationType.Kamino,
     integrationConfigData
   );
   const integrationPda = await deriveIntegrationPda(
@@ -119,6 +118,61 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "Kamino");
   assert.equal(integration.status, config.status);
+  
+  // Validate integration-level fields
+  assert.equal(
+    integration.description.toString(),
+    config.description,
+    "Description should match config"
+  );
+  assert.equal(
+    integration.rateLimitSlope.toString(),
+    config.rateLimitSlope.toString(),
+    "Rate limit slope should match config"
+  );
+  assert.equal(
+    integration.rateLimitMaxOutflow.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow should match config"
+  );
+  assert.equal(
+    integration.permitLiquidation,
+    config.permitLiquidation,
+    "Permit liquidation should match config"
+  );
+
+  // Validate Kamino config fields
+  if (integration.config.__kind !== "Kamino") {
+    throw new Error("Expected Kamino config");
+  }
+  const actualKaminoConfig = integration.config.fields[0];
+  assert(actualKaminoConfig, "Kamino config should exist");
+  
+  assert.equal(
+    actualKaminoConfig.obligationId,
+    config.obligationId,
+    "Obligation ID should match config"
+  );
+  assert.equal(
+    actualKaminoConfig.market.toString(),
+    address(config.market).toString(),
+    "Market should match config"
+  );
+  assert.equal(
+    actualKaminoConfig.reserve.toString(),
+    address(config.reserve).toString(),
+    "Reserve should match config"
+  );
+  assert.equal(
+    actualKaminoConfig.reserveLiquidityMint.toString(),
+    address(config.reserveLiquidityMint).toString(),
+    "Reserve liquidity mint should match config"
+  );
+  assert.equal(
+    actualKaminoConfig.obligation.toString(),
+    address(obligation).toString(),
+    "Obligation should match config"
+  );
 
   validateSuccess(args.file);
 };

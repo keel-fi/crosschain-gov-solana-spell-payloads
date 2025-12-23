@@ -58,7 +58,6 @@ const main = async () => {
   };
   const integrationConfigData = integrationConfig("Drift", [driftConfig]);
   const integrationHash = computeIntegrationHash(
-    IntegrationType.Drift,
     integrationConfigData
   );
   const integrationPda = await deriveIntegrationPda(
@@ -110,6 +109,51 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "Drift");
   assert.equal(integration.status, config.status);
+  
+  // Validate integration-level fields
+  assert.equal(
+    integration.description.toString(),
+    config.description,
+    "Description should match config"
+  );
+  assert.equal(
+    integration.rateLimitSlope.toString(),
+    config.rateLimitSlope.toString(),
+    "Rate limit slope should match config"
+  );
+  assert.equal(
+    integration.rateLimitMaxOutflow.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow should match config"
+  );
+  assert.equal(
+    integration.permitLiquidation,
+    config.permitLiquidation,
+    "Permit liquidation should match config"
+  );
+
+  // Validate Drift config fields
+  if (integration.config.__kind !== "Drift") {
+    throw new Error("Expected Drift config");
+  }
+  const actualDriftConfig = integration.config.fields[0];
+  assert(actualDriftConfig, "Drift config should exist");
+  
+  assert.equal(
+    actualDriftConfig.subAccountId,
+    config.subAccountId,
+    "Sub account ID should match config"
+  );
+  assert.equal(
+    actualDriftConfig.spotMarketIndex,
+    config.spotMarketIndex,
+    "Spot market index should match config"
+  );
+  assert.equal(
+    actualDriftConfig.poolId,
+    config.poolId,
+    "Pool ID should match config"
+  );
 
   validateSuccess(args.file);
 };

@@ -9,10 +9,9 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
   computeIntegrationHash,
-  getRpcEndpoint,
   writeMetadataFile,
 } from "../../src";
-import { Address, address, createNoopSigner, AccountRole } from "@solana/kit";
+import { address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getInitializeIntegrationInstruction,
@@ -57,7 +56,6 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   
   // Compute integration hash
   const integrationHash = computeIntegrationHash(
-    IntegrationType.AtomicSwap,
     integrationConfigData
   );
   
@@ -66,8 +64,6 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     integrationHash,
   );
 
-  console.log(integrationPda.toString());
-  
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const innerArgs = initializeArgs("AtomicSwap", {
