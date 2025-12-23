@@ -1,11 +1,8 @@
 import {
   IntegrationStatus,
-  IntegrationType,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
 import {
-  Network,
-  Stablecoin,
   NetworkStablecoinConfig,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -14,13 +11,9 @@ import {
   USDG_MINT,
 } from "../../src";
 import { KEEL_SUB_PROXY_CPI_AUTHORITY } from "../../src";
-import { address } from "@solana/kit";
-import { PublicKey } from "@solana/web3.js";
+import { kamino } from "@keel-fi/svm-alm-controller";
 
 export const ACTION = "controller-initialize-kamino-integration";
-
-export const KAMINO_LEND_PROGRAM_ID =
-  "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD";
 
 type ControllerInitializeKaminoIntegration = {
   controllerProgramId: string;
@@ -118,7 +111,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
         reserve: "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp",
         reserveLiquidityMint: USDG_MINT,
-        referrer: KAMINO_LEND_PROGRAM_ID,
+        referrer: kamino.KAMINO_LEND_PROGRAM_ID,
         reserveFarmCollateral: "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG"
       },
       PYUSD: {
@@ -135,7 +128,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
         reserve: "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN",
         reserveLiquidityMint: PYUSD_MINT,
-        referrer: KAMINO_LEND_PROGRAM_ID,
+        referrer: kamino.KAMINO_LEND_PROGRAM_ID,
         reserveFarmCollateral: "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku"
       },
       CASH: {
@@ -152,7 +145,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
         reserve: "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA",
         reserveLiquidityMint: CASH_MINT,
-        referrer: KAMINO_LEND_PROGRAM_ID,
+        referrer: kamino.KAMINO_LEND_PROGRAM_ID,
         reserveFarmCollateral: "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys",
       },
     },

@@ -197,10 +197,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@keel-fi/svm-alm-controller@1.0.1-rc.1":
-  version "1.0.1-rc.1"
-  resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.1-rc.1.tgz#8a71146b732f0c8e7cc47cf4e943a5b97e8168ef"
-  integrity sha512-XAdT7lcKJif+1cqFCnAgTsbP1WVcyFz5pCpWm5iMf3qcLN5RU4I1llLrB4k5RB7DdDPdaROzXY6LOuHAyMLMaw==
+"@keel-fi/svm-alm-controller@1.0.2-rc.1":
+  version "1.0.2-rc.1"
+  resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.2-rc.1.tgz#288d48a1f3448016a05c9857fb4cd6c4179b412f"
+  integrity sha512-eySmRFHFbuACLLzqNoZnWISK036mycxu4F0Dk1zDKiEofMFuECvMr2lAoXOrNYiGVXYpo7Np6lwh3pG24SWnXQ==
   dependencies:
     "@solana/kit" "^3.0.3"
     ws "^8.18.3"
@@ -803,6 +803,13 @@
   version "3.4.38"
   resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.38.tgz#5ba7f3bc4fbbdeaff8dded952e5ff2cc53f8d858"
   integrity sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==
+  dependencies:
+    "@types/node" "*"
+
+"@types/keccak@^3.0.5":
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/@types/keccak/-/keccak-3.0.5.tgz#76db7c4fa73f1706cc396754cc890bb5d71398a7"
+  integrity sha512-Mvu4StIJ9KyfPXDVRv3h0fWNBAjHPBQZ8EPcxhqA8FG6pLzxtytVXU5owB6J2/8xZ+ZspWTXJEUjAHt0pk0I1Q==
   dependencies:
     "@types/node" "*"
 

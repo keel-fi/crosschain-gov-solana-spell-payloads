@@ -23,8 +23,8 @@ import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   deriveIntegrationPda,
+  kamino,
 } from "@keel-fi/svm-alm-controller";
-import { deriveVanillaObligationAddress } from "./generate-payload";
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -53,7 +53,7 @@ const main = async () => {
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
   );
-  const obligation = await deriveVanillaObligationAddress(
+  const obligation = await kamino.deriveVanillaObligationAddress(
     config.obligationId,
     address(controllerAuthority),
     address(config.market)
