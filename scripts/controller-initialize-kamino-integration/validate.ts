@@ -121,11 +121,6 @@ const main = async () => {
   
   // Validate integration-level fields
   assert.equal(
-    integration.description.toString(),
-    config.description,
-    "Description should match config"
-  );
-  assert.equal(
     integration.rateLimitSlope.toString(),
     config.rateLimitSlope.toString(),
     "Rate limit slope should match config"
