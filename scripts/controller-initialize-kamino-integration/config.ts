@@ -109,10 +109,10 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
-        reserve: "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp",
+        reserve: "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp", // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp
         reserveLiquidityMint: USDG_MINT,
         referrer: kamino.KAMINO_LEND_PROGRAM_ID,
-        reserveFarmCollateral: "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG"
+        reserveFarmCollateral: "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG" // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp/anchor-account 
       },
       PYUSD: {
         controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -126,10 +126,10 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
-        reserve: "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN",
+        reserve: "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN", // https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN
         reserveLiquidityMint: PYUSD_MINT,
         referrer: kamino.KAMINO_LEND_PROGRAM_ID,
-        reserveFarmCollateral: "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku"
+        reserveFarmCollateral: "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku" // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN/anchor-account
       },
       CASH: {
         controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -143,10 +143,10 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
-        reserve: "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA",
+        reserve: "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA", // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA
         reserveLiquidityMint: CASH_MINT,
         referrer: kamino.KAMINO_LEND_PROGRAM_ID,
-        reserveFarmCollateral: "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys",
+        reserveFarmCollateral: "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys", // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA/anchor-account
       },
     },
   };

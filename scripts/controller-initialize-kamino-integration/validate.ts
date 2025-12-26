@@ -26,6 +26,12 @@ import {
   kamino,
 } from "@keel-fi/svm-alm-controller";
 
+// In this script we validate that state and configuration 
+// was correctly set in the SVM ALM Controller program.
+// The different accounts passed to the initialize integration instruction 
+// (mint, kamino market, kamino reserve, reserve farm collateral)
+// have been manually validated. Links to their respective 
+// sources have been added in the config.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
