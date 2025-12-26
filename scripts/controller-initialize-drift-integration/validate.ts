@@ -10,6 +10,7 @@ import {
   simulateInstructions,
   validateSuccess,
   computeIntegrationHash,
+  bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -17,7 +18,6 @@ import {
   ACTION,
 } from "./config";
 import {
-  IntegrationType,
   getIntegrationCodec,
   integrationConfig,
   deriveControllerAuthorityPda,
@@ -25,6 +25,11 @@ import {
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
 
+// In this script we validate that state and configuration 
+// was correctly set in the SVM ALM Controller program.
+// The different accounts and args passed to the initialize integration instruction 
+// (mint, spot market index) have been manually validated. Links to their respective 
+// sources have been added in the constants.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
@@ -109,7 +114,12 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "Drift");
   assert.equal(integration.status, config.status);
-  
+  assert.equal(
+    bytesToUtf8TrimNull(integration.description),
+    config.description,
+    "Description should match config"
+  );
+
   // Validate integration-level fields
   assert.equal(
     integration.rateLimitSlope.toString(),
@@ -120,6 +130,16 @@ const main = async () => {
     integration.rateLimitMaxOutflow.toString(),
     config.rateLimitMaxOutflow.toString(),
     "Rate limit max outflow should match config"
+  );
+  assert.equal(
+    integration.rateLimitOutflowAmountAvailable.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow amount available should match config"
+  );
+  assert.equal(
+    integration.rateLimitRemainder.toString(),
+    "0",
+    "Rate limit remainder should be 0"
   );
   assert.equal(
     integration.permitLiquidation,
@@ -149,6 +169,18 @@ const main = async () => {
     config.poolId,
     "Pool ID should match config"
   );
+
+  if (integration.state.__kind !== "Drift") {
+    throw new Error("Expected Drift state");
+  }
+
+  const actualDriftState = integration.state.fields[0];
+
+  assert.equal(
+    actualDriftState.balance.toString(),
+    "0",
+    "Integration state balance should be 0",
+  )
 
   validateSuccess(args.file);
 };
