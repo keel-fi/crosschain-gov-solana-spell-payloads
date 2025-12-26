@@ -47,21 +47,6 @@ type ControllerInitializeDriftIntegration = {
 
 export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftIntegration> = {
   devnet: {
-    USDG: {
-      controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-      controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
-      authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
-      payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
-      status: IntegrationStatus.Active,
-      description: "Drift Main USDG",
-      rateLimitSlope: 10_000_000_000_000n,
-      rateLimitMaxOutflow: 25_000_000_000_000n,
-      permitLiquidation: false,
-      mint: USDG_MINT,
-      subAccountId: 0, // TODO: update to actual sub account ID
-      spotMarketIndex: 0, // TODO: update to actual spot market index
-      poolId: 0, // TODO: update to actual pool ID
-    },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
       controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
@@ -94,22 +79,6 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
     },
   },
   mainnet: {
-    USDG: {
-      // USDG Does not exist on Drift, but is necessary for the config
-      controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
-      controller: "",
-      authority: "",
-      payer: "",
-      status: IntegrationStatus.Active,
-      description: "Drift Main USDG",
-      rateLimitSlope: 10_000_000_000_000n,
-      rateLimitMaxOutflow: 25_000_000_000_000n,
-      permitLiquidation: true,
-      mint: USDG_MINT,
-      subAccountId: 0,
-      spotMarketIndex: 0,
-      poolId: DRIFT_POOL_ID,
-    },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,

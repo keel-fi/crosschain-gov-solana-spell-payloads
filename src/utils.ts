@@ -18,7 +18,7 @@ export type Stablecoin = "USDG" | "PYUSD" | "CASH";
 
 export type NetworkConfig<T> = Record<Network, T>;
 export type StablecoinConfig<T> = Record<Stablecoin, T>;
-export type NetworkStablecoinConfig<T> = Record<Network, Record<Stablecoin, T>>;
+export type NetworkStablecoinConfig<T> = Record<Network, Partial<Record<Stablecoin, T>>>;
 
 /**
  * Read and validate the NETWORK env var
@@ -67,8 +67,13 @@ export const readAndValidateNetworkStablecoinConfig = <T>(
 ): { network: Network; stablecoin: Stablecoin; config: T } => {
   const network = readNetwork();
   const stablecoin = readStablecoin();
+
   const config = configs[network][stablecoin];
-  Object.entries(config).forEach(([key, val]) => {
+  if (!config) {
+    throw new Error(`${network}/${stablecoin} config not found`);
+  }
+
+  Object.entries(config as Record<string, unknown>).forEach(([key, val]) => {
     if (val === undefined || val === null) {
       throw new Error(`${network}/${stablecoin} is missing ${key}`);
     }
