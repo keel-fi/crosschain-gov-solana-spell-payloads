@@ -11,11 +11,8 @@ import {
   computeIntegrationHash,
 } from "../../src";
 import {
-  Address,
   address,
   createNoopSigner,
-  getAddressEncoder,
-  getProgramDerivedAddress,
   AccountRole,
 } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -60,7 +57,6 @@ const printControllerInitializeKaminoIntegrationPayload = async () => {
 
   // Compute integration hash
   const integrationHash = computeIntegrationHash(
-    IntegrationType.Kamino,
     integrationConfigData
   );
 

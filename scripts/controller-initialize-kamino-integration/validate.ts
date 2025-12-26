@@ -131,6 +131,16 @@ const main = async () => {
     "Rate limit max outflow should match config"
   );
   assert.equal(
+    integration.rateLimitOutflowAmountAvailable.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow amount available should match config"
+  );
+  assert.equal(
+    integration.rateLimitRemainder.toString(),
+    Number(0).toString(),
+    "Rate limit remainder should be 0"
+  );
+  assert.equal(
     integration.permitLiquidation,
     config.permitLiquidation,
     "Permit liquidation should match config"
@@ -167,6 +177,17 @@ const main = async () => {
     actualKaminoConfig.obligation.toString(),
     address(obligation).toString(),
     "Obligation should match config"
+  );
+
+  if (integration.state.__kind !== "Kamino") {
+    throw new Error("Expected Kamino state");
+  }
+  const actualKaminoState = integration.state.fields[0];
+  
+  assert.equal(
+    actualKaminoState.balance.toString(),
+    Number(0).toString(),
+    "Integration state balance should be 0"
   );
 
   validateSuccess(args.file);
