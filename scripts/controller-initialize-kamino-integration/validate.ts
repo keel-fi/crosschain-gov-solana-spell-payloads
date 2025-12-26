@@ -18,7 +18,6 @@ import {
   ACTION,
 } from "./config";
 import {
-  IntegrationType,
   getIntegrationCodec,
   integrationConfig,
   deriveControllerAuthorityPda,
@@ -32,7 +31,7 @@ import {
 // The different accounts passed to the initialize integration instruction 
 // (mint, kamino market, kamino reserve, reserve farm collateral)
 // have been manually validated. Links to their respective 
-// sources have been added in the config.ts file.
+// sources have been added in the constants.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
@@ -149,7 +148,7 @@ const main = async () => {
   );
   assert.equal(
     integration.rateLimitRemainder.toString(),
-    Number(0).toString(),
+    "0",
     "Rate limit remainder should be 0"
   );
   assert.equal(
@@ -198,7 +197,7 @@ const main = async () => {
   
   assert.equal(
     actualKaminoState.balance.toString(),
-    Number(0).toString(),
+    "0",
     "Integration state balance should be 0"
   );
 

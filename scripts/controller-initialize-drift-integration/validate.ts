@@ -29,7 +29,7 @@ import {
 // was correctly set in the SVM ALM Controller program.
 // The different accounts and args passed to the initialize integration instruction 
 // (mint, spot market index) have been manually validated. Links to their respective 
-// sources have been added in the config.ts file.
+// sources have been added in the constants.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
@@ -138,7 +138,7 @@ const main = async () => {
   );
   assert.equal(
     integration.rateLimitRemainder.toString(),
-    Number(0).toString(),
+    "0",
     "Rate limit remainder should be 0"
   );
   assert.equal(
@@ -178,7 +178,7 @@ const main = async () => {
 
   assert.equal(
     actualDriftState.balance.toString(),
-    Number(0).toString(),
+    "0",
     "Integration state balance should be 0",
   )
 

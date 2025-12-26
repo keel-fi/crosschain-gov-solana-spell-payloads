@@ -13,6 +13,9 @@ import {
   USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
+  DRIFT_CASH_SPOT_MARKET_INDEX,
+  DRIFT_POOL_ID,
+  DRIFT_PYUSD_SPOT_MARKET_INDEX,
 } from "../../src";
 
 export const ACTION = "controller-initialize-drift-integration";
@@ -105,7 +108,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       mint: USDG_MINT,
       subAccountId: 0,
       spotMarketIndex: 0,
-      poolId: 0,
+      poolId: DRIFT_POOL_ID,
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -119,8 +122,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       permitLiquidation: true,
       mint: PYUSD_MINT,
       subAccountId: 0,
-      spotMarketIndex: 22, // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L509
-      poolId: 0,
+      spotMarketIndex: DRIFT_PYUSD_SPOT_MARKET_INDEX,
+      poolId: DRIFT_POOL_ID,
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -134,8 +137,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       permitLiquidation: true,
       mint: CASH_MINT,
       subAccountId: 0,
-      spotMarketIndex: 61, // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L998
-      poolId: 0,
+      spotMarketIndex: DRIFT_CASH_SPOT_MARKET_INDEX,
+      poolId: DRIFT_POOL_ID,
     },
   },
 };
