@@ -5,6 +5,7 @@ import {
   isInstructionWithAccounts,
   isSignerRole,
   isWritableRole,
+  ReadonlyUint8Array,
 } from "@solana/kit";
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
@@ -294,3 +295,12 @@ export const computeIntegrationHash = (
   hash = createKeccakHash("keccak256").update(ixBytes).digest();
   return hash;
 };
+
+
+export function bytesToUtf8TrimNull(bytes: ReadonlyUint8Array): string {
+  const decoded = new TextDecoder("utf-8", { fatal: false }).decode(
+    bytes as Uint8Array
+  );
+
+  return decoded.replace(/\0+$/g, "");
+}

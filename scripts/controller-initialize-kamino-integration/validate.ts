@@ -10,6 +10,7 @@ import {
   simulateInstructions,
   validateSuccess,
   computeIntegrationHash,
+  bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -124,6 +125,11 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "Kamino");
   assert.equal(integration.status, config.status);
+  assert.equal(
+    bytesToUtf8TrimNull(integration.description),
+    config.description,
+    "Description should match config"
+  );
   
   // Validate integration-level fields
   assert.equal(
