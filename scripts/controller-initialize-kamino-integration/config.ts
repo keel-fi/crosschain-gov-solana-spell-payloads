@@ -104,8 +104,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
         status: IntegrationStatus.Active,
         description: "Kamino Main USDG",
-        rateLimitSlope: 10_000_000_000_000n, // TODO: update to actual rate limit slope
-        rateLimitMaxOutflow: 25_000_000_000_000n, // TODO: update to actual rate limit max outflow
+        rateLimitSlope: 10_000_000_000_000n,
+        rateLimitMaxOutflow: 25_000_000_000_000n,
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
@@ -121,8 +121,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
         status: IntegrationStatus.Active,
         description: "Kamino Main PYUSD",
-        rateLimitSlope: 10_000_000_000_000n, // TODO: update to actual rate limit slope
-        rateLimitMaxOutflow: 25_000_000_000_000n, // TODO: update to actual rate limit max outflow
+        rateLimitSlope: 10_000_000_000_000n,
+        rateLimitMaxOutflow: 25_000_000_000_000n,
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
@@ -138,8 +138,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeKamino
         payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
         status: IntegrationStatus.Active,
         description: "Kamino Main CASH",
-        rateLimitSlope: 10_000_000_000_000n, // TODO: update to actual rate limit slope
-        rateLimitMaxOutflow: 25_000_000_000_000n, // TODO: update to actual rate limit max outflow
+        rateLimitSlope: 10_000_000_000_000n,
+        rateLimitMaxOutflow: 25_000_000_000_000n,
         permitLiquidation: true,
         obligationId: 0,
         market: "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
