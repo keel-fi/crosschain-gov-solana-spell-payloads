@@ -77,18 +77,20 @@ const main = async () => {
   );
   const reserveResp = resp[reservePda];
   assert(reserveResp.after, "Reserve should be created");
-  if (reserveResp.before) {
-    assert.notDeepEqual(
-      reserveResp.after.data,
-      reserveResp.before.data,
-      "Reserve data should change"
-    );
-  }
+  assert.notDeepEqual(
+    reserveResp.after.data,
+    reserveResp.before.data,
+    "Reserve data should change"
+  );
 
   // Validate reserve data matches config
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
-  assert.equal(reserve.status, config.status, "Reserve status should match config");
+  assert.equal(
+    reserve.status,
+    config.status,
+    "Reserve status should match config"
+  );
   assert.equal(
     reserve.rateLimitSlope,
     config.rateLimitSlope,
