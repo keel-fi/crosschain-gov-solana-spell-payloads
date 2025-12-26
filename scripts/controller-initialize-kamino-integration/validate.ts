@@ -10,6 +10,7 @@ import {
   simulateInstructions,
   validateSuccess,
   computeIntegrationHash,
+  bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -17,7 +18,6 @@ import {
   ACTION,
 } from "./config";
 import {
-  IntegrationType,
   getIntegrationCodec,
   integrationConfig,
   deriveControllerAuthorityPda,
@@ -26,6 +26,12 @@ import {
   kamino,
 } from "@keel-fi/svm-alm-controller";
 
+// In this script we validate that state and configuration 
+// was correctly set in the SVM ALM Controller program.
+// The different accounts passed to the initialize integration instruction 
+// (mint, kamino market, kamino reserve, reserve farm collateral)
+// have been manually validated. Links to their respective 
+// sources have been added in the constants.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
@@ -118,6 +124,11 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "Kamino");
   assert.equal(integration.status, config.status);
+  assert.equal(
+    bytesToUtf8TrimNull(integration.description),
+    config.description,
+    "Description should match config"
+  );
   
   // Validate integration-level fields
   assert.equal(
@@ -129,6 +140,16 @@ const main = async () => {
     integration.rateLimitMaxOutflow.toString(),
     config.rateLimitMaxOutflow.toString(),
     "Rate limit max outflow should match config"
+  );
+  assert.equal(
+    integration.rateLimitOutflowAmountAvailable.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow amount available should match config"
+  );
+  assert.equal(
+    integration.rateLimitRemainder.toString(),
+    "0",
+    "Rate limit remainder should be 0"
   );
   assert.equal(
     integration.permitLiquidation,
@@ -167,6 +188,17 @@ const main = async () => {
     actualKaminoConfig.obligation.toString(),
     address(obligation).toString(),
     "Obligation should match config"
+  );
+
+  if (integration.state.__kind !== "Kamino") {
+    throw new Error("Expected Kamino state");
+  }
+  const actualKaminoState = integration.state.fields[0];
+  
+  assert.equal(
+    actualKaminoState.balance.toString(),
+    "0",
+    "Integration state balance should be 0"
   );
 
   validateSuccess(args.file);

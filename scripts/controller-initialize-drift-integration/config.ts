@@ -13,6 +13,9 @@ import {
   USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
+  DRIFT_CASH_SPOT_MARKET_INDEX,
+  DRIFT_POOL_ID,
+  DRIFT_PYUSD_SPOT_MARKET_INDEX,
 } from "../../src";
 
 export const ACTION = "controller-initialize-drift-integration";
@@ -44,30 +47,15 @@ type ControllerInitializeDriftIntegration = {
 
 export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftIntegration> = {
   devnet: {
-    USDG: {
-      controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-      controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
-      authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
-      payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
-      status: IntegrationStatus.Active,
-      description: "Drift Integration for USDG",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
-      permitLiquidation: false,
-      mint: USDG_MINT,
-      subAccountId: 0, // TODO: update to actual sub account ID
-      spotMarketIndex: 0, // TODO: update to actual spot market index
-      poolId: 0, // TODO: update to actual pool ID
-    },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
       controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
       authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
       payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
       status: IntegrationStatus.Active,
-      description: "Drift Integration for PYUSD",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
+      description: "Drift Main PYUSD",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
       mint: PYUSD_MINT,
       subAccountId: 0, // TODO: update to actual sub account ID
@@ -80,9 +68,9 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
       payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
       status: IntegrationStatus.Active,
-      description: "Drift Integration for CASH",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
+      description: "Drift Main CASH",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
       mint: CASH_MINT,
       subAccountId: 0, // TODO: update to actual sub account ID
@@ -91,36 +79,20 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
     },
   },
   mainnet: {
-    USDG: {
-      // USDG Does not exist on Drift, but is necessary for the config
-      controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
-      controller: "",
-      authority: "",
-      payer: "",
-      status: IntegrationStatus.Active,
-      description: "Drift Integration for USDG",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
-      permitLiquidation: false,
-      mint: USDG_MINT,
-      subAccountId: 0, // TODO: update to actual sub account ID
-      spotMarketIndex: 0,
-      poolId: 0,
-    },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
       controller: SVM_ALM_CONTROLLER,
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
-      description: "Drift Integration for PYUSD",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
-      permitLiquidation: false,
+      description: "Drift Main PYUSD",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
+      permitLiquidation: true,
       mint: PYUSD_MINT,
       subAccountId: 0,
-      spotMarketIndex: 22,
-      poolId: 0,
+      spotMarketIndex: DRIFT_PYUSD_SPOT_MARKET_INDEX,
+      poolId: DRIFT_POOL_ID,
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -128,14 +100,14 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeDriftI
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
-      description: "Drift Integration for CASH",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
-      permitLiquidation: false,
+      description: "Drift Main CASH",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
+      permitLiquidation: true,
       mint: CASH_MINT,
       subAccountId: 0,
-      spotMarketIndex: 61,
-      poolId: 0,
+      spotMarketIndex: DRIFT_CASH_SPOT_MARKET_INDEX,
+      poolId: DRIFT_POOL_ID,
     },
   },
 };
