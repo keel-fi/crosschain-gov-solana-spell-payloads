@@ -95,6 +95,25 @@ const main = async () => {
   const permissionResp = resp[permissionPda];
   assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
+
+  // Assert input mint does not change
+  const inputMintResp = resp[config.inputTokenMint];
+  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
+
+  // Assert output mint does not change
+  const outputMintResp = resp[config.outputTokenMint];
+  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
+
+  // Assert oracle does not change
+  const oracleResp = resp[config.oracle];
+  assertNoAccountChanges(oracleResp.before, oracleResp.after);
+
   // Assert integration is created
   const integrationResp = resp[integrationPda];
   assert(integrationResp.after, "Integration should be created");
@@ -107,10 +126,10 @@ const main = async () => {
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
-  assert.equal(integration.config.__kind, "AtomicSwap");
-  assert.equal(integration.status, config.status);
-
+  
   // Validate integration-level fields
+  assert.equal(integration.config.__kind, "AtomicSwap", "Config kind should be AtomicSwap");
+  assert.equal(integration.status, config.status, "Status should match config");
   assert.equal(
     integration.description.toString(),
     config.description,
@@ -130,6 +149,15 @@ const main = async () => {
     integration.permitLiquidation,
     config.permitLiquidation,
     "Permit liquidation should match config"
+  );
+  
+  
+  // Validate integration state exists
+  assert(integration.state, "Integration state should exist");
+  assert.equal(
+    integration.state.__kind,
+    "AtomicSwap",
+    "State kind should be AtomicSwap"
   );
 
   // Validate AtomicSwap config fields

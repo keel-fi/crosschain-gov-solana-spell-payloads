@@ -70,6 +70,12 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     oraclePriceInverted: config.oraclePriceInverted,
   });
 
+  const description = Buffer.from(config.description, "utf-8");
+
+  if (description.length > 32) {
+    throw new Error("Description is too long. Must be 32 bytes or less.");
+  }
+
   const instruction = getInitializeIntegrationInstruction({
     payer: createNoopSigner(lzPayerSentinel),
     controller: address(config.controller),
@@ -81,7 +87,7 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     integrationType: IntegrationType.AtomicSwap,
     status: config.status,
-    description: Buffer.from(config.description, "utf-8"),
+    description,
     rateLimitSlope: config.rateLimitSlope,
     rateLimitMaxOutflow: config.rateLimitMaxOutflow,
     permitLiquidation: config.permitLiquidation,
