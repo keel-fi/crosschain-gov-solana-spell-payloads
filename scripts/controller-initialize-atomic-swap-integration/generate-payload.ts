@@ -1,6 +1,5 @@
 // Generates a payload for initializing an Atomic Swap Integration account
 
-import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
@@ -8,18 +7,11 @@ import {
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
-  computeIntegrationHash,
 } from "../../src";
-import { address, createNoopSigner, AccountRole } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
-  getInitializeIntegrationInstruction,
-  IntegrationType,
-  initializeArgs,
-  integrationConfig,
-  deriveControllerAuthorityPda,
-  derivePermissionPda,
-  deriveIntegrationPda,
+  createAtomicSwapInitializeIntegrationInstruction,
 } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
@@ -28,84 +20,31 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   
   const expiryTimestamp = config.expiryTimestamp;
-  
-  const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
-  );
-  const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority),
-  );
-  
-  const atomicSwapConfig = {
-    inputToken: address(config.inputTokenMint),
-    outputToken: address(config.outputTokenMint),
-    oracle: address(config.oracle),
-    maxStaleness: config.maxStaleness,
-    expiryTimestamp,
-    maxSlippageBps: config.maxSlippageBps,
-    inputMintDecimals: config.inputMintDecimals,
-    outputMintDecimals: config.outputMintDecimals,
-    oraclePriceInverted: config.oraclePriceInverted,
-    padding: new Uint8Array(107),
-  };
-  const integrationConfigData = integrationConfig("AtomicSwap", [atomicSwapConfig]);
-  
-  // Compute integration hash
-  const integrationHash = computeIntegrationHash(
-    integrationConfigData
-  );
-  
-  const integrationPda = await deriveIntegrationPda(
-    address(config.controller),
-    integrationHash,
-  );
-
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
-  const innerArgs = initializeArgs("AtomicSwap", {
-    maxSlippageBps: config.maxSlippageBps,
-    maxStaleness: config.maxStaleness,
-    expiryTimestamp,
-    oraclePriceInverted: config.oraclePriceInverted,
-  });
-
-  const description = Buffer.from(config.description, "utf-8");
-
-  if (description.length > 32) {
+  if (config.description.length > 32) {
     throw new Error("Description is too long. Must be 32 bytes or less.");
   }
 
-  const instruction = getInitializeIntegrationInstruction({
-    payer: createNoopSigner(lzPayerSentinel),
-    controller: address(config.controller),
-    controllerAuthority: controllerAuthority,
-    authority: createNoopSigner(address(config.authority)),
-    permission: permissionPda,
-    integration: integrationPda,
-    programId: address(config.controllerProgramId),
-    systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
-    integrationType: IntegrationType.AtomicSwap,
-    status: config.status,
-    description,
-    rateLimitSlope: config.rateLimitSlope,
-    rateLimitMaxOutflow: config.rateLimitMaxOutflow,
-    permitLiquidation: config.permitLiquidation,
-    innerArgs: innerArgs,
-  });
-
-  instruction.accounts.push({
-    address: address(config.inputTokenMint),
-    role: AccountRole.READONLY,
-  });
-  instruction.accounts.push({
-    address: address(config.outputTokenMint),
-    role: AccountRole.READONLY,
-  });
-  instruction.accounts.push({
-    address: address(config.oracle),
-    role: AccountRole.READONLY,
-  });
+  const instruction = await createAtomicSwapInitializeIntegrationInstruction(
+    createNoopSigner(lzPayerSentinel),
+    address(config.controller),
+    createNoopSigner(address(config.authority)),
+    config.description,
+    config.status,
+    config.rateLimitSlope,
+    config.rateLimitMaxOutflow,
+    config.permitLiquidation,
+    address(config.inputTokenMint),
+    config.inputMintDecimals,
+    address(config.outputTokenMint),
+    config.outputMintDecimals,
+    address(config.oracle),
+    config.maxStaleness,
+    expiryTimestamp,
+    config.maxSlippageBps,
+    config.oraclePriceInverted,
+  );
 
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
