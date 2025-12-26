@@ -272,23 +272,6 @@ export function convertKitInstructionToWeb3Js(
   });
 }
 
-/**
- * Compute integration hash from integration type and config
- * @param integrationType
- * @param config
- * @returns
- */
-export const computeIntegrationHash = (
-  config: IntegrationConfigArgs
-): Uint8Array => {
-  let ixBytes: Buffer;
-  let hash: Uint8Array;
-
-  ixBytes = Buffer.from(getIntegrationConfigEncoder().encode(config));
-  hash = createKeccakHash("keccak256").update(ixBytes).digest();
-  return hash;
-};
-
 
 export function bytesToUtf8TrimNull(bytes: ReadonlyUint8Array): string {
   const decoded = new TextDecoder("utf-8", { fatal: false }).decode(

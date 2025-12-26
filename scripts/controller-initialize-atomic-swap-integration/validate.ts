@@ -9,7 +9,6 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
-  computeIntegrationHash,
 } from "../../src";
 import { address } from "@solana/kit";
 import { NETWORK_CONFIGS, ACTION } from "./config";
@@ -19,6 +18,7 @@ import {
   deriveIntegrationPda,
   getIntegrationCodec,
   integrationConfig,
+  computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
