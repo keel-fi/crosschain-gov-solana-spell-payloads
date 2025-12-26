@@ -9,7 +9,6 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
   computeIntegrationHash,
-  writeMetadataFile,
 } from "../../src";
 import { address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -22,14 +21,12 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, getNetworkConfigs } from "./config";
+import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
-  const networkConfigs = await getNetworkConfigs();
-  const { config } = readAndValidateNetworkStablecoinConfig(networkConfigs);
   const args = readArgs(ACTION);
+  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   
-  // Fetch expiryTimestamp from Solana clock (only once)
   const expiryTimestamp = config.expiryTimestamp;
   
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -109,9 +106,6 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   );
 
   writeOutputFile(args.file, payload);
-  
-  // Write expiryTimestamp to metadata file so validate.ts can use the same value
-  writeMetadataFile(args.file, { expiryTimestamp: expiryTimestamp.toString() });
 };
 
 printControllerInitializeAtomicSwapIntegrationPayload();

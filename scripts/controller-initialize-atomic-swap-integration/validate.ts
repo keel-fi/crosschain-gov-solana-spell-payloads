@@ -10,34 +10,21 @@ import {
   simulateInstructions,
   validateSuccess,
   computeIntegrationHash,
-  readMetadataFile,
 } from "../../src";
 import { address } from "@solana/kit";
-import { getNetworkConfigs, ACTION } from "./config";
+import { NETWORK_CONFIGS, ACTION } from "./config";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   deriveIntegrationPda,
-  IntegrationType,
   getIntegrationCodec,
   integrationConfig,
 } from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
   const args = readArgs(ACTION);
-  
-  // Read expiryTimestamp from metadata file (same value used in generate-payload.ts)
-  const metadata = readMetadataFile(args.file);
-  if (!metadata || !metadata.expiryTimestamp) {
-    throw new Error(
-      `Metadata file not found for ${args.file}. Please run generate-payload.ts first.`
-    );
-  }
-  const expiryTimestamp = BigInt(metadata.expiryTimestamp);
-  
-  // Use the same timestamp to avoid fetching a new one
-  const networkConfigs = await getNetworkConfigs(expiryTimestamp);
-  const { config } = readAndValidateNetworkStablecoinConfig(networkConfigs);
+  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  const expiryTimestamp = config.expiryTimestamp;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(args.file);
@@ -74,9 +61,7 @@ const main = async () => {
   const integrationConfigData = integrationConfig("AtomicSwap", [
     expectedAtomicSwapConfig,
   ]);
-  const integrationHash = computeIntegrationHash(
-    integrationConfigData
-  );
+  const integrationHash = computeIntegrationHash(integrationConfigData);
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
     integrationHash
@@ -97,42 +82,34 @@ const main = async () => {
     address(config.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
-  if (controllerAuthorityResp?.before && controllerAuthorityResp?.after) {
-    assertNoAccountChanges(
-      controllerAuthorityResp.before,
-      controllerAuthorityResp.after
-    );
-  }
+  assertNoAccountChanges(
+    controllerAuthorityResp.before,
+    controllerAuthorityResp.after
+  );
 
   // Assert authority does not change
   const authorityResp = resp[config.authority];
-  if (authorityResp?.before && authorityResp?.after) {
-    assertNoAccountChanges(authorityResp.before, authorityResp.after);
-  }
+  assertNoAccountChanges(authorityResp.before, authorityResp.after);
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  if (permissionResp?.before && permissionResp?.after) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
   // Assert integration is created
   const integrationResp = resp[integrationPda];
   assert(integrationResp.after, "Integration should be created");
-  if (integrationResp.before) {
-    assert.notDeepEqual(
-      integrationResp.after.data,
-      integrationResp.before.data,
-      "Integration data should change"
-    );
-  }
+  assert.notDeepEqual(
+    integrationResp.after.data,
+    integrationResp.before.data,
+    "Integration data should change"
+  );
 
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
   assert.equal(integration.config.__kind, "AtomicSwap");
   assert.equal(integration.status, config.status);
-  
+
   // Validate integration-level fields
   assert.equal(
     integration.description.toString(),
@@ -161,7 +138,7 @@ const main = async () => {
   }
   const actualAtomicSwapConfig = integration.config.fields[0];
   assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
-  
+
   assert.equal(
     actualAtomicSwapConfig.maxSlippageBps,
     config.maxSlippageBps,
@@ -192,14 +169,11 @@ const main = async () => {
     address(config.outputTokenMint).toString(),
     "Output token should match config"
   );
-  // Only validate oracle if it's not empty (some configs have empty oracle)
-  if (config.oracle) {
-    assert.equal(
-      actualAtomicSwapConfig.oracle.toString(),
-      address(config.oracle).toString(),
-      "Oracle should match config"
-    );
-  }
+  assert.equal(
+    actualAtomicSwapConfig.oracle.toString(),
+    address(config.oracle).toString(),
+    "Oracle should match config"
+  );
   assert.equal(
     actualAtomicSwapConfig.inputMintDecimals,
     config.inputMintDecimals,

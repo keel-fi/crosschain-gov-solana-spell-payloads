@@ -10,25 +10,9 @@ import {
   USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
-  getRpcEndpoint,
 } from "../../src";
-import { web3 } from "@coral-xyz/anchor";
 
 export const ACTION = "controller-initialize-atomic-swap-integration";
-
-/**
- * Fetches the current expiry timestamp from Solana's clock
- */
-async function fetchExpiryTimestamp(): Promise<bigint> {
-  const rpcEndpoint = getRpcEndpoint();
-  const connection = new web3.Connection(rpcEndpoint);
-  const slot = await connection.getSlot();
-  const timestamp = await connection.getBlockTime(slot);
-  if (timestamp === null) {
-    throw new Error("Failed to fetch block time from Solana");
-  }
-  return BigInt(timestamp);
-}
 
 type ControllerInitializeAtomicSwapIntegration = {
   controllerProgramId: string;
@@ -60,9 +44,9 @@ type ControllerInitializeAtomicSwapIntegration = {
 };
 
 /**
- * Base network configs (expiryTimestamp is fetched dynamically)
+ * Network configs
  */
-const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration> = {
+export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration> = {
   devnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -70,13 +54,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
       payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for USDG",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
+      description: "Atomic Swap for USDG",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // 1% slippage
-      maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -90,13 +74,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
       payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for PYUSD",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
+      description: "Atomic Swap for PYUSD",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // 1% slippage
-      maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -110,13 +94,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
       payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for CASH",
-      rateLimitSlope: 0n,
-      rateLimitMaxOutflow: 0n,
+      description: "Atomic Swap for CASH",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // 1% slippage
-      maxStaleness: 300n, // 5 minutes in seconds
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -132,13 +116,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for USDG",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      description: "Atomic Swap for USDG",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // TODO: update to actual max slippage
-      maxStaleness: 300n, // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: "",
@@ -152,13 +136,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for PYUSD",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      description: "Atomic Swap for PYUSD",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // TODO: update to actual max slippage
-      maxStaleness: 300n, // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: false,
       inputTokenMint: PYUSD_MINT,
       outputTokenMint: "",
@@ -172,13 +156,13 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
       authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: IntegrationStatus.Active,
-      description: "Atomic Swap Integration for CASH",
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      description: "Atomic Swap for CASH",
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
       permitLiquidation: false,
-      maxSlippageBps: 100, // TODO: update to actual max slippage
-      maxStaleness: BigInt(300), // TODO: update to actual max staleness
-      expiryTimestamp: 0n, // Will be set dynamically
+      maxSlippageBps: 10,
+      maxStaleness: 100n,
+      expiryTimestamp: BigInt(1866674216),
       oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
       inputTokenMint: CASH_MINT,
       outputTokenMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -188,33 +172,4 @@ const BASE_NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomicSw
     },
   },
 };
-
-/**
- * Legacy export for backward compatibility (expiryTimestamp will be 0n)
- * @deprecated Use getNetworkConfigs() instead to get configs with dynamically fetched expiryTimestamp
- */
-export const NETWORK_CONFIGS = BASE_NETWORK_CONFIGS;
-
-/**
- * Gets network configs with dynamically fetched expiryTimestamp from Solana's clock
- * @param expiryTimestamp Optional timestamp to use instead of fetching from Solana
- */
-export async function getNetworkConfigs(
-  expiryTimestamp?: bigint
-): Promise<NetworkStablecoinConfig<ControllerInitializeAtomicSwapIntegration>> {
-  const timestamp = expiryTimestamp ?? (await fetchExpiryTimestamp());
-  
-  return {
-    devnet: {
-      USDG: { ...BASE_NETWORK_CONFIGS.devnet.USDG, expiryTimestamp: timestamp },
-      PYUSD: { ...BASE_NETWORK_CONFIGS.devnet.PYUSD, expiryTimestamp: timestamp },
-      CASH: { ...BASE_NETWORK_CONFIGS.devnet.CASH, expiryTimestamp: timestamp },
-    },
-    mainnet: {
-      USDG: { ...BASE_NETWORK_CONFIGS.mainnet.USDG, expiryTimestamp: timestamp },
-      PYUSD: { ...BASE_NETWORK_CONFIGS.mainnet.PYUSD, expiryTimestamp: timestamp },
-      CASH: { ...BASE_NETWORK_CONFIGS.mainnet.CASH, expiryTimestamp: timestamp },
-    },
-  };
-}
 

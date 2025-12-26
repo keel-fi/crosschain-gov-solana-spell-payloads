@@ -8,8 +8,10 @@ import {
 } from "@solana/kit";
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
-import { createHash } from "crypto";
-import { IntegrationConfigArgs, IntegrationType, getIntegrationConfigEncoder } from "@keel-fi/svm-alm-controller";
+import {
+  IntegrationConfigArgs,
+  getIntegrationConfigEncoder,
+} from "@keel-fi/svm-alm-controller";
 import createKeccakHash from "keccak";
 
 export type Network = "devnet" | "mainnet";
@@ -35,8 +37,14 @@ export const readNetwork = (): Network => {
  */
 export const readStablecoin = (): Stablecoin => {
   const stablecoin = process.env.STABLECOIN;
-  if (stablecoin !== "USDG" && stablecoin !== "PYUSD" && stablecoin !== "CASH") {
-    throw new Error("Invalid stablecoin argument. Must be USDG, PYUSD, or CASH.");
+  if (
+    stablecoin !== "USDG" &&
+    stablecoin !== "PYUSD" &&
+    stablecoin !== "CASH"
+  ) {
+    throw new Error(
+      "Invalid stablecoin argument. Must be USDG, PYUSD, or CASH."
+    );
   }
   return stablecoin;
 };
@@ -59,7 +67,7 @@ export const readAndValidateNetworkConfig = <T>(
 };
 
 /**
- * Given the NETWORK and STABLECOIN, return the configuration.
+ * Given the NETWORK and TOKEN, return the configuration.
  */
 export const readAndValidateNetworkStablecoinConfig = <T>(
   configs: NetworkStablecoinConfig<T>
@@ -133,26 +141,6 @@ export const writeOutputFile = (file: string, payload: Buffer) => {
   fs.writeFileSync(file, payload.toString("hex"));
 
   console.log(`Payload generated at ${file}`);
-};
-
-/**
- * Write metadata (e.g., expiryTimestamp) to a JSON file alongside the payload file.
- */
-export const writeMetadataFile = (file: string, metadata: Record<string, any>) => {
-  const metadataFile = file.replace(/\.txt$/, ".meta.json");
-  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
-};
-
-/**
- * Read metadata from a JSON file alongside the payload file.
- */
-export const readMetadataFile = (file: string): Record<string, any> | null => {
-  const metadataFile = file.replace(/\.txt$/, ".meta.json");
-  if (!fs.existsSync(metadataFile)) {
-    return null;
-  }
-  const content = fs.readFileSync(metadataFile, { encoding: "utf-8" });
-  return JSON.parse(content);
 };
 
 /**
