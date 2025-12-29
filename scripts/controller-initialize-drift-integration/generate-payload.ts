@@ -18,6 +18,11 @@ import { ACTION, NETWORK_CONFIGS } from "./config";
 const printControllerInitializeDriftIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+
+
+  if (config.description.length > 32) {
+    throw new Error("Description is too long. Must be 32 bytes or less.");
+  }
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 

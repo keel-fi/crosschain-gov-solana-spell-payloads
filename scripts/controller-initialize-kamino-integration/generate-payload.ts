@@ -33,6 +33,11 @@ const printControllerInitializeKaminoIntegrationPayload = async () => {
     address(config.market)
   );
 
+
+  if (config.description.length > 32) {
+    throw new Error("Description is too long. Must be 32 bytes or less.");
+  }
+
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const instruction = await createKaminoLendInitializeIntegrationInstruction(
