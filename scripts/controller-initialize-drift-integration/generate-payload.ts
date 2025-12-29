@@ -1,6 +1,5 @@
 // Generates a payload for initializing a Drift Integration account
 
-import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
@@ -9,20 +8,11 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { address, createNoopSigner, AccountRole } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
-  getInitializeIntegrationInstruction,
-  IntegrationType,
-  initializeArgs,
-  integrationConfig,
-  deriveControllerAuthorityPda,
-  derivePermissionPda,
-  deriveIntegrationPda,
-  computeIntegrationHash,
   createDriftInitializeIntegrationInstruction,
 } from "@keel-fi/svm-alm-controller";
-import { drift } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
 const printControllerInitializeDriftIntegrationPayload = async () => {
