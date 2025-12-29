@@ -98,7 +98,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
     },
   },
   // The outputTokenMint and oracle are left empty for USDG and PYUSD.
-  // This is be implemented post audit which includes additional support for the respective tokens.
+  // This will be implemented post audit which includes additional support for the respective tokens.
   mainnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
