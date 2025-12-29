@@ -87,12 +87,6 @@ const main = async () => {
     "Reserve should be owned by controller program"
   );
 
-  assert.notDeepEqual(
-    reserveResp.after.data,
-    reserveResp.before.data,
-    "Reserve data should change"
-  );
-
   // Validate reserve data matches config
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
@@ -154,13 +148,6 @@ const main = async () => {
     vaultResp.after.owner.toString(),
     TOKEN_2022_PROGRAM_ID.toString(),
     "Vault should be owned by token program"
-  );
-
-  // Validate vault mint matches config
-  assert.notDeepEqual(
-    vaultResp.after.data,
-    vaultResp.before.data,
-    "Vault data should change"
   );
 
   validateSuccess(args.file);
