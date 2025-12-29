@@ -18,6 +18,8 @@ import {
   deriveReservePda,
   getReserveCodec,
 } from "@keel-fi/svm-alm-controller";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -77,6 +79,14 @@ const main = async () => {
   );
   const reserveResp = resp[reservePda];
   assert(reserveResp.after, "Reserve should be created");
+
+  // Validate reserve account ownership
+  assert.equal(
+    reserveResp.after.owner.toString(),
+    config.controllerProgramId.toString(),
+    "Reserve should be owned by controller program"
+  );
+
   assert.notDeepEqual(
     reserveResp.after.data,
     reserveResp.before.data,
@@ -86,11 +96,25 @@ const main = async () => {
   // Validate reserve data matches config
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
+
+  assert.equal(
+    reserve.controller.toString(),
+    config.controller.toString(),
+    "Reserve controller should match config"
+  );
+
+  assert.equal(
+    reserve.mint.toString(),
+    config.mint.toString(),
+    "Mint should match config"
+  );
   assert.equal(
     reserve.status,
     config.status,
     "Reserve status should match config"
   );
+
+  // Validate rate limit fields
   assert.equal(
     reserve.rateLimitSlope,
     config.rateLimitSlope,
@@ -100,6 +124,43 @@ const main = async () => {
     reserve.rateLimitMaxOutflow,
     config.rateLimitMaxOutflow,
     "Reserve rateLimitMaxOutflow should match config"
+  );
+
+  // Validate rate limit initial state
+  assert.equal(
+    reserve.rateLimitOutflowAmountAvailable.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit outflow amount available should match max outflow initially"
+  );
+  assert.equal(
+    reserve.rateLimitRemainder.toString(),
+    "0",
+    "Rate limit remainder should be 0 initially"
+  );
+
+  // Validate vault account is created
+  const vaultPda = getAssociatedTokenAddressSync(
+    new web3.PublicKey(config.mint),
+    new web3.PublicKey(controllerAuthority),
+    true,
+    TOKEN_2022_PROGRAM_ID
+  );
+  const vaultResp = resp[vaultPda.toString()];
+  assert(vaultResp, "Vault account should be in simulation response");
+  assert(vaultResp.after, "Vault should be created");
+
+  // Validate vault account ownership
+  assert.equal(
+    vaultResp.after.owner.toString(),
+    TOKEN_2022_PROGRAM_ID.toString(),
+    "Vault should be owned by token program"
+  );
+
+  // Validate vault mint matches config
+  assert.notDeepEqual(
+    vaultResp.after.data,
+    vaultResp.before.data,
+    "Vault data should change"
   );
 
   validateSuccess(args.file);

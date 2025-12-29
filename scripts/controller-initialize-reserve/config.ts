@@ -76,8 +76,8 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       mint: USDG_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -86,8 +86,8 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       mint: PYUSD_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -96,8 +96,8 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       mint: CASH_MINT,
       payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
       status: ReserveStatus.Active,
-      rateLimitSlope: 0n, // TODO: update to actual rate limit slope
-      rateLimitMaxOutflow: 0n, // TODO: update to actual rate limit max outflow
+      rateLimitSlope: 10_000_000_000_000n,
+      rateLimitMaxOutflow: 25_000_000_000_000n,
     },
   },
 };
