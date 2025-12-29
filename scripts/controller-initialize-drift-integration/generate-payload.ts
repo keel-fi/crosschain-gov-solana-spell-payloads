@@ -8,7 +8,6 @@ import {
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
-  computeIntegrationHash,
 } from "../../src";
 import { address, createNoopSigner, AccountRole } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
@@ -20,6 +19,7 @@ import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
   deriveIntegrationPda,
+  computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
 import { drift } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS } from "./config";

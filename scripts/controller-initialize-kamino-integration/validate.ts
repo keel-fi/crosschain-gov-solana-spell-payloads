@@ -9,7 +9,6 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
-  computeIntegrationHash,
   bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
@@ -24,6 +23,7 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
   kamino,
+  computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
 
 // In this script we validate that state and configuration 

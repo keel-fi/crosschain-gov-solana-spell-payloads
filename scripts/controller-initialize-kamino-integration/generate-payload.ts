@@ -8,7 +8,6 @@ import {
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
-  computeIntegrationHash,
 } from "../../src";
 import {
   address,
@@ -25,6 +24,7 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
   kamino,
+  computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 

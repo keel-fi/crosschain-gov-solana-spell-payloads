@@ -73,9 +73,7 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  if (controllerResp?.before && controllerResp?.after) {
-    assertNoAccountChanges(controllerResp.before, controllerResp.after);
-  }
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -126,9 +124,13 @@ const main = async () => {
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
-  
+
   // Validate integration-level fields
-  assert.equal(integration.config.__kind, "AtomicSwap", "Config kind should be AtomicSwap");
+  assert.equal(
+    integration.config.__kind,
+    "AtomicSwap",
+    "Config kind should be AtomicSwap"
+  );
   assert.equal(integration.status, config.status, "Status should match config");
   assert.equal(
     integration.description.toString(),
@@ -150,8 +152,7 @@ const main = async () => {
     config.permitLiquidation,
     "Permit liquidation should match config"
   );
-  
-  
+
   // Validate integration state exists
   assert(integration.state, "Integration state should exist");
   assert.equal(
