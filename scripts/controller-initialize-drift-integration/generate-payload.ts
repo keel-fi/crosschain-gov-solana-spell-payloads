@@ -62,17 +62,7 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
     integrationConfigData
   );
   
-  const integrationPda = await deriveIntegrationPda(
-    address(config.controller),
-    integrationHash,
-  );
-  
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
-
-  const innerArgs = initializeArgs("Drift", {
-    subAccountId: config.subAccountId,
-    spotMarketIndex: config.spotMarketIndex,
-  });
 
   const instruction = await createDriftInitializeIntegrationInstruction(
     createNoopSigner(lzPayerSentinel),
