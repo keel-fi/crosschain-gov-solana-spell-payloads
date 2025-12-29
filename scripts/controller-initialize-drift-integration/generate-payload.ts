@@ -29,39 +29,6 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   
-  const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
-  );
-  const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority),
-  );
-
-  // Derive Drift PDAs
-  // Convert controllerAuthority to string for PDA derivation
-  const userStatsPda = await drift.deriveUserStatsPda(address(controllerAuthority));
-  const userPda = await drift.deriveUserPda(
-    address(controllerAuthority),
-    config.subAccountId
-  );
-  const statePda = await drift.deriveStatePda();
-  const spotMarketPda = await drift.deriveSpotMarketPda(
-    config.spotMarketIndex
-  );
-
-  const driftConfig = {
-    subAccountId: config.subAccountId,
-    spotMarketIndex: config.spotMarketIndex,
-    poolId: config.poolId,
-    padding: new Uint8Array(219),
-  };
-  const integrationConfigData = integrationConfig("Drift", [driftConfig]);
-  
-  // Compute integration hash
-  const integrationHash = computeIntegrationHash(
-    integrationConfigData
-  );
-  
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const instruction = await createDriftInitializeIntegrationInstruction(
