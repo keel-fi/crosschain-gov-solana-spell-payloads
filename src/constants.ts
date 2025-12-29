@@ -45,6 +45,9 @@ export const BPF_LOADER_PROGRAM_ID =
 export const USDG_MINT = "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH"; // link: https://explorer.solana.com/address/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH
 export const PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"; // link: https://explorer.solana.com/address/2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo
 export const CASH_MINT = "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH"; // link: https://explorer.solana.com/address/CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH
+export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // link: https://explorer.solana.com/address/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+export const CASH_USDC_ORACLE = "63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY"; // link: https://explorer.solana.com/address/63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY
 
 export const KAMINO_MAIN_MARKET = "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF";
 export const KAMINO_CASH_RESERVE = "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA
@@ -57,3 +60,5 @@ export const KAMINO_USDG_FARM_COLLATERAL = "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4Qp
 export const DRIFT_POOL_ID = 0;
 export const DRIFT_CASH_SPOT_MARKET_INDEX = 61; // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L998
 export const DRIFT_PYUSD_SPOT_MARKET_INDEX = 22; // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L509
+
+export const I64_MAX = 2n ** 63n - 1n; // i64::MAX

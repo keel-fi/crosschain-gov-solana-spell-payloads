@@ -10,27 +10,15 @@ import {
   USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
+  USDC_MINT,
+  I64_MAX,
+  CASH_USDC_ORACLE,
+  BaseControllerIntegrationConfig,
 } from "../../src";
 
 export const ACTION = "controller-initialize-atomic-swap-integration";
 
-type ControllerInitializeAtomicSwapIntegration = {
-  controllerProgramId: string;
-  // Controller that the Integration applies to
-  controller: string;
-  // Authority that has permission to initialize the integration
-  authority: string;
-  payer: string;
-  // Integration status
-  status: IntegrationStatus;
-  // Description of the integration
-  description: string;
-  // Rate limit slope
-  rateLimitSlope: bigint;
-  // Rate limit max outflow
-  rateLimitMaxOutflow: bigint;
-  // Permit liquidation
-  permitLiquidation: boolean;
+type ControllerInitializeAtomicSwapIntegration = BaseControllerIntegrationConfig & {
   // Atomic swap specific args
   maxSlippageBps: number;
   maxStaleness: bigint;
@@ -60,7 +48,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -80,7 +68,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -100,7 +88,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: USDG_MINT,
@@ -109,6 +97,8 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       outputMintDecimals: 6,
     },
   },
+  // The outputTokenMint and oracle are left empty for USDG and PYUSD.
+  // This is be implemented post audit which includes additional support for the respective tokens.
   mainnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -122,7 +112,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: false,
       inputTokenMint: USDG_MINT,
       outputTokenMint: "",
@@ -142,7 +132,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: false,
       inputTokenMint: PYUSD_MINT,
       outputTokenMint: "",
@@ -162,11 +152,11 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       permitLiquidation: true,
       maxSlippageBps: 10,
       maxStaleness: 100n,
-      expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+      expiryTimestamp: I64_MAX,
       oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
       inputTokenMint: CASH_MINT,
-      outputTokenMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      oracle: "63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY",
+      outputTokenMint: USDC_MINT,
+      oracle: CASH_USDC_ORACLE,
       inputMintDecimals: 6,
       outputMintDecimals: 6,
     },

@@ -1,42 +1,23 @@
 import {
   IntegrationStatus,
-  IntegrationType,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
 } from "@keel-fi/svm-alm-controller";
 import {
-  Network,
-  Stablecoin,
   NetworkStablecoinConfig,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
-  USDG_MINT,
   PYUSD_MINT,
   CASH_MINT,
   DRIFT_CASH_SPOT_MARKET_INDEX,
   DRIFT_POOL_ID,
   DRIFT_PYUSD_SPOT_MARKET_INDEX,
+  BaseControllerIntegrationConfig,
 } from "../../src";
 
 export const ACTION = "controller-initialize-drift-integration";
 
-type ControllerInitializeDriftIntegration = {
-  controllerProgramId: string;
-  // Controller that the Integration applies to
-  controller: string;
-  // Authority that has permission to initialize the integration
-  authority: string;
-  payer: string;
-  // Integration status
-  status: IntegrationStatus;
-  // Description of the integration
-  description: string;
-  // Rate limit slope
-  rateLimitSlope: bigint;
-  // Rate limit max outflow
-  rateLimitMaxOutflow: bigint;
-  // Permit liquidation
-  permitLiquidation: boolean;
+type ControllerInitializeDriftIntegration = BaseControllerIntegrationConfig & {
   // Mint address
   mint: string;
   // Drift specific args

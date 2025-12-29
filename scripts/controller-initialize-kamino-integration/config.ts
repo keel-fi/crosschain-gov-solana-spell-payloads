@@ -1,6 +1,7 @@
 import {
   IntegrationStatus,
   SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
+  kamino,
 } from "@keel-fi/svm-alm-controller";
 import {
   NetworkStablecoinConfig,
@@ -16,29 +17,13 @@ import {
   KAMINO_PYUSD_FARM_COLLATERAL,
   KAMINO_USDG_RESERVE,
   KAMINO_USDG_FARM_COLLATERAL,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  BaseControllerIntegrationConfig,
 } from "../../src";
-import { KEEL_SUB_PROXY_CPI_AUTHORITY } from "../../src";
-import { kamino } from "@keel-fi/svm-alm-controller";
 
 export const ACTION = "controller-initialize-kamino-integration";
 
-type ControllerInitializeKaminoIntegration = {
-  controllerProgramId: string;
-  // Controller that the Integration applies to
-  controller: string;
-  // Authority that has permission to initialize the integration
-  authority: string;
-  payer: string;
-  // Integration status
-  status: IntegrationStatus;
-  // Description of the integration
-  description: string;
-  // Rate limit slope
-  rateLimitSlope: bigint;
-  // Rate limit max outflow
-  rateLimitMaxOutflow: bigint;
-  // Permit liquidation
-  permitLiquidation: boolean;
+type ControllerInitializeKaminoIntegration = BaseControllerIntegrationConfig & {
   // Kamino specific args
   obligationId: number;
   market: string;
