@@ -197,10 +197,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@keel-fi/svm-alm-controller@1.0.4-rc.1":
-  version "1.0.4-rc.1"
-  resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.4-rc.1.tgz#368b21fad0525ee2ffd17c198e10f0af01a5a237"
-  integrity sha512-xBml3Ksk4E2eA2dKJpEnSOlUuPN2bipJswBSEIc7Q32kJaM91ldCcU8jgCptyJDLJ0wvZ6SXKzQihh0hvlZpFg==
+"@keel-fi/svm-alm-controller@1.0.6-rc.1":
+  version "1.0.6-rc.1"
+  resolved "https://registry.yarnpkg.com/@keel-fi/svm-alm-controller/-/svm-alm-controller-1.0.6-rc.1.tgz#cf33f8e9e748fe0857361e9636a1996227c64ac6"
+  integrity sha512-2kQ9zCyha2umBrtQ9W+skELgETFZod5xfPkYMjZ2VHiVkmRJfcOCggvlrNkMdC/O4yWcyL1i1y2hs2neuVWzog==
   dependencies:
     "@solana/kit" "^3.0.3"
     keccak "^3.0.4"

@@ -20,6 +20,7 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
   computeIntegrationHash,
+  createDriftInitializeIntegrationInstruction,
 } from "@keel-fi/svm-alm-controller";
 import { drift } from "@keel-fi/svm-alm-controller";
 import { ACTION, NETWORK_CONFIGS } from "./config";
@@ -73,66 +74,20 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
     spotMarketIndex: config.spotMarketIndex,
   });
 
-  const instruction = getInitializeIntegrationInstruction({
-    payer: createNoopSigner(lzPayerSentinel),
-    controller: address(config.controller),
-    controllerAuthority: controllerAuthority,
-    authority: createNoopSigner(address(config.authority)),
-    permission: permissionPda,
-    integration: integrationPda,
-    programId: address(config.controllerProgramId),
-    systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
-    integrationType: IntegrationType.Drift,
-    status: config.status,
-    description: Buffer.from(config.description, "utf-8"),
-    rateLimitSlope: config.rateLimitSlope,
-    rateLimitMaxOutflow: config.rateLimitMaxOutflow,
-    permitLiquidation: config.permitLiquidation,
-    innerArgs: innerArgs,
-  });
-
-  // Add remaining accounts for Drift integration
-  // 1. Mint (readonly)
-  instruction.accounts.push({
-    address: address(config.mint),
-    role: AccountRole.READONLY,
-  });
-
-  // 2. User PDA (writable)
-  instruction.accounts.push({
-    address: address(userPda.toString()),
-    role: AccountRole.WRITABLE,
-  });
-
-  // 3. User Stats PDA (writable)
-  instruction.accounts.push({
-    address: address(userStatsPda.toString()),
-    role: AccountRole.WRITABLE,
-  });
-
-  // 4. State PDA (writable)
-  instruction.accounts.push({
-    address: address(statePda.toString()),
-    role: AccountRole.WRITABLE,
-  });
-
-  // 5. Spot Market PDA (readonly)
-  instruction.accounts.push({
-    address: address(spotMarketPda.toString()),
-    role: AccountRole.READONLY,
-  });
-
-  // 6. Rent sysvar (readonly)
-  instruction.accounts.push({
-    address: address(web3.SYSVAR_RENT_PUBKEY.toString()),
-    role: AccountRole.READONLY,
-  });
-
-  // 7. Drift Program ID (readonly)
-  instruction.accounts.push({
-    address: address(drift.DRIFT_PROGRAM_ID),
-    role: AccountRole.READONLY,
-  });
+  const instruction = await createDriftInitializeIntegrationInstruction(
+    createNoopSigner(lzPayerSentinel),
+    address(config.controller),
+    createNoopSigner(address(config.authority)),
+    address(config.mint),
+    config.description,
+    config.status,
+    config.rateLimitSlope,
+    config.rateLimitMaxOutflow,
+    config.permitLiquidation,
+    config.subAccountId,
+    config.spotMarketIndex,
+    config.poolId,
+  );
 
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
