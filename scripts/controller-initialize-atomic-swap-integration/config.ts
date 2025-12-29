@@ -12,7 +12,6 @@ import {
   CASH_MINT,
   USDC_MINT,
   I64_MAX,
-  CASH_USDC_ORACLE,
   BaseControllerIntegrationConfig,
 } from "../../src";
 
@@ -156,7 +155,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
       inputTokenMint: CASH_MINT,
       outputTokenMint: USDC_MINT,
-      oracle: CASH_USDC_ORACLE,
+      oracle: "",
       inputMintDecimals: 6,
       outputMintDecimals: 6,
     },
