@@ -1,7 +1,9 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  assertNoAccountChanges,
+  assertCommonAccountChanges,
+  assertIntegrationCreated,
+  validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkStablecoinConfig,
@@ -9,7 +11,6 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
-  bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -83,79 +84,29 @@ const main = async () => {
     integrationHash,
   );
 
-  // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
-  assertNoAccountChanges(payerResp.before, payerResp.after, true);
-
-  // Assert controller does not change
-  const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
-
-  // Assert controller authority does not change
-  const controllerAuthorityResp = resp[controllerAuthority];
-  assertNoAccountChanges(
-    controllerAuthorityResp?.before,
-    controllerAuthorityResp?.after
-  );
-
-  // Assert authority does not change
-  const authorityResp = resp[config.authority];
-  assertNoAccountChanges(authorityResp.before, authorityResp.after);
-
-  // Assert permission does not change
-  const permissionResp = resp[permissionPda];
-  if (permissionResp.before) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
+  // Assert common account changes
+  assertCommonAccountChanges(resp, {
+    payer: config.payer,
+    controller: config.controller,
+    authority: config.authority,
+    controllerProgramId: config.controllerProgramId,
+    controllerAuthority,
+    permissionPda,
+  });
 
   // Assert integration is created
-  const integrationResp = resp[integrationPda];
-  assert(integrationResp.after, "Integration should be created");
-  if (integrationResp.before) {
-    assert.notDeepEqual(
-      integrationResp.after.data,
-      integrationResp.before.data,
-      "Integration data should change"
-    );
-  }
+  assertIntegrationCreated(resp, integrationPda);
 
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
-  const [integration] = integrationCodec.read(integrationResp.after.data, 1);
+  const integrationResp = resp[integrationPda];
+  const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
   assert.equal(integration.config.__kind, "Kamino");
-  assert.equal(integration.status, config.status);
-  assert.equal(
-    bytesToUtf8TrimNull(integration.description),
-    config.description,
-    "Description should match config"
-  );
-  
+
   // Validate integration-level fields
-  assert.equal(
-    integration.rateLimitSlope.toString(),
-    config.rateLimitSlope.toString(),
-    "Rate limit slope should match config"
-  );
-  assert.equal(
-    integration.rateLimitMaxOutflow.toString(),
-    config.rateLimitMaxOutflow.toString(),
-    "Rate limit max outflow should match config"
-  );
-  assert.equal(
-    integration.rateLimitOutflowAmountAvailable.toString(),
-    config.rateLimitMaxOutflow.toString(),
-    "Rate limit max outflow amount available should match config"
-  );
-  assert.equal(
-    integration.rateLimitRemainder.toString(),
-    "0",
-    "Rate limit remainder should be 0"
-  );
-  assert.equal(
-    integration.permitLiquidation,
-    config.permitLiquidation,
-    "Permit liquidation should match config"
-  );
+  validateCommonIntegrationFields(integration, config, {
+    validateRateLimitState: true,
+  });
 
   // Validate Kamino config fields
   if (integration.config.__kind !== "Kamino") {

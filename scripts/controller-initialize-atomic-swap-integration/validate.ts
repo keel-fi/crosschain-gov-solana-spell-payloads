@@ -2,6 +2,9 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
+  assertCommonAccountChanges,
+  assertIntegrationCreated,
+  validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readAndValidateNetworkStablecoinConfig,
@@ -46,6 +49,10 @@ const main = async () => {
     address(config.authority)
   );
 
+  const controllerAuthority = await deriveControllerAuthorityPda(
+    address(config.controller)
+  );
+
   const expectedAtomicSwapConfig = {
     inputToken: address(config.inputTokenMint),
     outputToken: address(config.outputTokenMint),
@@ -67,38 +74,15 @@ const main = async () => {
     integrationHash
   );
 
-  // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
-  assertNoAccountChanges(payerResp.before, payerResp.after, true);
-
-  // Assert controller does not change
-  const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
-
-  // Assert controller authority does not change
-  const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller)
-  );
-  const controllerAuthorityResp = resp[controllerAuthority];
-  assertNoAccountChanges(
-    controllerAuthorityResp.before,
-    controllerAuthorityResp.after
-  );
-
-  // Assert authority does not change
-  const authorityResp = resp[config.authority];
-  assertNoAccountChanges(authorityResp.before, authorityResp.after);
-
-  // Assert permission does not change
-  const permissionResp = resp[permissionPda];
-  assertNoAccountChanges(permissionResp.before, permissionResp.after);
-
-  // Assert controller program does not change
-  const controllerProgramResp = resp[config.controllerProgramId];
-  assertNoAccountChanges(
-    controllerProgramResp.before,
-    controllerProgramResp.after
-  );
+  // Assert common account changes
+  assertCommonAccountChanges(resp, {
+    payer: config.payer,
+    controller: config.controller,
+    authority: config.authority,
+    controllerProgramId: config.controllerProgramId,
+    controllerAuthority,
+    permissionPda,
+  });
 
   // Assert input mint does not change
   const inputMintResp = resp[config.inputTokenMint];
@@ -113,17 +97,12 @@ const main = async () => {
   assertNoAccountChanges(oracleResp.before, oracleResp.after);
 
   // Assert integration is created
-  const integrationResp = resp[integrationPda];
-  assert(integrationResp.after, "Integration should be created");
-  assert.notDeepEqual(
-    integrationResp.after.data,
-    integrationResp.before.data,
-    "Integration data should change"
-  );
+  assertIntegrationCreated(resp, integrationPda);
 
   // Validate integration data
   const integrationCodec = getIntegrationCodec();
-  const [integration] = integrationCodec.read(integrationResp.after.data, 1);
+  const integrationResp = resp[integrationPda];
+  const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
 
   // Validate integration-level fields
   assert.equal(
@@ -131,27 +110,9 @@ const main = async () => {
     "AtomicSwap",
     "Config kind should be AtomicSwap"
   );
-  assert.equal(integration.status, config.status, "Status should match config");
-  assert.equal(
-    integration.description.toString(),
-    config.description,
-    "Description should match config"
-  );
-  assert.equal(
-    integration.rateLimitSlope.toString(),
-    config.rateLimitSlope.toString(),
-    "Rate limit slope should match config"
-  );
-  assert.equal(
-    integration.rateLimitMaxOutflow.toString(),
-    config.rateLimitMaxOutflow.toString(),
-    "Rate limit max outflow should match config"
-  );
-  assert.equal(
-    integration.permitLiquidation,
-    config.permitLiquidation,
-    "Permit liquidation should match config"
-  );
+  validateCommonIntegrationFields(integration, config, {
+    descriptionAsString: true,
+  });
 
   // Validate integration state exists
   assert(integration.state, "Integration state should exist");
