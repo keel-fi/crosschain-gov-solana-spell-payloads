@@ -40,7 +40,7 @@ const printControllerInitializeReservePayload = async () => {
     new web3.PublicKey(config.mint),
     new web3.PublicKey(controllerAuthority),
     true,
-    TOKEN_2022_PROGRAM_ID
+    new web3.PublicKey(config.tokenProgram)
   );
 
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
@@ -54,7 +54,7 @@ const printControllerInitializeReservePayload = async () => {
     reserve: reservePda,
     mint: address(config.mint),
     vault: address(vaultPda.toString()),
-    tokenProgram: address(TOKEN_2022_PROGRAM_ID.toString()),
+    tokenProgram: address(config.tokenProgram),
     associatedTokenProgram: address(ASSOCIATED_TOKEN_PROGRAM_ID.toString()),
     programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),

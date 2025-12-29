@@ -11,6 +11,7 @@ import {
   USDG_MINT,
   CASH_MINT,
 } from "../../src";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 export const ACTION = "controller-initialize-reserve";
 
@@ -31,6 +32,7 @@ type ControllerInitializeReserve = {
   rateLimitSlope: bigint;
   // Rate limit max outflow
   rateLimitMaxOutflow: bigint;
+  tokenProgram: string;
 };
 
 type NetworkConfigs = Record<Network, Record<Stablecoin, ControllerInitializeReserve>>;
@@ -46,6 +48,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 0n,
       rateLimitMaxOutflow: 0n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -56,6 +59,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 0n,
       rateLimitMaxOutflow: 0n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
@@ -66,6 +70,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 0n,
       rateLimitMaxOutflow: 0n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
   },
   mainnet: {
@@ -78,6 +83,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 10_000_000_000_000n,
       rateLimitMaxOutflow: 25_000_000_000_000n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
     PYUSD: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -88,6 +94,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 10_000_000_000_000n,
       rateLimitMaxOutflow: 25_000_000_000_000n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
     CASH: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
@@ -98,6 +105,7 @@ export const NETWORK_CONFIGS: NetworkConfigs = {
       status: ReserveStatus.Active,
       rateLimitSlope: 10_000_000_000_000n,
       rateLimitMaxOutflow: 25_000_000_000_000n,
+      tokenProgram: TOKEN_2022_PROGRAM_ID.toString(),
     },
   },
 };

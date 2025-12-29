@@ -137,7 +137,7 @@ const main = async () => {
     new web3.PublicKey(config.mint),
     new web3.PublicKey(controllerAuthority),
     true,
-    TOKEN_2022_PROGRAM_ID
+    new web3.PublicKey(config.tokenProgram)
   );
   const vaultResp = resp[vaultPda.toString()];
   assert(vaultResp, "Vault account should be in simulation response");
@@ -146,7 +146,7 @@ const main = async () => {
   // Validate vault account ownership
   assert.equal(
     vaultResp.after.owner.toString(),
-    TOKEN_2022_PROGRAM_ID.toString(),
+    config.tokenProgram,
     "Vault should be owned by token program"
   );
 
