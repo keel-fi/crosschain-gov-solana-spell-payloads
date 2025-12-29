@@ -2,7 +2,7 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  assertCommonAccountChanges,
+  assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
@@ -75,7 +75,7 @@ const main = async () => {
   );
 
   // Assert common account changes
-  assertCommonAccountChanges(resp, {
+  assertInitializeIntegrationCommonAccountChanges(resp, {
     payer: config.payer,
     controller: config.controller,
     authority: config.authority,
@@ -110,9 +110,7 @@ const main = async () => {
     "AtomicSwap",
     "Config kind should be AtomicSwap"
   );
-  validateCommonIntegrationFields(integration, config, {
-    descriptionAsString: true,
-  });
+  validateCommonIntegrationFields(integration, config);
 
   // Validate integration state exists
   assert(integration.state, "Integration state should exist");

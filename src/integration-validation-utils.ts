@@ -22,7 +22,7 @@ type SimulateResponse = Record<
  * - Permission does not change (with optional check if permission exists)
  * - Controller program does not change
  */
-export const assertCommonAccountChanges = (
+export const assertInitializeIntegrationCommonAccountChanges = (
   resp: SimulateResponse,
   config: {
     payer: string;
@@ -77,31 +77,15 @@ export const assertCommonAccountChanges = (
  */
 export const validateCommonIntegrationFields = (
   integration: Integration,
-  config: BaseControllerIntegrationConfig,
-  options: {
-    descriptionAsString?: boolean;
-    validateRateLimitState?: boolean;
-  } = {}
+  config: BaseControllerIntegrationConfig
 ) => {
-  const { descriptionAsString = false, validateRateLimitState = false } =
-    options;
-
   assert.equal(integration.status, config.status, "Status should match config");
 
-  // Handle description - atomic-swap uses .toString(), drift/kamino use bytesToUtf8TrimNull
-  if (descriptionAsString) {
-    assert.equal(
-      integration.description.toString(),
-      config.description,
-      "Description should match config"
-    );
-  } else {
-    assert.equal(
-      bytesToUtf8TrimNull(integration.description),
-      config.description,
-      "Description should match config"
-    );
-  }
+  assert.equal(
+    integration.description.toString(),
+    config.description,
+    "Description should match config"
+  );
 
   assert.equal(
     integration.rateLimitSlope.toString(),
@@ -119,19 +103,16 @@ export const validateCommonIntegrationFields = (
     "Permit liquidation should match config"
   );
 
-  // Validate rate limit state (drift/kamino only)
-  if (validateRateLimitState) {
-    assert.equal(
-      integration.rateLimitOutflowAmountAvailable.toString(),
-      config.rateLimitMaxOutflow.toString(),
-      "Rate limit max outflow amount available should match config"
-    );
-    assert.equal(
-      integration.rateLimitRemainder.toString(),
-      "0",
-      "Rate limit remainder should be 0"
-    );
-  }
+  assert.equal(
+    integration.rateLimitOutflowAmountAvailable.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow amount available should match config"
+  );
+  assert.equal(
+    integration.rateLimitRemainder.toString(),
+    "0",
+    "Rate limit remainder should be 0"
+  );
 };
 
 /**
@@ -151,4 +132,3 @@ export const assertIntegrationCreated = (
     );
   }
 };
-

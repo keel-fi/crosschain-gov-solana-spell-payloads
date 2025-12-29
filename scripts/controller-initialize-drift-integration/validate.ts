@@ -1,7 +1,7 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  assertCommonAccountChanges,
+  assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
@@ -13,10 +13,7 @@ import {
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
-import {
-  NETWORK_CONFIGS,
-  ACTION,
-} from "./config";
+import { NETWORK_CONFIGS, ACTION } from "./config";
 import {
   getIntegrationCodec,
   integrationConfig,
@@ -26,10 +23,10 @@ import {
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
 
-// In this script we validate that state and configuration 
+// In this script we validate that state and configuration
 // was correctly set in the SVM ALM Controller program.
-// The different accounts and args passed to the initialize integration instruction 
-// (mint, spot market index) have been manually validated. Links to their respective 
+// The different accounts and args passed to the initialize integration instruction
+// (mint, spot market index) have been manually validated. Links to their respective
 // sources have been added in the constants.ts file.
 const main = async () => {
   const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
@@ -52,11 +49,11 @@ const main = async () => {
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
-    address(config.authority),
+    address(config.authority)
   );
 
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
+    address(config.controller)
   );
 
   // Compute integration hash
@@ -67,16 +64,14 @@ const main = async () => {
     padding: new Uint8Array(219),
   };
   const integrationConfigData = integrationConfig("Drift", [driftConfig]);
-  const integrationHash = computeIntegrationHash(
-    integrationConfigData
-  );
+  const integrationHash = computeIntegrationHash(integrationConfigData);
   const integrationPda = await deriveIntegrationPda(
     address(config.controller),
-    integrationHash,
+    integrationHash
   );
 
   // Assert common account changes
-  assertCommonAccountChanges(resp, {
+  assertInitializeIntegrationCommonAccountChanges(resp, {
     payer: config.payer,
     controller: config.controller,
     authority: config.authority,
@@ -95,9 +90,7 @@ const main = async () => {
   assert.equal(integration.config.__kind, "Drift");
 
   // Validate integration-level fields
-  validateCommonIntegrationFields(integration, config, {
-    validateRateLimitState: true,
-  });
+  validateCommonIntegrationFields(integration, config);
 
   // Validate Drift config fields
   if (integration.config.__kind !== "Drift") {
@@ -105,7 +98,7 @@ const main = async () => {
   }
   const actualDriftConfig = integration.config.fields[0];
   assert(actualDriftConfig, "Drift config should exist");
-  
+
   assert.equal(
     actualDriftConfig.subAccountId,
     config.subAccountId,
@@ -131,11 +124,10 @@ const main = async () => {
   assert.equal(
     actualDriftState.balance.toString(),
     "0",
-    "Integration state balance should be 0",
-  )
+    "Integration state balance should be 0"
+  );
 
   validateSuccess(args.file);
 };
 
 main();
-

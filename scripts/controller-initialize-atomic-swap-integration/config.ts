@@ -96,7 +96,7 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       outputMintDecimals: 6,
     },
   },
-  // The outputTokenMint and oracle are left empty for USDG and PYUSD.
+  // The outputTokenMint and oracle are left empty for CASH, USDG and PYUSD.
   // This will be implemented post audit which includes additional support for the respective tokens.
   mainnet: {
     USDG: {
@@ -152,9 +152,9 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       maxSlippageBps: 10,
       maxStaleness: 100n,
       expiryTimestamp: I64_MAX,
-      oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
+      oraclePriceInverted: false,
       inputTokenMint: CASH_MINT,
-      outputTokenMint: USDC_MINT,
+      outputTokenMint: "",
       oracle: "",
       inputMintDecimals: 6,
       outputMintDecimals: 6,
