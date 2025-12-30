@@ -96,8 +96,15 @@ export const NETWORK_CONFIGS: NetworkStablecoinConfig<ControllerInitializeAtomic
       outputMintDecimals: 6,
     },
   },
-  // The outputTokenMint and oracle are left empty for CASH, USDG and PYUSD.
-  // This will be implemented post audit which includes additional support for the respective tokens.
+  // TODO: The following mainnet configurations are incomplete and require post-audit implementation:
+  // - USDG: Missing outputTokenMint (target swap token) and oracle (price feed address)
+  // - PYUSD: Missing outputTokenMint (target swap token) and oracle (price feed address)
+  // - CASH: Missing outputTokenMint (target swap token) and oracle (price feed address)
+  //
+  // Rationale: These values depend on finalizing cross-token swap support and oracle integrations,
+  // which require additional audit coverage. The outputTokenMint should be set to the target
+  // stablecoin for each swap pair (e.g., USDC), and oracle should point to the verified price
+  // feed for that pair. These integrations cannot be deployed until these values are populated.
   mainnet: {
     USDG: {
       controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,

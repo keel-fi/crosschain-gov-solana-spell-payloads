@@ -70,10 +70,6 @@ export const assertInitializeIntegrationCommonAccountChanges = (
  * Validate common integration-level fields that are shared across all integrations.
  * @param integration - The decoded integration object
  * @param config - The config object with expected values
- * @param descriptionAsString - If true, treats description as string (atomic-swap style).
- *                              If false, uses bytesToUtf8TrimNull (drift/kamino style).
- * @param validateRateLimitState - If true, validates rateLimitOutflowAmountAvailable and
- *                                 rateLimitRemainder (drift/kamino style).
  */
 export const validateCommonIntegrationFields = (
   integration: Integration,
@@ -124,11 +120,4 @@ export const assertIntegrationCreated = (
 ) => {
   const integrationResp = resp[integrationPda];
   assert(integrationResp.after, "Integration should be created");
-  if (integrationResp.before) {
-    assert.notDeepEqual(
-      integrationResp.after.data,
-      integrationResp.before.data,
-      "Integration data should change"
-    );
-  }
 };

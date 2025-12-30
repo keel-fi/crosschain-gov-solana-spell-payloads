@@ -104,9 +104,7 @@ const main = async () => {
   assert.equal(integration.config.__kind, "Kamino");
 
   // Validate integration-level fields
-  validateCommonIntegrationFields(integration, config, {
-    validateRateLimitState: true,
-  });
+  validateCommonIntegrationFields(integration, config);
 
   // Validate Kamino config fields
   if (integration.config.__kind !== "Kamino") {

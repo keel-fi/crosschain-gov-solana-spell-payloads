@@ -120,6 +120,41 @@ const main = async () => {
     "State kind should be AtomicSwap"
   );
 
+  if (integration.state.__kind !== "AtomicSwap") {
+    throw new Error("Expected AtomicSwap state");
+  }
+
+  assert.equal(
+    integration.state.fields[0].amountBorrowed.toString(),
+    "0",
+    "Amount borrowed should be 0"
+  );
+  assert.equal(
+    integration.state.fields[0].lastBalanceA.toString(),
+    "0",
+    "Amount borrowed should be 0"
+  );
+  assert.equal(
+    integration.state.fields[0].lastBalanceB.toString(),
+    "0",
+    "Last balance B should be 0"
+  );
+  assert.equal(
+    integration.state.fields[0].padding.toString(),
+    new Uint8Array(107).toString(),
+    "Padding should be 107 bytes"
+  );
+  assert.equal(
+    integration.state.fields[0].recipientTokenAPre.toString(),
+    "0",
+    "Recipient token A pre should be 0"
+  );
+  assert.equal(
+    integration.state.fields[0].recipientTokenBPre.toString(),
+    "0",
+    "Recipient token A post should be 0"
+  );
+
   // Validate AtomicSwap config fields
   if (integration.config.__kind !== "AtomicSwap") {
     throw new Error("Expected AtomicSwap config");
