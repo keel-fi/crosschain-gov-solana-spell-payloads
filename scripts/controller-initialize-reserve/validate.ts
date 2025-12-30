@@ -18,7 +18,10 @@ import {
   deriveReservePda,
   getReserveCodec,
 } from "@keel-fi/svm-alm-controller";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddressSync,
+  unpackAccount,
+} from "@solana/spl-token";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 const main = async () => {
@@ -69,9 +72,7 @@ const main = async () => {
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  if (permissionResp.before) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
   const reservePda = await deriveReservePda(
     address(config.controller),
@@ -148,6 +149,18 @@ const main = async () => {
     vaultResp.after.owner.toString(),
     config.tokenProgram,
     "Vault should be owned by token program"
+  );
+
+  // Unpack token account and assert owner is Controller Authority
+  const tokenAccount = unpackAccount(
+    vaultPda,
+    vaultResp.after,
+    new web3.PublicKey(config.tokenProgram)
+  );
+  assert.equal(
+    tokenAccount.owner.toString(),
+    controllerAuthority.toString(),
+    "Token account owner should be Controller Authority"
   );
 
   validateSuccess(args.file);
