@@ -23,7 +23,7 @@ export default {
   expiryTimestamp: I64_MAX,
   oraclePriceInverted: false,
   inputTokenMint: PYUSD_MINT,
-  outputTokenMint: "", // TODO: update to actual output token mint
+  outputTokenMint: USDC_MINT,
   oracle: "", // TODO: update to actual oracle address
   inputMintDecimals: 6,
   outputMintDecimals: 6,
