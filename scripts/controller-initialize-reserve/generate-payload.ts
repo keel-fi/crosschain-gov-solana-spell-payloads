@@ -4,7 +4,7 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -16,14 +16,18 @@ import {
   deriveReservePda,
   deriveControllerAuthorityPda,
   derivePermissionPda,
+  ReserveStatus,
 } from "@keel-fi/svm-alm-controller";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { ACTION, NETWORK_CONFIGS } from "./config";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ACTION, ControllerInitializeReserveConfig } from "./config";
+import { ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 const printControllerInitializeReservePayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeReserveConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)

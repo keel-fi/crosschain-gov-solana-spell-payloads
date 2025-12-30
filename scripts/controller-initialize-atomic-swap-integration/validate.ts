@@ -7,14 +7,14 @@ import {
   validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
-import { NETWORK_CONFIGS, ACTION } from "./config";
+import { ACTION, ControllerInitializeAtomicSwapIntegrationConfig } from "./config";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
@@ -26,7 +26,10 @@ import {
 
 const main = async () => {
   const args = readArgs(ACTION);
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(args.config);
   const expiryTimestamp = config.expiryTimestamp;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);

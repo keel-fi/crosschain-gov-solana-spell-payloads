@@ -6,17 +6,14 @@ import {
   validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
-import {
-  NETWORK_CONFIGS,
-  ACTION,
-} from "./config";
+import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
 import {
   getIntegrationCodec,
   integrationConfig,
@@ -34,10 +31,13 @@ import {
 // have been manually validated. Links to their respective 
 // sources have been added in the constants.ts file.
 const main = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);

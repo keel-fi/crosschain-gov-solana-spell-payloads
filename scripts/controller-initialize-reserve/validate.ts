@@ -4,14 +4,14 @@ import {
   assertNoAccountChanges,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
-import { NETWORK_CONFIGS, ACTION } from "./config";
+import { ACTION, ControllerInitializeReserveConfig } from "./config";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
@@ -22,13 +22,17 @@ import {
   getAssociatedTokenAddressSync,
   unpackAccount,
 } from "@solana/spl-token";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+
 
 const main = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeReserveConfig>(args.config);
+  
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
 
   const payerPubkey = new web3.PublicKey(config.payer);
