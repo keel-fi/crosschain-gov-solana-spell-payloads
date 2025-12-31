@@ -3,18 +3,19 @@ import {
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
-  CASH_MINT,
+  USDG_MINT,
   USDC_MINT,
   I64_MAX,
 } from "../../../src";
 
 export default {
+  outputFile: "controller-initialize-atomic-swap-integration-USDG-to-USDC-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
   status: IntegrationStatus.Active,
-  description: "Atomic Swap for CASH",
+  description: "USDG->USDC AtomicSwap",
   rateLimitSlope: 10_000_000_000_000n,
   rateLimitMaxOutflow: 25_000_000_000_000n,
   permitLiquidation: true,
@@ -22,9 +23,9 @@ export default {
   maxStaleness: 100n,
   expiryTimestamp: I64_MAX,
   oraclePriceInverted: false,
-  inputTokenMint: CASH_MINT,
+  inputTokenMint: USDG_MINT,
   outputTokenMint: USDC_MINT,
-  oracle: "", // TODO: update to actual oracle address
+  oracle: "2XBgvU8h95BxHMFFenKBdHir4XeXrnx5nirGrLjPm8EJ",
   inputMintDecimals: 6,
   outputMintDecimals: 6,
 };

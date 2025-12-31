@@ -5,6 +5,7 @@ import {
 export const ACTION = "controller-initialize-atomic-swap-integration";
 
 export type ControllerInitializeAtomicSwapIntegrationConfig = BaseControllerIntegrationConfig & {
+  outputFile: string;
   // Atomic swap specific args
   maxSlippageBps: number;
   maxStaleness: bigint;
