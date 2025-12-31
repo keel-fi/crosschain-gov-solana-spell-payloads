@@ -71,7 +71,7 @@ const printControllerInitializeReservePayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeReservePayload();

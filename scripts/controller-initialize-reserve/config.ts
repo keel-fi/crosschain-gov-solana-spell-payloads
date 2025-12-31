@@ -5,6 +5,7 @@ import {
 export const ACTION = "controller-initialize-reserve";
 
 export type ControllerInitializeReserveConfig = {
+  outputFile: string;
   controllerProgramId: string;
   // Controller that the Reserve applies to
   controller: string;

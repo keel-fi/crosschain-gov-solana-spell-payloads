@@ -65,7 +65,7 @@ const printControllerInitializeKaminoIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeKaminoIntegrationPayload();

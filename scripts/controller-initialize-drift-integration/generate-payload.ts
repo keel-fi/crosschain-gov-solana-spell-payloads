@@ -22,7 +22,6 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
   }
   const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
 
-
   if (config.description.length > 32) {
     throw new Error("Description is too long. Must be 32 bytes or less.");
   }
@@ -48,7 +47,7 @@ const printControllerInitializeDriftIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeDriftIntegrationPayload();

@@ -8,6 +8,7 @@ import {
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 export default {
+  outputFile: "controller-initialize-reserve-USDG-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,

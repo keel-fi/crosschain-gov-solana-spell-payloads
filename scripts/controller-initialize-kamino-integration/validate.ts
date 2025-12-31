@@ -36,9 +36,10 @@ const main = async () => {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
   const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
-  const rpcUrl = getRpcEndpoint();
+  //const rpcUrl = getRpcEndpoint();
+  const rpcUrl = "http://127.0.0.1:8899";
   const connection = new web3.Connection(rpcUrl);
-  const payload = readPayloadFile(args.file);
+  const payload = readPayloadFile(config.outputFile);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
@@ -83,6 +84,8 @@ const main = async () => {
     address(config.controller),
     integrationHash,
   );
+
+  console.log("integrationPda", integrationPda.toString());
 
   // Assert common account changes
   assertInitializeIntegrationCommonAccountChanges(resp, {

@@ -9,6 +9,7 @@ import {
 } from "../../../src";
 
 export default {
+  outputFile: "controller-initialize-drift-integration-CASH-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
