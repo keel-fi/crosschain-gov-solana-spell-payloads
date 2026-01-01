@@ -6,6 +6,7 @@ import {
   PYUSD_MINT,
   USDC_MINT,
   I64_MAX,
+  PYUSD_ORACLE_PDA,
 } from "../../../src";
 
 export default {
@@ -25,7 +26,7 @@ export default {
   oraclePriceInverted: false,
   inputTokenMint: PYUSD_MINT,
   outputTokenMint: USDC_MINT,
-  oracle: "EaUZnyqbcyHyJVy13aBhqd9k7NrsdDXzeD1VZnLNokid",
+  oracle: PYUSD_ORACLE_PDA,
   inputMintDecimals: 6,
   outputMintDecimals: 6,
 };

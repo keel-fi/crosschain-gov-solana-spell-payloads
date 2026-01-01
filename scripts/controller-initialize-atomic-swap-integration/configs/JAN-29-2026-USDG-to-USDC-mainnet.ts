@@ -6,6 +6,7 @@ import {
   USDG_MINT,
   USDC_MINT,
   I64_MAX,
+  USDG_ORACLE_PDA,
 } from "../../../src";
 
 export default {
@@ -25,7 +26,7 @@ export default {
   oraclePriceInverted: false,
   inputTokenMint: USDG_MINT,
   outputTokenMint: USDC_MINT,
-  oracle: "2XBgvU8h95BxHMFFenKBdHir4XeXrnx5nirGrLjPm8EJ",
+  oracle: USDG_ORACLE_PDA,
   inputMintDecimals: 6,
   outputMintDecimals: 6,
 };
