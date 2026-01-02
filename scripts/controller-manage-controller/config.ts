@@ -34,8 +34,8 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManageController> = {
     controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
     controller: SVM_ALM_CONTROLLER,
     authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-    payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
-    status: ControllerStatus.Active,
+    payer: "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC",
+    status: ControllerStatus.PushPullFrozen,
   },
 };
 

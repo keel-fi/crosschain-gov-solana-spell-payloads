@@ -26,7 +26,6 @@ const printControllerManageControllerPayload = async () => {
     address(config.controller),
     address(config.authority)
   );
-
   const instruction = getManageControllerInstruction({
     controller: address(config.controller),
     controllerAuthority: controllerAuthority,
