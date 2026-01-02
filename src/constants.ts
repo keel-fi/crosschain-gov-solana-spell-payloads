@@ -47,6 +47,10 @@ export const PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"; // lin
 export const CASH_MINT = "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH"; // link: https://explorer.solana.com/address/CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // link: https://explorer.solana.com/address/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 
+export const CASH_ORACLE_PDA = "H8uoMnbTruerEj2twgd7CjFydupvcGoK97LEJeHvkE8N";
+export const PYUSD_ORACLE_PDA = "EaUZnyqbcyHyJVy13aBhqd9k7NrsdDXzeD1VZnLNokid";
+export const USDG_ORACLE_PDA = "2XBgvU8h95BxHMFFenKBdHir4XeXrnx5nirGrLjPm8EJ";
+
 export const KAMINO_MAIN_MARKET = "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"; // link: https://explorer.solana.com/address/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF
 export const KAMINO_CASH_RESERVE = "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA
 export const KAMINO_CASH_FARM_COLLATERAL = "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA/anchor-account
