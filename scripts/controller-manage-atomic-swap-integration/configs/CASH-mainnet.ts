@@ -4,6 +4,10 @@ import {
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   CASH_MINT,
+  MAINNET_PAYER,
+  USDC_MINT,
+  CASH_ORACLE_PDA,
+  I64_MAX,
 } from "../../../src";
 
 export default {
@@ -11,18 +15,18 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: null,
   rateLimitSlope: null,
   rateLimitMaxOutflow: null,
   maxSlippageBps: 10,
   maxStaleness: 100n,
-  expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
+  expiryTimestamp: I64_MAX,
   oraclePriceInverted: true, // Oracle has USDC as base_mint and CASH as quote_mint, so inverted
   inputTokenMint: CASH_MINT,
-  outputTokenMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-  oracle: "63MhziM5prCQkykzfciCuDo1iezd8tqQUHkK1nT7NWY",
+  outputTokenMint: USDC_MINT,
+  oracle: CASH_ORACLE_PDA,
   inputMintDecimals: 6,
   outputMintDecimals: 6,
 };

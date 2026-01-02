@@ -64,3 +64,20 @@ export const DRIFT_CASH_SPOT_MARKET_INDEX = 61; // link: https://github.com/drif
 export const DRIFT_PYUSD_SPOT_MARKET_INDEX = 22; // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L509
 
 export const I64_MAX = 2n ** 63n - 1n; // i64::MAX
+
+/* Payer addresses */
+export const MAINNET_PAYER = "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC";
+export const DEVNET_PAYER = "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr";
+
+/* Devnet controller */
+export const DEVNET_CONTROLLER = "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6";
+
+/* Token mints */
+export const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
+
+/* Oracle addresses */
+export const USDC_TO_USDT_ORACLE = "E6QFLWgPoDHydKVwEc5Ar49k1zMQ19qM8A9NFxjoSitn";
+
+/* Kamino reserves */
+export const KAMINO_USDC_RESERVE = "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59";
+

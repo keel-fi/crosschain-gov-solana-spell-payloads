@@ -1,12 +1,13 @@
 import { ReserveStatus, SVM_ALM_CONTROLLER_PROGRAM_ADDRESS } from "@keel-fi/svm-alm-controller";
+import { DEVNET_CONTROLLER, KEEL_DEPLOYER, DEVNET_PAYER } from "../../../src";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-  controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
-  authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
+  controller: DEVNET_CONTROLLER,
+  authority: KEEL_DEPLOYER,
   mint: "", // TODO: update to actual PYUSD mint
-  payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+  payer: DEVNET_PAYER,
   status: ReserveStatus.Active,
   rateLimitSlope: 0n,
   rateLimitMaxOutflow: 0n,

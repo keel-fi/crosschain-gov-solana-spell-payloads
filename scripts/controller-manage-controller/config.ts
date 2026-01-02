@@ -7,6 +7,10 @@ import {
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
+  DEVNET_CONTROLLER,
+  KEEL_DEPLOYER,
+  DEVNET_PAYER,
+  MAINNET_PAYER,
 } from "../../src";
 
 export const ACTION = "controller-manage-controller";
@@ -25,16 +29,16 @@ type ControllerManageController = {
 export const NETWORK_CONFIGS: Record<Network, ControllerManageController> = {
   devnet: {
     controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-    controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
-    authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
-    payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    controller: DEVNET_CONTROLLER,
+    authority: KEEL_DEPLOYER,
+    payer: DEVNET_PAYER,
     status: ControllerStatus.Active,
   },
   mainnet: {
     controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
     controller: SVM_ALM_CONTROLLER,
     authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-    payer: "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC",
+    payer: MAINNET_PAYER,
     status: ControllerStatus.PushPullFrozen,
   },
 };

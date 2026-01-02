@@ -7,6 +7,7 @@ import {
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
+  MAINNET_PAYER,
 } from "../../src";
 
 export const ACTION = "controller-manage-permission";
@@ -36,7 +37,7 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
     // TODO: update to actual authority
     authority: "",
     superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-    payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+    payer: MAINNET_PAYER,
   },
 };
 

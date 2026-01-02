@@ -4,6 +4,7 @@ import {
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   USDC_MINT,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -12,7 +13,7 @@ export default {
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   mint: USDC_MINT,
-  payer: "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC",
+  payer: MAINNET_PAYER,
   status: ReserveStatus.Active,
   rateLimitSlope: 0n,
   rateLimitMaxOutflow: 0n,

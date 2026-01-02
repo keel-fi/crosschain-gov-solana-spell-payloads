@@ -1,11 +1,11 @@
 import { IntegrationStatus, SVM_ALM_CONTROLLER_PROGRAM_ADDRESS } from "@keel-fi/svm-alm-controller";
-import { CASH_MINT } from "../../../src";
+import { CASH_MINT, DEVNET_CONTROLLER, DEVNET_PAYER, KEEL_DEPLOYER } from "../../../src";
 
 export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ADDRESS,
-  controller: "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6",
-  authority: "PcJcgdWmFZznhhfN28i6T8GHcwA6jmFGuUeNNGvcSY2",
-  payer: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+  controller: DEVNET_CONTROLLER,
+  authority: KEEL_DEPLOYER,
+  payer: DEVNET_PAYER,
   status: IntegrationStatus.Active,
   description: "Drift Main CASH",
   rateLimitSlope: 10_000_000_000_000n,

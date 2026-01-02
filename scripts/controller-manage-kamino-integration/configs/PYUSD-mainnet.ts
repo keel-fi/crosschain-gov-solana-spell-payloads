@@ -1,13 +1,5 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
-import {
-  SVM_ALM_CONTROLLER_PROGRAM_ID,
-  SVM_ALM_CONTROLLER,
-  KEEL_SUB_PROXY_CPI_AUTHORITY,
-  PYUSD_MINT,
-  KAMINO_MAIN_MARKET,
-  KAMINO_PYUSD_RESERVE,
-  KAMINO_PYUSD_FARM_COLLATERAL,
-} from "../../../src";
+import { KAMINO_MAIN_MARKET, KAMINO_PYUSD_FARM_COLLATERAL, KAMINO_PYUSD_RESERVE, KEEL_SUB_PROXY_CPI_AUTHORITY, MAINNET_PAYER_2, PYUSD_MINT, SVM_ALM_CONTROLLER, SVM_ALM_CONTROLLER_PROGRAM_ID } from "../../../src";
 import { kamino } from "@keel-fi/svm-alm-controller";
 
 export default {
@@ -15,7 +7,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER_2,
   status: IntegrationStatus.Active,
   description: null,
   rateLimitSlope: null,

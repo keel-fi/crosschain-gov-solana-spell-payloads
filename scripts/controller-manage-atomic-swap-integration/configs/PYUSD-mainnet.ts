@@ -4,6 +4,7 @@ import {
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   PYUSD_MINT,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -11,7 +12,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: null,
   rateLimitSlope: null,

@@ -5,6 +5,7 @@ import {
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   USDC_MINT,
   DRIFT_POOL_ID,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -12,7 +13,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "Drift Main USDC",
   rateLimitSlope: 10_000_000_000_000n,
