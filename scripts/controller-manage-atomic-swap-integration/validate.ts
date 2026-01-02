@@ -27,7 +27,10 @@ const main = async () => {
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerManageAtomicSwapIntegrationConfig>(args.config);
+  const config =
+    readConfigFromFile<ControllerManageAtomicSwapIntegrationConfig>(
+      args.config
+    );
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
@@ -112,34 +115,25 @@ const main = async () => {
   // Validate integration data matches config (only validate non-null fields)
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
-  
-  if (config.status !== null) {
-    assert.equal(integration.status, config.status, "Status should match config");
-  }
-  if (config.description !== null) {
-    assert.equal(
-      bytesToUtf8TrimNull(integration.description),
-      config.description,
-      "Description should match config"
-    );
-  }
-  if (config.rateLimitSlope !== null) {
-    assert.equal(
-      integration.rateLimitSlope.toString(),
-      config.rateLimitSlope.toString(),
-      "Rate limit slope should match config"
-    );
-  }
-  if (config.rateLimitMaxOutflow !== null) {
-    assert.equal(
-      integration.rateLimitMaxOutflow.toString(),
-      config.rateLimitMaxOutflow.toString(),
-      "Rate limit max outflow should match config"
-    );
-  }
+
+  assert.equal(integration.status, config.status, "Status should match config");
+  assert.equal(
+    bytesToUtf8TrimNull(integration.description),
+    config.description,
+    "Description should match config"
+  );
+  assert.equal(
+    integration.rateLimitSlope.toString(),
+    config.rateLimitSlope.toString(),
+    "Rate limit slope should match config"
+  );
+  assert.equal(
+    integration.rateLimitMaxOutflow.toString(),
+    config.rateLimitMaxOutflow.toString(),
+    "Rate limit max outflow should match config"
+  );
 
   validateSuccess(config.outputFile);
 };
 
 main();
-
