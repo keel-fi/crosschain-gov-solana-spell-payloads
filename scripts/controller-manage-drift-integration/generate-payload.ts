@@ -9,12 +9,10 @@ import {
 } from "../../src";
 import { address, createNoopSigner } from "@solana/kit";
 import {
-  getManageIntegrationInstruction,
-  deriveControllerAuthorityPda,
-  derivePermissionPda,
   deriveIntegrationPda,
   integrationConfig,
   computeIntegrationHash,
+  createManageIntegrationInstruction,
 } from "@keel-fi/svm-alm-controller";
 import { ACTION, ControllerManageDriftIntegrationConfig } from "./config";
 
@@ -23,14 +21,8 @@ const printControllerManageDriftIntegrationPayload = async () => {
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerManageDriftIntegrationConfig>(args.config);
-
-  const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller)
-  );
-  const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority)
+  const config = readConfigFromFile<ControllerManageDriftIntegrationConfig>(
+    args.config
   );
 
   // Compute integration hash to derive integration PDA
@@ -57,18 +49,15 @@ const printControllerManageDriftIntegrationPayload = async () => {
     descriptionBytes = encoded;
   }
 
-  const instruction = getManageIntegrationInstruction({
-    controller: address(config.controller),
-    controllerAuthority: controllerAuthority,
-    authority: createNoopSigner(address(config.authority)),
-    permission: permissionPda,
-    integration: integrationPda,
-    programId: address(config.controllerProgramId),
-    status: config.status,
-    description: descriptionBytes,
-    rateLimitSlope: config.rateLimitSlope,
-    rateLimitMaxOutflow: config.rateLimitMaxOutflow,
-  });
+  const instruction = await createManageIntegrationInstruction(
+    address(config.controller),
+    createNoopSigner(address(config.authority)),
+    integrationPda,
+    config.status,
+    config.rateLimitSlope,
+    config.rateLimitMaxOutflow,
+    descriptionBytes
+  );
 
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
@@ -78,4 +67,3 @@ const printControllerManageDriftIntegrationPayload = async () => {
 };
 
 printControllerManageDriftIntegrationPayload();
-
