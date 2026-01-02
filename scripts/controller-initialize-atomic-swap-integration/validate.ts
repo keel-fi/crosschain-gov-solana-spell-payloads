@@ -14,7 +14,10 @@ import {
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
-import { ACTION, ControllerInitializeAtomicSwapIntegrationConfig } from "./config";
+import {
+  ACTION,
+  ControllerInitializeAtomicSwapIntegrationConfig,
+} from "./config";
 import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
@@ -29,9 +32,34 @@ const main = async () => {
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(args.config);
+  const config =
+    readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
+      args.config
+    );
   const expiryTimestamp = config.expiryTimestamp;
   //const rpcUrl = getRpcEndpoint();
+  // Some of the tests run on localhost (surfpool)
+  // The upgraded controller enables PYUSD and USDG to be used in the controller https://github.com/keel-fi/svm-alm-controller/pull/158
+  // To test this, you need run the following commands to set the program upgrade authority and deploy the new controller:
+  //
+  // surfpool start
+  //
+  // curl -X POST http://localhost:8899 \
+  // -H "Content-Type: application/json" \
+  // -d '{
+  // "jsonrpc": "2.0",
+  // "id": 1,
+  // "method": "surfnet_setProgramAuthority",
+  // "params": [
+  //      "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd", "/wallet/publicKey"
+  // ]
+  // }'
+  //
+  // solana program deploy target/deploy/svm_alm_controller.so \
+  // --url http://127.0.0.1:8899 \
+  // --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
+  // --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
+  
   const rpcUrl = "http://127.0.0.1:8899";
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
@@ -92,15 +120,15 @@ const main = async () => {
 
   // Assert input mint does not change
   const inputMintResp = resp[config.inputTokenMint];
-  //assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
+  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
 
   // Assert output mint does not change
   const outputMintResp = resp[config.outputTokenMint];
-  //assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
+  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
 
   // Assert oracle does not change
   const oracleResp = resp[config.oracle];
-  //assertNoAccountChanges(oracleResp.before, oracleResp.after);
+  assertNoAccountChanges(oracleResp.before, oracleResp.after);
 
   // Assert integration is created
   assertIntegrationCreated(resp, integrationPda);
@@ -147,11 +175,7 @@ const main = async () => {
   );
   const expectedPadding = new Uint8Array(8);
   const actualPadding = integration.state.fields[0].padding;
-  assert.equal(
-    actualPadding.length,
-    8,
-    "Padding should be 8 bytes"
-  );
+  assert.equal(actualPadding.length, 8, "Padding should be 8 bytes");
   assert.deepStrictEqual(
     Array.from(actualPadding),
     Array.from(expectedPadding),

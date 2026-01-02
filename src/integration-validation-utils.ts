@@ -39,7 +39,7 @@ export const assertInitializeIntegrationCommonAccountChanges = (
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  // assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthorityResp = resp[config.controllerAuthority];
@@ -54,14 +54,14 @@ export const assertInitializeIntegrationCommonAccountChanges = (
 
   // Assert permission does not change
   const permissionResp = resp[config.permissionPda];
-  // assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
   // Assert controller program does not change
   const controllerProgramResp = resp[config.controllerProgramId];
-  // assertNoAccountChanges(
-  //   controllerProgramResp.before,
-  //   controllerProgramResp.after
-  // );
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
 };
 
 /**
@@ -75,7 +75,9 @@ export const validateCommonIntegrationFields = (
 ) => {
   assert.equal(integration.status, config.status, "Status should match config");
 
-  const descriptionStr = integration.description.toString().replace(/\0+$/g, "");
+  const descriptionStr = integration.description
+    .toString()
+    .replace(/\0+$/g, "");
   assert.equal(
     descriptionStr,
     config.description,
