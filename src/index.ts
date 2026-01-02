@@ -1,4 +1,6 @@
 export * from "./constants";
+export * from "./controller-types";
+export * from "./integration-validation-utils";
 export * from "./lz-governance-codec";
 export * from "./programs";
 export * from "./simulation-assertions";

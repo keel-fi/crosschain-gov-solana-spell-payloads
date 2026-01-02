@@ -3,7 +3,7 @@
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -18,11 +18,14 @@ import {
   kamino,
   createKaminoLendInitializeIntegrationInstruction,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
 
 const printControllerInitializeKaminoIntegrationPayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
@@ -62,7 +65,7 @@ const printControllerInitializeKaminoIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeKaminoIntegrationPayload();

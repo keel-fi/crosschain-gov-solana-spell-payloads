@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { web3 } from "@coral-xyz/anchor";
 import {
   Instruction,
@@ -99,6 +100,43 @@ export const getRpcEndpoint = () => {
 };
 
 /**
+ * Read config from a TypeScript file
+ * The file should export a default export with the config object
+ */
+export const readConfigFromFile = <T>(configPath: string): T => {
+  // Resolve the absolute path - handle both relative and absolute paths
+  let absolutePath: string;
+  if (configPath.startsWith("/") || configPath.startsWith("./") || configPath.startsWith("../")) {
+    // Relative path - resolve from current working directory
+    absolutePath = path.resolve(process.cwd(), configPath);
+  } else {
+    // Try to resolve as a module
+    try {
+      absolutePath = require.resolve(configPath, { paths: [process.cwd()] });
+    } catch {
+      // If that fails, treat as relative path
+      absolutePath = path.resolve(process.cwd(), configPath);
+    }
+  }
+  
+  // Delete from cache to allow hot reloading during development
+  delete require.cache[absolutePath];
+  
+  // Require the config file (works with ts-node)
+  const configModule = require(absolutePath);
+  const config = (configModule.default || configModule) as T;
+  
+  // Validate that config has required fields
+  Object.entries(config as Record<string, unknown>).forEach(([key, val]) => {
+    if (val === undefined || val === null) {
+      throw new Error(`Config is missing ${key}`);
+    }
+  });
+  
+  return config;
+};
+
+/**
  * Read the payload file argument
  */
 export const readArgs = (action: string) => {
@@ -113,6 +151,10 @@ export const readArgs = (action: string) => {
         type: "string",
         short: "f",
         default: defaultFile,
+      },
+      config: {
+        type: "string",
+        short: "c",
       },
     },
   }).values;

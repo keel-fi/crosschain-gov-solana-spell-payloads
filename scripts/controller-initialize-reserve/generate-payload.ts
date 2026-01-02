@@ -4,7 +4,7 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -16,14 +16,18 @@ import {
   deriveReservePda,
   deriveControllerAuthorityPda,
   derivePermissionPda,
+  ReserveStatus,
 } from "@keel-fi/svm-alm-controller";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { ACTION, NETWORK_CONFIGS } from "./config";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ACTION, ControllerInitializeReserveConfig } from "./config";
+import { ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 const printControllerInitializeReservePayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeReserveConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
@@ -40,7 +44,7 @@ const printControllerInitializeReservePayload = async () => {
     new web3.PublicKey(config.mint),
     new web3.PublicKey(controllerAuthority),
     true,
-    TOKEN_2022_PROGRAM_ID
+    new web3.PublicKey(config.tokenProgram)
   );
 
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
@@ -54,7 +58,7 @@ const printControllerInitializeReservePayload = async () => {
     reserve: reservePda,
     mint: address(config.mint),
     vault: address(vaultPda.toString()),
-    tokenProgram: address(TOKEN_2022_PROGRAM_ID.toString()),
+    tokenProgram: address(config.tokenProgram),
     associatedTokenProgram: address(ASSOCIATED_TOKEN_PROGRAM_ID.toString()),
     programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
@@ -67,7 +71,7 @@ const printControllerInitializeReservePayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeReservePayload();

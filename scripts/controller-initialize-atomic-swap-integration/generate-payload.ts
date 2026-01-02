@@ -3,7 +3,7 @@
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -12,12 +12,17 @@ import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   createAtomicSwapInitializeIntegrationInstruction,
+  IntegrationStatus,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, ControllerInitializeAtomicSwapIntegrationConfig } from "./config";
+
 
 const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
   const args = readArgs(ACTION);
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(args.config);
   
   const expiryTimestamp = config.expiryTimestamp;
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
@@ -50,7 +55,7 @@ const printControllerInitializeAtomicSwapIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerInitializeAtomicSwapIntegrationPayload();
