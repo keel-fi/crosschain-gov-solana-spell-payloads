@@ -2,7 +2,7 @@
 
 import {
   convertKitInstructionToWeb3Js,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -16,11 +16,14 @@ import {
   integrationConfig,
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, ControllerManageDriftIntegrationConfig } from "./config";
 
 const printControllerManageDriftIntegrationPayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageDriftIntegrationConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
@@ -71,7 +74,7 @@ const printControllerManageDriftIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerManageDriftIntegrationPayload();

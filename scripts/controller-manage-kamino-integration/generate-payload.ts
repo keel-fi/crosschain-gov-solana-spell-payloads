@@ -2,7 +2,7 @@
 
 import {
   convertKitInstructionToWeb3Js,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -20,11 +20,14 @@ import {
   computeIntegrationHash,
   kamino,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, ControllerManageKaminoIntegrationConfig } from "./config";
 
 const printControllerManageKaminoIntegrationPayload = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageKaminoIntegrationConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
@@ -84,7 +87,7 @@ const printControllerManageKaminoIntegrationPayload = async () => {
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerManageKaminoIntegrationPayload();

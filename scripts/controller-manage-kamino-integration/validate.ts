@@ -4,7 +4,7 @@ import {
   assertNoAccountChanges,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkStablecoinConfig,
+  readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulateInstructions,
@@ -13,7 +13,7 @@ import {
 } from "../../src";
 import { address } from "@solana/kit";
 import {
-  NETWORK_CONFIGS,
+  ControllerManageKaminoIntegrationConfig,
   ACTION,
 } from "./config";
 import {
@@ -27,11 +27,14 @@ import {
 } from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
-  const { config } = readAndValidateNetworkStablecoinConfig(NETWORK_CONFIGS);
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageKaminoIntegrationConfig>(args.config);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
+  const payload = readPayloadFile(config.outputFile);
 
   const payerPubkey = new web3.PublicKey(config.payer);
   const instruction = convertLzSolanaGovernancePayloadToInstruction(
@@ -140,7 +143,7 @@ const main = async () => {
     );
   }
 
-  validateSuccess(args.file);
+  validateSuccess(config.outputFile);
 };
 
 main();
