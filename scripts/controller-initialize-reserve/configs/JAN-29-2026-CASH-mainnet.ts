@@ -4,6 +4,7 @@ import {
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   CASH_MINT,
+  MAINNET_PAYER,
 } from "../../../src";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
@@ -13,7 +14,7 @@ export default {
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   mint: CASH_MINT,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: ReserveStatus.Active,
   rateLimitSlope: 10_000_000_000_000n,
   rateLimitMaxOutflow: 25_000_000_000_000n,
