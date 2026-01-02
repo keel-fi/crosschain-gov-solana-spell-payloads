@@ -64,3 +64,6 @@ export const DRIFT_CASH_SPOT_MARKET_INDEX = 61; // link: https://github.com/drif
 export const DRIFT_PYUSD_SPOT_MARKET_INDEX = 22; // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L509
 
 export const I64_MAX = 2n ** 63n - 1n; // i64::MAX
+
+export const MAINNET_PAYER = "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC";
+

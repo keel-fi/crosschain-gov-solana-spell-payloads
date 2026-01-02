@@ -6,6 +6,7 @@ import {
   PYUSD_MINT,
   DRIFT_PYUSD_SPOT_MARKET_INDEX,
   DRIFT_POOL_ID,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -13,7 +14,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "Drift Main PYUSD",
   rateLimitSlope: 10_000_000_000_000n,

@@ -7,6 +7,7 @@ import {
   USDC_MINT,
   I64_MAX,
   PYUSD_ORACLE_PDA,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -14,7 +15,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "USDC->PYUSD AtomicSwap",
   rateLimitSlope: 10_000_000_000_000n,

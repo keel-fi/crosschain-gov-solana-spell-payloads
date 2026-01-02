@@ -7,6 +7,7 @@ import {
   KAMINO_MAIN_MARKET,
   KAMINO_CASH_RESERVE,
   KAMINO_CASH_FARM_COLLATERAL,
+  MAINNET_PAYER,
 } from "../../../src";
 
 export default {
@@ -14,7 +15,7 @@ export default {
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: "8acMLGppEZ3RijkBUsd4L6bHomRFCjdctU7KydNihnVe",
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "Kamino Main CASH",
   rateLimitSlope: 10_000_000_000_000n,
