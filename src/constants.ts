@@ -67,3 +67,5 @@ export const I64_MAX = 2n ** 63n - 1n; // i64::MAX
 
 export const MAINNET_PAYER = "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC";
 
+export const SURFPOOL_URL = "http://127.0.0.1:8899";
+

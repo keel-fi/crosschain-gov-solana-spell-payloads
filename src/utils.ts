@@ -10,8 +10,9 @@ import {
 } from "@solana/kit";
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
+import { SURFPOOL_URL } from "./constants";
 
-export type Network = "devnet" | "mainnet";
+export type Network = "devnet" | "mainnet" | "surfpool";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";
 
 export type NetworkConfig<T> = Record<Network, T>;
@@ -23,8 +24,8 @@ export type NetworkStablecoinConfig<T> = Record<Network, Partial<Record<Stableco
  */
 export const readNetwork = (): Network => {
   const network = process.env.NETWORK;
-  if (network !== "devnet" && network !== "mainnet") {
-    throw new Error("Invalid network argument.");
+  if (network !== "devnet" && network !== "mainnet" && network !== "surfpool") {
+    throw new Error("Invalid network argument. Must be devnet, mainnet, or surfpool.");
   }
   return network;
 };
@@ -95,6 +96,9 @@ export const getRpcEndpoint = () => {
   if (network === "mainnet") {
     return "https://api.mainnet-beta.solana.com";
   }
+  if (network === "surfpool") {
+    return SURFPOOL_URL;
+  }
 
   return "https://api.devnet.solana.com";
 };
@@ -155,6 +159,10 @@ export const readArgs = (action: string) => {
       config: {
         type: "string",
         short: "c",
+      },
+      surfpool: {
+        type: "boolean",
+        short: "s",
       },
     },
   }).values;

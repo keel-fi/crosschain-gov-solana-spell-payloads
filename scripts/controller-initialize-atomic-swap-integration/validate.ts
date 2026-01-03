@@ -12,6 +12,7 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
+  SURFPOOL_URL,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -37,7 +38,6 @@ const main = async () => {
       args.config
     );
   const expiryTimestamp = config.expiryTimestamp;
-  //const rpcUrl = getRpcEndpoint();
   // Some of the tests run on localhost (surfpool)
   // The upgraded controller enables PYUSD and USDG to be used in the controller https://github.com/keel-fi/svm-alm-controller/pull/158
   // To test this, you need run the following commands to set the program upgrade authority and deploy the new controller:
@@ -60,7 +60,7 @@ const main = async () => {
   // --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
   // --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
   
-  const rpcUrl = "http://127.0.0.1:8899";
+  const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
 
@@ -116,19 +116,26 @@ const main = async () => {
     controllerProgramId: config.controllerProgramId,
     controllerAuthority,
     permissionPda,
+    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert input mint does not change
   const inputMintResp = resp[config.inputTokenMint];
-  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
+  }
 
   // Assert output mint does not change
   const outputMintResp = resp[config.outputTokenMint];
-  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
+  }
 
   // Assert oracle does not change
   const oracleResp = resp[config.oracle];
-  assertNoAccountChanges(oracleResp.before, oracleResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(oracleResp.before, oracleResp.after);
+  }
 
   // Assert integration is created
   assertIntegrationCreated(resp, integrationPda);

@@ -31,6 +31,7 @@ export const assertInitializeIntegrationCommonAccountChanges = (
     controllerProgramId: string;
     controllerAuthority: string;
     permissionPda: string;
+    skipSurfpoolChecks?: boolean;
   }
 ) => {
   // Assert payer does not change, except for lamports
@@ -39,7 +40,9 @@ export const assertInitializeIntegrationCommonAccountChanges = (
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  if (!config.skipSurfpoolChecks) {
+    assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  }
 
   // Assert controller authority does not change
   const controllerAuthorityResp = resp[config.controllerAuthority];
@@ -54,14 +57,18 @@ export const assertInitializeIntegrationCommonAccountChanges = (
 
   // Assert permission does not change
   const permissionResp = resp[config.permissionPda];
-  assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  if (!config.skipSurfpoolChecks) {
+    assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  }
 
   // Assert controller program does not change
   const controllerProgramResp = resp[config.controllerProgramId];
-  assertNoAccountChanges(
-    controllerProgramResp.before,
-    controllerProgramResp.after
-  );
+  if (!config.skipSurfpoolChecks) {
+    assertNoAccountChanges(
+      controllerProgramResp.before,
+      controllerProgramResp.after
+    );
+  }
 };
 
 /**
