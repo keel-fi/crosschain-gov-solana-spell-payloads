@@ -32,8 +32,7 @@ const main = async () => {
     args.config
   );
 
-  //const rpcUrl = getRpcEndpoint();
-  const rpcUrl = "http://127.0.0.1:8899";
+  const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
 
