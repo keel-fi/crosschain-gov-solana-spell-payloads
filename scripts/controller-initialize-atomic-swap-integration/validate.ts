@@ -38,27 +38,6 @@ const main = async () => {
       args.config
     );
   const expiryTimestamp = config.expiryTimestamp;
-  // Some of the tests run on localhost (surfpool)
-  // The upgraded controller enables PYUSD and USDG to be used in the controller https://github.com/keel-fi/svm-alm-controller/pull/158
-  // To test this, you need run the following commands to set the program upgrade authority and deploy the new controller:
-  //
-  // surfpool start
-  //
-  // curl -X POST http://localhost:8899 \
-  // -H "Content-Type: application/json" \
-  // -d '{
-  // "jsonrpc": "2.0",
-  // "id": 1,
-  // "method": "surfnet_setProgramAuthority",
-  // "params": [
-  //      "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd", "/wallet/publicKey"
-  // ]
-  // }'
-  //
-  // solana program deploy target/deploy/svm_alm_controller.so \
-  // --url http://127.0.0.1:8899 \
-  // --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
-  // --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
   
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
