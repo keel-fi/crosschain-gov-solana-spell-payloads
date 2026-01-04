@@ -85,8 +85,6 @@ const main = async () => {
     integrationHash
   );
 
-  console.log("integrationPda", integrationPda.toString());
-
   // Assert common account changes
   assertInitializeIntegrationCommonAccountChanges(resp, {
     payer: config.payer,
