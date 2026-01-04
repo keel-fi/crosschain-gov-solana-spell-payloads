@@ -16,8 +16,6 @@ export type Network = "devnet" | "mainnet" | "surfpool";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";
 
 export type NetworkConfig<T> = Record<Network, T>;
-export type StablecoinConfig<T> = Record<Stablecoin, T>;
-export type NetworkStablecoinConfig<T> = Record<Network, Partial<Record<Stablecoin, T>>>;
 
 /**
  * Read and validate the NETWORK env var
@@ -28,23 +26,6 @@ export const readNetwork = (): Network => {
     throw new Error("Invalid network argument. Must be devnet, mainnet, or surfpool.");
   }
   return network;
-};
-
-/**
- * Read and validate the STABLECOIN env var
- */
-export const readStablecoin = (): Stablecoin => {
-  const stablecoin = process.env.STABLECOIN;
-  if (
-    stablecoin !== "USDG" &&
-    stablecoin !== "PYUSD" &&
-    stablecoin !== "CASH"
-  ) {
-    throw new Error(
-      "Invalid stablecoin argument. Must be USDG, PYUSD, or CASH."
-    );
-  }
-  return stablecoin;
 };
 
 /**
@@ -62,29 +43,6 @@ export const readAndValidateNetworkConfig = <T>(
   });
 
   return { network, config: networkConfig };
-};
-
-/**
- * Given the NETWORK and TOKEN, return the configuration.
- */
-export const readAndValidateNetworkStablecoinConfig = <T>(
-  configs: NetworkStablecoinConfig<T>
-): { network: Network; stablecoin: Stablecoin; config: T } => {
-  const network = readNetwork();
-  const stablecoin = readStablecoin();
-
-  const config = configs[network][stablecoin];
-  if (!config) {
-    throw new Error(`${network}/${stablecoin} config not found`);
-  }
-
-  Object.entries(config as Record<string, unknown>).forEach(([key, val]) => {
-    if (val === undefined || val === null) {
-      throw new Error(`${network}/${stablecoin} is missing ${key}`);
-    }
-  });
-
-  return { network, stablecoin, config };
 };
 
 /**
