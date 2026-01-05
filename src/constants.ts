@@ -1,3 +1,5 @@
+import { web3 } from "@coral-xyz/anchor";
+
 export const USDS_TOKEN_MINT = "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA";
 
 /* Pre migration constants */
@@ -68,4 +70,49 @@ export const I64_MAX = 2n ** 63n - 1n; // i64::MAX
 export const MAINNET_PAYER = "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC";
 
 export const SURFPOOL_URL = "http://127.0.0.1:8899";
+
+// LayerZero configuration constants
+export namespace LayerZeroConfig {
+  // LayerZero Solana Endpoint ID
+  export const SOLANA_ENDPOINT_ID = 30168;
+  
+  // Ethereum chain endpoint ID
+  export const ETHEREUM_ENDPOINT_ID = 30101;
+  
+  // LayerZero V2 Endpoint Program on Solana mainnet
+  export const LAYERZERO_ENDPOINT_PROGRAM = new web3.PublicKey(
+    "76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6"
+  );
+  
+  // Memo program for cross-chain text messages
+  export const MEMO_PROGRAM = new web3.PublicKey(
+    "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+  );
+  
+  // Noop program for no-operation cross-chain instructions
+  export const NOOP_PROGRAM = new web3.PublicKey(
+    "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"
+  );
+  
+  // LayerZero account seeds
+  export const OAPP_SEED = Buffer.from("OApp");
+  export const NONCE_SEED = Buffer.from("Nonce");
+  export const PAYLOAD_HASH_SEED = Buffer.from("PayloadHash");
+  export const ENDPOINT_SEED = Buffer.from("Endpoint");
+  
+  // Message type for governance transactions
+  export const SEND_TX_TYPE = 1;
+}
+
+// Ethereum contract addresses
+export namespace EthereumAddresses {
+  // L1 Governance Relay contract address
+  export const L1_GOVERNANCE_RELAY = "0x2beBFe397D497b66cB14461cB6ee467b4C3B7D61";
+  
+  // Governance OApp Sender contract address
+  export const GOVERNANCE_OAPP_SENDER = "0x27FC1DD771817b53bE48Dc28789533BEa53C9CCA";
+  
+  // LayerZero Endpoint v2 address
+  export const LAYERZERO_ENDPOINT_V2 = "0x1a44076050125825900e736c501f859c50fE728c";
+}
 

@@ -2,12 +2,10 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
-  simulateInstructions,
+  simulateControllerPayloadWithLayerZeroForValidation,
   validateSuccess,
 } from "../../src";
 import {
@@ -20,22 +18,18 @@ import { NETWORK_CONFIGS, ACTION } from "./config";
 
 const main = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
-
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const resp = await simulateControllerPayloadWithLayerZeroForValidation(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),

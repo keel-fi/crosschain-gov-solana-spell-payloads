@@ -4,12 +4,10 @@ import {
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
-  simulateInstructions,
+  simulateControllerPayloadWithLayerZeroForValidation,
   validateSuccess,
 } from "../../src";
 import { address } from "@solana/kit";
@@ -36,21 +34,17 @@ const main = async () => {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
   const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
-
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const resp = await simulateControllerPayloadWithLayerZeroForValidation(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),

@@ -5,7 +5,7 @@ import {
   getUniquePublicKeysFromInstructionsAndPayer,
 } from "./utils";
 
-type SimulateResponse = Record<
+export type SimulateResponse = Record<
   string,
   {
     before: web3.AccountInfo<Buffer> | null;
@@ -98,8 +98,14 @@ export const simulateInstructionsWithLiteSVM = (
 
   const resp = svm.sendTransaction(transaction);
   if (resp instanceof FailedTransactionMetadata) {
-    console.log("logs: ", resp.meta().logs());
-    throw new Error(resp.err().toString());
+    const logs = resp.meta().logs();
+    console.log("logs: ", logs);
+    const err = resp.err();
+    // Provide more detailed error information
+    const errorDetails = typeof err === 'object' && err !== null
+      ? JSON.stringify(err, null, 2)
+      : err?.toString() || String(err);
+    throw new Error(`Simulation failed: ${errorDetails}`);
   }
   const postTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
 

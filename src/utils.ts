@@ -325,3 +325,73 @@ export function bytesToUtf8TrimNull(bytes: ReadonlyUint8Array): string {
 
   return decoded.replace(/\0+$/g, "");
 }
+
+/**
+ * Convert Ethereum address string to bytes32 format
+ */
+export function ethereumAddressToBytes32(address: string): Buffer {
+  if (!address.startsWith("0x")) {
+    throw new Error("Address must start with 0x");
+  }
+  
+  const addressHex = address.slice(2);
+  if (addressHex.length !== 40) {
+    throw new Error("Invalid Ethereum address length");
+  }
+  
+  const bytes = Buffer.alloc(32);
+  // Ethereum addresses are 20 bytes, so we pad with zeros
+  const addressBytes = Buffer.from(addressHex, "hex");
+  addressBytes.copy(bytes, 12); // Pad with zeros at the beginning
+  
+  return bytes;
+}
+
+/**
+ * Convert Solana pubkey to bytes32 format for cross-chain compatibility
+ */
+export function pubkeyToBytes32(pubkey: web3.PublicKey): Buffer {
+  return pubkey.toBuffer();
+}
+
+/**
+ * Format bytes as hex string for debugging
+ */
+export function bytesToHexString(bytes: Buffer | Uint8Array): string {
+  return Buffer.from(bytes).toString("hex");
+}
+
+/**
+ * Parse hex string to bytes
+ */
+export function hexStringToBytes(hexStr: string): Buffer {
+  const cleaned = hexStr.trimStart().replace(/^0x/i, "");
+  return Buffer.from(cleaned, "hex");
+}
+
+/**
+ * Get Solana RPC URL from environment variable or fallback to public RPC
+ * 
+ * Environment variables checked (in order):
+ * 1. SOLANA_RPC_URL - Custom RPC URL
+ * 2. SOLANA_RPC_ENDPOINT - Alternative env var name
+ * 
+ * If no environment variable is set, falls back to the public Solana RPC
+ */
+export function getRpcUrl(): string {
+  // Check environment variables in order of preference
+  if (process.env.SOLANA_RPC_URL && process.env.SOLANA_RPC_URL.length > 0) {
+    console.log(`   🌐 Using RPC from SOLANA_RPC_URL: ${process.env.SOLANA_RPC_URL}`);
+    return process.env.SOLANA_RPC_URL;
+  }
+  
+  if (process.env.SOLANA_RPC_ENDPOINT && process.env.SOLANA_RPC_ENDPOINT.length > 0) {
+    console.log(`   🌐 Using RPC from SOLANA_RPC_ENDPOINT: ${process.env.SOLANA_RPC_ENDPOINT}`);
+    return process.env.SOLANA_RPC_ENDPOINT;
+  }
+  
+  // Fallback to public RPC
+  const defaultRpc = "https://api.mainnet-beta.solana.com";
+  console.log(`   🌐 Using default public RPC: ${defaultRpc}`);
+  return defaultRpc;
+}
