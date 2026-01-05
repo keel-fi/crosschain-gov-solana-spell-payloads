@@ -34,12 +34,12 @@ To generate and validate a payload for a spell:
 1. **Generate the payload**
 
    ```bash
-   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/generate-payload.ts --file manage-permissions.txt
+   NETWORK=[devnet|mainnet|surfpool] ts-node ./scripts/controller-manage-permission/generate-payload.ts --file manage-permissions.txt
    ```
 
 2. **Validate the payload**
    ```bash
-   NETWORK=[devnet|mainnet] ts-node ./scripts/controller-manage-permission/validate.ts --file manage-permissions.txt
+   NETWORK=[devnet|mainnet|surfpool] ts-node ./scripts/controller-manage-permission/validate.ts --file manage-permissions.txt
    ```
 
 Swap `controller-manage-permission` for other spells, e.g.:
@@ -58,3 +58,7 @@ This tool is currently using both of the main Solana TS SDKs. The reasoning for 
 The tool uses Codama to generate SDKs for some protocols such as the Metaplex Token Metadata program. For verification, others may regenerate these generated SDKs using `yarn generate-clients`.
 
 NOTE: we currently leave all generated files in for completeness, but would be open to trimming down the generated files if requested.
+
+## Surfpool
+
+Simulating on surfpool causes some of the accounts to erroneously become null.  Therefore when we are testing the upgraded controller on surfpool we must skip these checks.

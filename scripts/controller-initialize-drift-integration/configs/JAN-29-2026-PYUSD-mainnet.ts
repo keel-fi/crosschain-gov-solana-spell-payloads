@@ -1,12 +1,20 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
-import { DRIFT_POOL_ID, DRIFT_PYUSD_SPOT_MARKET_INDEX, KEEL_SUB_PROXY_CPI_AUTHORITY, MAINNET_PAYER_2, PYUSD_MINT, SVM_ALM_CONTROLLER, SVM_ALM_CONTROLLER_PROGRAM_ID } from "../../../src";
+import {
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  SVM_ALM_CONTROLLER,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  PYUSD_MINT,
+  DRIFT_PYUSD_SPOT_MARKET_INDEX,
+  DRIFT_POOL_ID,
+  MAINNET_PAYER,
+} from "../../../src";
 
 export default {
   outputFile: "controller-initialize-drift-integration-PYUSD-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: MAINNET_PAYER_2,
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "Drift Main PYUSD",
   rateLimitSlope: 10_000_000_000_000n,

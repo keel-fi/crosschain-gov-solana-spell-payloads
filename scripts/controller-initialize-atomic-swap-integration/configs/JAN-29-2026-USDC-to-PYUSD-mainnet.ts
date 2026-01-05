@@ -1,12 +1,21 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
-import { I64_MAX, KEEL_SUB_PROXY_CPI_AUTHORITY, MAINNET_PAYER_2, PYUSD_MINT, PYUSD_ORACLE_PDA, SVM_ALM_CONTROLLER, SVM_ALM_CONTROLLER_PROGRAM_ID, USDC_MINT } from "../../../src";
+import {
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  SVM_ALM_CONTROLLER,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  PYUSD_MINT,
+  USDC_MINT,
+  I64_MAX,
+  PYUSD_ORACLE_PDA,
+  MAINNET_PAYER,
+} from "../../../src";
 
 export default {
   outputFile: "controller-initialize-atomic-swap-integration-USDC-to-PYUSD-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: MAINNET_PAYER_2,
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "USDC->PYUSD AtomicSwap",
   rateLimitSlope: 10_000_000_000_000n,

@@ -1,5 +1,11 @@
 import { ReserveStatus } from "@keel-fi/svm-alm-controller";
-import { KEEL_SUB_PROXY_CPI_AUTHORITY, MAINNET_PAYER_2, SVM_ALM_CONTROLLER, SVM_ALM_CONTROLLER_PROGRAM_ID, USDG_MINT } from "../../../src";
+import {
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  SVM_ALM_CONTROLLER,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  USDG_MINT,
+  MAINNET_PAYER,
+} from "../../../src";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 export default {
@@ -8,7 +14,7 @@ export default {
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   mint: USDG_MINT,
-  payer: MAINNET_PAYER_2,
+  payer: MAINNET_PAYER,
   status: ReserveStatus.Active,
   rateLimitSlope: 10_000_000_000_000n,
   rateLimitMaxOutflow: 25_000_000_000_000n,
