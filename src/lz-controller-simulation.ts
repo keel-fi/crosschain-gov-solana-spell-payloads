@@ -78,9 +78,6 @@ export interface LzControllerSimulationResult {
  */
 
 /**
- * Load all accounts required for controller instruction simulation
- */
-/**
  * Helper to fix rentEpoch for LiteSVM compatibility
  * LiteSVM requires rentEpoch to be a number, not bigint
  */
@@ -161,6 +158,90 @@ async function safeGetAccountInfo(
   }
 }
 
+/**
+ * Load a single account from an instruction account meta into LiteSVM
+ * 
+ * This helper function handles:
+ * - Loading account data from RPC
+ * - Fixing rentEpoch for LiteSVM compatibility
+ * - Creating minimal accounts if the account doesn't exist
+ * - Handling errors gracefully
+ * 
+ * @param svm - LiteSVM instance
+ * @param connection - Solana connection
+ * @param accountMeta - Account metadata from instruction
+ * @param logPrefix - Prefix for log messages (e.g., "instruction account", "additional account")
+ */
+async function loadInstructionAccount(
+  svm: LiteSVM,
+  connection: Connection,
+  accountMeta: web3.AccountMeta,
+  logPrefix: string = "account"
+): Promise<void> {
+  if (svm.getAccount(accountMeta.pubkey)) {
+    return; // Account already loaded
+  }
+
+  try {
+    const accountData = await safeGetAccountInfo(connection, accountMeta.pubkey);
+    if (accountData) {
+      const fixedAccount = fixRentEpoch(accountData);
+      if (typeof fixedAccount.rentEpoch !== 'number') {
+        fixedAccount.rentEpoch = 999_999_999_999_999;
+      }
+      // Try to set the account, but skip if it fails due to missing dependencies
+      try {
+        svm.setAccount(accountMeta.pubkey, fixedAccount);
+        console.log(`   ✅ Loaded ${logPrefix}: ${accountMeta.pubkey.toString()}`);
+      } catch (setError: any) {
+        // If it's a program and we can't set it due to missing dependencies, skip it
+        // RPC simulation will handle it
+        if (fixedAccount.executable && setError?.message?.includes('account required')) {
+          console.log(`   ⚠️  Skipped program ${logPrefix} (missing dependencies): ${accountMeta.pubkey.toString()}`);
+        } else {
+          // For non-executable accounts, create minimal account
+          const minimalAccount = {
+            lamports: 1_000_000,
+            data: Buffer.alloc(0),
+            owner: web3.SystemProgram.programId,
+            executable: false,
+            rentEpoch: 0,
+          };
+          svm.setAccount(accountMeta.pubkey, minimalAccount);
+          console.log(`   ✅ Created minimal ${logPrefix}: ${accountMeta.pubkey.toString()}`);
+        }
+      }
+    } else {
+      // Create minimal account if doesn't exist
+      const minimalAccount = {
+        lamports: 1_000_000,
+        data: Buffer.alloc(0),
+        owner: web3.SystemProgram.programId,
+        executable: false,
+        rentEpoch: 0,
+      };
+      svm.setAccount(accountMeta.pubkey, minimalAccount);
+      console.log(`   ✅ Created minimal ${logPrefix}: ${accountMeta.pubkey.toString()}`);
+    }
+  } catch (error: any) {
+    // If we can't load the account, create a minimal one
+    const minimalAccount = {
+      lamports: 1_000_000,
+      data: Buffer.alloc(0),
+      owner: web3.SystemProgram.programId,
+      executable: false,
+      rentEpoch: 0,
+    };
+    try {
+      svm.setAccount(accountMeta.pubkey, minimalAccount);
+      console.log(`   ✅ Created minimal ${logPrefix} (error): ${accountMeta.pubkey.toString()}`);
+    } catch {
+      // Skip if we can't even create minimal account
+      console.log(`   ⚠️  Skipped ${logPrefix}: ${accountMeta.pubkey.toString()}`);
+    }
+  }
+}
+
 async function loadControllerInstructionAccounts(
   svm: LiteSVM,
   instruction: web3.TransactionInstruction,
@@ -224,66 +305,7 @@ async function loadControllerInstructionAccounts(
   
   // Load all accounts referenced in the instruction
   for (const accountMeta of instruction.keys) {
-    if (!svm.getAccount(accountMeta.pubkey)) {
-      try {
-        const accountData = await safeGetAccountInfo(connection, accountMeta.pubkey);
-        if (accountData) {
-          const fixedAccount = fixRentEpoch(accountData);
-          if (typeof fixedAccount.rentEpoch !== 'number') {
-            fixedAccount.rentEpoch = 999_999_999_999_999;
-          }
-          // Try to set the account, but skip if it fails due to missing dependencies
-          try {
-            svm.setAccount(accountMeta.pubkey, fixedAccount);
-            console.log(`   ✅ Loaded instruction account: ${accountMeta.pubkey.toString()}`);
-          } catch (setError: any) {
-            // If it's a program and we can't set it due to missing dependencies, skip it
-            // RPC simulation will handle it
-            if (fixedAccount.executable && setError?.message?.includes('account required')) {
-              console.log(`   ⚠️  Skipped program account (missing dependencies): ${accountMeta.pubkey.toString()}`);
-            } else {
-              // For non-executable accounts, create minimal account
-              const minimalAccount = {
-                lamports: 1_000_000,
-                data: Buffer.alloc(0),
-                owner: web3.SystemProgram.programId,
-                executable: false,
-                rentEpoch: 0,
-              };
-              svm.setAccount(accountMeta.pubkey, minimalAccount);
-              console.log(`   ✅ Created minimal account: ${accountMeta.pubkey.toString()}`);
-            }
-          }
-        } else {
-          // Create minimal account if doesn't exist
-          const minimalAccount = {
-            lamports: 1_000_000,
-            data: Buffer.alloc(0),
-            owner: web3.SystemProgram.programId,
-            executable: false,
-            rentEpoch: 0,
-          };
-          svm.setAccount(accountMeta.pubkey, minimalAccount);
-          console.log(`   ✅ Created minimal account: ${accountMeta.pubkey.toString()}`);
-        }
-      } catch (error: any) {
-        // If we can't load the account, create a minimal one
-        const minimalAccount = {
-          lamports: 1_000_000,
-          data: Buffer.alloc(0),
-          owner: web3.SystemProgram.programId,
-          executable: false,
-          rentEpoch: 0,
-        };
-        try {
-          svm.setAccount(accountMeta.pubkey, minimalAccount);
-          console.log(`   ✅ Created minimal account (error): ${accountMeta.pubkey.toString()}`);
-        } catch {
-          // Skip if we can't even create minimal account
-          console.log(`   ⚠️  Skipped account: ${accountMeta.pubkey.toString()}`);
-        }
-      }
-    }
+    await loadInstructionAccount(svm, connection, accountMeta, "instruction account");
   }
   
   // Load target program LAST (after all accounts it might reference)
@@ -322,20 +344,6 @@ async function createSpoofedLayerZeroAccounts(
     config.sender,
     config.nonce
   );
-  
-  // Helper to fix rentEpoch for LiteSVM compatibility
-  const fixRentEpoch = (account: web3.AccountInfo<Buffer>): web3.AccountInfo<Buffer> => {
-    const rentEpochValue = typeof account.rentEpoch === 'bigint' 
-      ? account.rentEpoch 
-      : BigInt(account.rentEpoch);
-    const maxU64 = 18_446_744_073_709_552_000n;
-    return {
-      ...account,
-      rentEpoch: rentEpochValue >= maxU64
-        ? 999_999_999_999_999
-        : Number(rentEpochValue),
-    };
-  };
   
   // Create PayloadHash account
   const payloadHashData = createPayloadHashAccountData(payload.payloadHash);
@@ -553,66 +561,7 @@ export async function simulateControllerInstructionWithLayerZero(
   
   // Load all accounts from the converted instruction
   for (const accountMeta of targetInstruction.keys) {
-    if (!svm.getAccount(accountMeta.pubkey)) {
-      try {
-        const accountData = await safeGetAccountInfo(connection, accountMeta.pubkey);
-        if (accountData) {
-          const fixedAccount = fixRentEpoch(accountData);
-          if (typeof fixedAccount.rentEpoch !== 'number') {
-            fixedAccount.rentEpoch = 999_999_999_999_999;
-          }
-          // Try to set the account, but skip if it fails due to missing dependencies
-          try {
-            svm.setAccount(accountMeta.pubkey, fixedAccount);
-            console.log(`   ✅ Loaded additional account: ${accountMeta.pubkey.toString()}`);
-          } catch (setError: any) {
-            // If it's a program and we can't set it due to missing dependencies, skip it
-            // RPC simulation will handle it
-            if (fixedAccount.executable && setError?.message?.includes('account required')) {
-              console.log(`   ⚠️  Skipped program account (missing dependencies): ${accountMeta.pubkey.toString()}`);
-            } else {
-              // For non-executable accounts, create minimal account
-              const minimalAccount = {
-                lamports: 1_000_000,
-                data: Buffer.alloc(0),
-                owner: web3.SystemProgram.programId,
-                executable: false,
-                rentEpoch: 0,
-              };
-              svm.setAccount(accountMeta.pubkey, minimalAccount);
-              console.log(`   ✅ Created minimal additional account: ${accountMeta.pubkey.toString()}`);
-            }
-          }
-        } else {
-          // Create minimal account if doesn't exist
-          const minimalAccount = {
-            lamports: 1_000_000,
-            data: Buffer.alloc(0),
-            owner: web3.SystemProgram.programId,
-            executable: false,
-            rentEpoch: 0,
-          };
-          svm.setAccount(accountMeta.pubkey, minimalAccount);
-          console.log(`   ✅ Created minimal additional account: ${accountMeta.pubkey.toString()}`);
-        }
-      } catch (error: any) {
-        // If we can't load the account, create a minimal one
-        const minimalAccount = {
-          lamports: 1_000_000,
-          data: Buffer.alloc(0),
-          owner: web3.SystemProgram.programId,
-          executable: false,
-          rentEpoch: 0,
-        };
-        try {
-          svm.setAccount(accountMeta.pubkey, minimalAccount);
-          console.log(`   ✅ Created minimal additional account (error): ${accountMeta.pubkey.toString()}`);
-        } catch {
-          // Skip if we can't even create minimal account
-          console.log(`   ⚠️  Skipped additional account: ${accountMeta.pubkey.toString()}`);
-        }
-      }
-    }
+    await loadInstructionAccount(svm, connection, accountMeta, "additional account");
   }
   
   // Step 7: Execute simulation using RPC
