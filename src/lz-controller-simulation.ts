@@ -29,6 +29,11 @@ import {
 } from "./constants";
 import { getRpcUrl, ethereumAddressToBytes32 } from "./utils";
 import {
+  createPayloadHashAccountData,
+  adjustNonceAccountData,
+  createNonceAccountData,
+} from "./lz-account-helpers";
+import {
   convertLzSolanaGovernancePayloadToInstruction,
   LZ_CPI_AUTHORITY_PLACEHOLDER,
   LZ_PAYER_PLACEHOLDER,
@@ -422,53 +427,6 @@ async function createSpoofedLayerZeroAccounts(
   }
 }
 
-/**
- * Helper functions for account data creation
- */
-function createPayloadHashAccountData(payloadHash: Buffer): Buffer {
-  const discriminator = Buffer.from([96, 28, 106, 145, 103, 32, 186, 70]);
-  const data = Buffer.alloc(discriminator.length + payloadHash.length + 1);
-  discriminator.copy(data, 0);
-  payloadHash.copy(data, discriminator.length);
-  data[discriminator.length + payloadHash.length] = 255;
-  return data;
-}
-
-function adjustNonceAccountData(
-  account: web3.AccountInfo<Buffer>,
-  targetNonce: bigint
-): web3.AccountInfo<Buffer> {
-  const data = Buffer.from(account.data);
-  if (data.length >= 17) {
-    const allowedNonce = targetNonce > 0n ? targetNonce - 1n : 0n;
-    const nonceBytes = Buffer.allocUnsafe(8);
-    nonceBytes.writeBigUInt64LE(allowedNonce, 0);
-    nonceBytes.copy(data, 9);
-  }
-  return {
-    ...account,
-    data,
-  };
-}
-
-function createNonceAccountData(targetNonce: bigint): web3.AccountInfo<Buffer> {
-  const data = Buffer.alloc(17);
-  data[0] = 255;
-  const allowedNonce = targetNonce > 0n ? targetNonce - 1n : 0n;
-  const nonceBytes = Buffer.allocUnsafe(8);
-  nonceBytes.writeBigUInt64LE(0n, 0);
-  nonceBytes.copy(data, 1);
-  nonceBytes.writeBigUInt64LE(allowedNonce, 0);
-  nonceBytes.copy(data, 9);
-  
-  return {
-    lamports: 1000000,
-    data,
-    owner: LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM,
-    executable: false,
-    rentEpoch: 0,
-  };
-}
 
 /**
  * Simulate a controller instruction through Layer Zero governance
