@@ -7,6 +7,7 @@ import {
   readPayloadFile,
   simulateControllerPayloadWithLayerZeroForValidation,
   validateSuccess,
+  SURFPOOL_URL,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeReserveConfig } from "./config";
@@ -53,8 +54,9 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  console.log("controllerResp", controllerResp);
-  //assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  }
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -72,14 +74,14 @@ const main = async () => {
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  console.log("permissionResp", permissionResp);
-  //assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  }
 
   const reservePda = await deriveReservePda(
     address(config.controller),
     address(config.mint)
   );
-  console.log("reservePda", reservePda.toString());
   const reserveResp = resp[reservePda];
   assert(reserveResp.after, "Reserve should be created");
 

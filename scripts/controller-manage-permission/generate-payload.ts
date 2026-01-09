@@ -41,7 +41,7 @@ const printControllerManagePermissionPayload = async () => {
     // NOTE: we do not use sentinel here because it cannot be used
     // above for PDA derivation.
     superAuthority: createNoopSigner(address(config.superAuthority)),
-    superPermission: address(superPermissionPda.toString()),
+    superPermission: superPermissionPda,
     authority: address(config.authority),
     permission: permissionPda,
     programId: address(config.controllerProgramId),

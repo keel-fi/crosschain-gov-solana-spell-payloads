@@ -1,16 +1,14 @@
 import {
   KEEL_DEPLOYER,
   Network,
-  SKY_LZ_GOVERNANCE_PROGRAM_ID,
   SVM_ALM_CONTROLLER_PROGRAM_DATA,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
-  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  LZ_CPI_AUTHORITY_PLACEHOLDER,
 } from "../../src";
 
 export const ACTION = "lz-program-upgrade";
 
 type ProgramUpgrade = {
-  governanceProgramId: string;
   programAddress: string;
   programDataAddress: string;
   programUpgradeAuthority: string;
@@ -21,19 +19,26 @@ type ProgramUpgrade = {
 
 export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   devnet: {
-    governanceProgramId: "",
-    programAddress: "",
-    programDataAddress: "",
-    programUpgradeAuthority: "",
-    newProgramBuffer: "",
-    spillAccount: "",
-    payer: "",
+    programAddress: "H3BpbuheXwBnfxjb2L66mxZ9nFhRmUentYwQDspd6yJ9",
+    programDataAddress: "G9PGxifnjuhcJHtVV4XMgRMY3ZsWyvyQsKHqVnMf4XRB",
+    programUpgradeAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    newProgramBuffer: "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta",
+    spillAccount: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    payer: KEEL_DEPLOYER,
   },
   mainnet: {
-    governanceProgramId: SKY_LZ_GOVERNANCE_PROGRAM_ID,
     programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
     programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
-    programUpgradeAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    programUpgradeAuthority: LZ_CPI_AUTHORITY_PLACEHOLDER.toString(),
+    // TODO: Replace with actual program buffer post audit
+    newProgramBuffer: "",
+    spillAccount: KEEL_DEPLOYER,
+    payer: KEEL_DEPLOYER,
+  },
+  surfpool: {
+    programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
+    programUpgradeAuthority: LZ_CPI_AUTHORITY_PLACEHOLDER.toString(),
     // TODO: Replace with actual program buffer post audit
     newProgramBuffer: "",
     spillAccount: KEEL_DEPLOYER,

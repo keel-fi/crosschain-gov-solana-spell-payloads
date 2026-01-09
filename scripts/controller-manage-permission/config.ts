@@ -34,14 +34,20 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
   mainnet: {
     controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
     controller: SVM_ALM_CONTROLLER,
-    // TODO: update to actual authority
+    authority: "9tSZj13gLcuvsXWRLo7xW7d8n1mNndJmKxZX4xmxqcxU",
+    superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    payer: MAINNET_PAYER,
+  },
+  surfpool: {
+    controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    controller: SVM_ALM_CONTROLLER,
     authority: "",
     superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
     payer: MAINNET_PAYER,
   },
 };
 
-// Network agnostic Permissions matrix
+// PERMISSIONS should be modified to match the desired permissions for the authority
 export const PERMISSIONS = {
   status: PermissionStatus.Active,
   canManagePermissions: false,
