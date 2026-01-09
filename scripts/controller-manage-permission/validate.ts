@@ -108,8 +108,16 @@ const main = async () => {
       permissionAfter.authority.toString(),
       permissionBefore.authority.toString()
     );
+  } else {
+    assert.equal(permissionAfter.controller.toString(), config.controller);
+    assert.equal(permissionAfter.authority.toString(), config.authority);
   }
 
+  assert.equal(
+    permissionAccount.after.owner.toString(),
+    config.controllerProgramId,
+    "Permission owner should be the controller program ID"
+  );
   // Assert permission matrix matches expected values
   assert.equal(permissionAfter.status, EXPECTED_PERMISSIONS.status);
   assert.equal(

@@ -112,6 +112,7 @@ const main = async () => {
   // Assert buffer was closed (balance is 0)
   assert.equal(newDataBufferResp.after.lamports, 0);
 
+  assert.equal(programDataResp.after.data.length, programDataResp.before.data.length);
   // Assert spill account got lamports from closed buffer
   const spillResp = resp[config.spillAccount];
   assert.ok(

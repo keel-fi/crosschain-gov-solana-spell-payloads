@@ -39,4 +39,14 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
     spillAccount: KEEL_DEPLOYER,
     payer: KEEL_DEPLOYER,
   },
+  surfpool: {
+    governanceProgramId: SKY_LZ_GOVERNANCE_PROGRAM_ID,
+    programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
+    programUpgradeAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    // TODO: Replace with actual program buffer post audit
+    newProgramBuffer: "",
+    spillAccount: KEEL_DEPLOYER,
+    payer: KEEL_DEPLOYER,
+  },
 };
