@@ -19,12 +19,12 @@ type ProgramUpgrade = {
 
 export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   devnet: {
-    programAddress: "",
-    programDataAddress: "",
-    programUpgradeAuthority: "",
-    newProgramBuffer: "",
-    spillAccount: "",
-    payer: "",
+    programAddress: "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc",
+    programDataAddress: "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4",
+    programUpgradeAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    newProgramBuffer: "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta",
+    spillAccount: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
+    payer: KEEL_DEPLOYER,
   },
   mainnet: {
     programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
