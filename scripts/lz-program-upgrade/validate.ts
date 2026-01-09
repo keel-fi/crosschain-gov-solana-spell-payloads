@@ -112,7 +112,10 @@ const main = async () => {
   // Assert buffer was closed (balance is 0)
   assert.equal(newDataBufferResp.after.lamports, 0);
 
-  assert.ok(programDataResp.after.data.length > programDataResp.before.data.length);
+  assert.ok(
+    programDataResp.after.data.length >= bufferCodeBefore.length,
+    `ProgramData size (${programDataResp.after.data.length}) is less than buffer length (${bufferCodeBefore.length})`
+  );
 
   assert.equal(programDataResp.after.data.length, programDataResp.before.data.length);
   // Assert spill account got lamports from closed buffer
