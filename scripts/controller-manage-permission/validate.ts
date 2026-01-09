@@ -118,40 +118,25 @@ const main = async () => {
     config.controllerProgramId,
     "Permission owner should be the controller program ID"
   );
+
   // Assert permission matrix matches expected values
-  assert.equal(permissionAfter.status, EXPECTED_PERMISSIONS.status);
-  assert.equal(
-    permissionAfter.canExecuteSwap,
-    EXPECTED_PERMISSIONS.canExecuteSwap
-  );
-  assert.equal(
-    permissionAfter.canFreezeController,
-    EXPECTED_PERMISSIONS.canFreezeController
-  );
-  assert.equal(
-    permissionAfter.canInvokeExternalTransfer,
-    EXPECTED_PERMISSIONS.canInvokeExternalTransfer
-  );
-  assert.equal(permissionAfter.canLiquidate, EXPECTED_PERMISSIONS.canLiquidate);
-  assert.equal(
-    permissionAfter.canManagePermissions,
-    EXPECTED_PERMISSIONS.canManagePermissions
-  );
-  assert.equal(
-    permissionAfter.canManageReservesAndIntegrations,
-    EXPECTED_PERMISSIONS.canManageReservesAndIntegrations
-  );
-  assert.equal(
-    permissionAfter.canReallocate,
-    EXPECTED_PERMISSIONS.canReallocate
-  );
-  assert.equal(
-    permissionAfter.canSuspendPermissions,
-    EXPECTED_PERMISSIONS.canSuspendPermissions
-  );
-  assert.equal(
-    permissionAfter.canUnfreezeController,
-    EXPECTED_PERMISSIONS.canUnfreezeController
+  const observedPermission: typeof EXPECTED_PERMISSIONS = {
+    status: permissionAfter.status,
+    canManagePermissions: permissionAfter.canManagePermissions,
+    canInvokeExternalTransfer: permissionAfter.canInvokeExternalTransfer,
+    canExecuteSwap: permissionAfter.canExecuteSwap,
+    canReallocate: permissionAfter.canReallocate,
+    canFreezeController: permissionAfter.canFreezeController,
+    canUnfreezeController: permissionAfter.canUnfreezeController,
+    canManageReservesAndIntegrations: permissionAfter.canManageReservesAndIntegrations,
+    canSuspendPermissions: permissionAfter.canSuspendPermissions,
+    canLiquidate: permissionAfter.canLiquidate,
+  };
+
+  assert.deepEqual(
+    observedPermission,
+    EXPECTED_PERMISSIONS,
+    `Permission mismatch:\nExpected: ${JSON.stringify(EXPECTED_PERMISSIONS, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
 
   validateSuccess(args.file);

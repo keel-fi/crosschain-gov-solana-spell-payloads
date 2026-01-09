@@ -116,7 +116,7 @@ const main = async () => {
   // Assert spill account got lamports from closed buffer
   const spillResp = resp[config.spillAccount];
   assert.ok(
-    spillResp.after.lamports >= spillResp.before.lamports,
+    spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
   );
 
