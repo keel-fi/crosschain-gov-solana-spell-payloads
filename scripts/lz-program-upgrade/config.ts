@@ -19,8 +19,8 @@ type ProgramUpgrade = {
 
 export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   devnet: {
-    programAddress: "BnxAbsogxcsFwUHHt787EQUP9DgD8jf1SA2BX4ERD8Rc",
-    programDataAddress: "EsBqEQkFSsiRifBgQmtoXJheDJfYEMhgHSETn2MKgGV4",
+    programAddress: "H3BpbuheXwBnfxjb2L66mxZ9nFhRmUentYwQDspd6yJ9",
+    programDataAddress: "G9PGxifnjuhcJHtVV4XMgRMY3ZsWyvyQsKHqVnMf4XRB",
     programUpgradeAuthority: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
     newProgramBuffer: "9g2VA38gRTvVvPXQPiUVcPH4HGPMVCRvax5HKVEaBLta",
     spillAccount: "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr",
