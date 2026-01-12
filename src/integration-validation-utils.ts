@@ -82,9 +82,7 @@ export const validateCommonIntegrationFields = (
 ) => {
   assert.equal(integration.status, config.status, "Status should match config");
 
-  const descriptionStr = integration.description
-    .toString()
-    .replace(/\0+$/g, "");
+  const descriptionStr = bytesToUtf8TrimNull(integration.description);
   assert.equal(
     descriptionStr,
     config.description,
