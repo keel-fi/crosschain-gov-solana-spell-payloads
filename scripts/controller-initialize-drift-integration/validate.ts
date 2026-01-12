@@ -11,6 +11,7 @@ import {
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
+  SURFPOOL_URL,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -129,6 +130,7 @@ const main = async () => {
     controllerProgramId: config.controllerProgramId,
     controllerAuthority,
     permissionPda,
+    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert integration is created
