@@ -182,6 +182,19 @@ const main = async () => {
     "Token account owner should be Controller Authority"
   );
 
+  // Validate vault token mint matches config
+  assert.equal(
+    tokenAccount.mint.toString(),
+    config.mint,
+    "Vault token account mint must match configured mint"
+  );
+  // Validate reserve lastBalance was synced to vault amount
+  assert.equal(
+    reserve.lastBalance.toString(),
+    tokenAccount.amount.toString(),
+    "Reserve lastBalance should equal vault token amount after sync_balance"
+  );
+
   validateSuccess(args.file);
 };
 
