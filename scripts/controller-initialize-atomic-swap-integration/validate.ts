@@ -2,6 +2,7 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
+  assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
@@ -144,39 +145,17 @@ const main = async () => {
     throw new Error("Expected AtomicSwap state");
   }
 
-  assert.equal(
-    integration.state.fields[0].amountBorrowed.toString(),
-    "0",
-    "Amount borrowed should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].lastBalanceA.toString(),
-    "0",
-    "Last balance A should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].lastBalanceB.toString(),
-    "0",
-    "Last balance B should be 0"
-  );
-  const expectedPadding = new Uint8Array(8);
-  const actualPadding = integration.state.fields[0].padding;
-  assert.equal(actualPadding.length, 8, "Padding should be 8 bytes");
-  assert.deepStrictEqual(
-    Array.from(actualPadding),
-    Array.from(expectedPadding),
-    "Padding should be all zeros"
-  );
-  assert.equal(
-    integration.state.fields[0].recipientTokenAPre.toString(),
-    "0",
-    "Recipient token A pre should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].recipientTokenBPre.toString(),
-    "0",
-    "Recipient token B pre should be 0"
-  );
+  // Validate AtomicSwap state fields using typed Omit<> to explicitly exclude fields we don't check
+  const actualAtomicSwapState = integration.state.fields[0];
+  const expectedAtomicSwapState: Omit<typeof actualAtomicSwapState, never> = {
+    amountBorrowed: 0n,
+    lastBalanceA: 0n,
+    lastBalanceB: 0n,
+    padding: new Uint8Array(8),
+    recipientTokenAPre: 0n,
+    recipientTokenBPre: 0n,
+  };
+  assertContainsIn(expectedAtomicSwapState, actualAtomicSwapState);
 
   // Validate AtomicSwap config fields
   if (integration.config.__kind !== "AtomicSwap") {
@@ -185,51 +164,19 @@ const main = async () => {
   const actualAtomicSwapConfig = integration.config.fields[0];
   assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
 
-  assert.equal(
-    actualAtomicSwapConfig.maxSlippageBps,
-    config.maxSlippageBps,
-    "Max slippage BPS should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.maxStaleness.toString(),
-    config.maxStaleness.toString(),
-    "Max staleness should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.expiryTimestamp.toString(),
-    expiryTimestamp.toString(),
-    "Expiry timestamp should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.oraclePriceInverted,
-    config.oraclePriceInverted,
-    "Oracle price inverted should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.inputToken.toString(),
-    address(config.inputTokenMint).toString(),
-    "Input token should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.outputToken.toString(),
-    address(config.outputTokenMint).toString(),
-    "Output token should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.oracle.toString(),
-    address(config.oracle).toString(),
-    "Oracle should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.inputMintDecimals,
-    config.inputMintDecimals,
-    "Input mint decimals should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.outputMintDecimals,
-    config.outputMintDecimals,
-    "Output mint decimals should match config"
-  );
+  // Validate AtomicSwap config using typed Omit<> to explicitly exclude padding
+  const expectedConfigForValidation: Omit<typeof actualAtomicSwapConfig, "padding"> = {
+    inputToken: address(config.inputTokenMint),
+    outputToken: address(config.outputTokenMint),
+    oracle: address(config.oracle),
+    maxStaleness: config.maxStaleness,
+    expiryTimestamp,
+    maxSlippageBps: config.maxSlippageBps,
+    inputMintDecimals: config.inputMintDecimals,
+    outputMintDecimals: config.outputMintDecimals,
+    oraclePriceInverted: config.oraclePriceInverted,
+  };
+  assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
 
   validateSuccess(args.file);
 };

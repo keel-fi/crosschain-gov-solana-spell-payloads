@@ -2,6 +2,7 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
+  assertContainsIn,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readConfigFromFile,
@@ -110,53 +111,21 @@ const main = async () => {
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
 
-  // Validate vault matches reserve.vault
-  assert.equal(
-    reserve.vault.toString(),
-    vaultPda.toString(),
-    "Reserve vault should match vault PDA"
-  );
-
-  assert.equal(
-    reserve.controller.toString(),
-    config.controller.toString(),
-    "Reserve controller should match config"
-  );
-
-  assert.equal(
-    reserve.mint.toString(),
-    config.mint.toString(),
-    "Mint should match config"
-  );
-  assert.equal(
-    reserve.status,
-    config.status,
-    "Reserve status should match config"
-  );
-
-  // Validate rate limit fields
-  assert.equal(
-    reserve.rateLimitSlope,
-    config.rateLimitSlope,
-    "Reserve rateLimitSlope should match config"
-  );
-  assert.equal(
-    reserve.rateLimitMaxOutflow,
-    config.rateLimitMaxOutflow,
-    "Reserve rateLimitMaxOutflow should match config"
-  );
-
-  // Validate rate limit initial state
-  assert.equal(
-    reserve.rateLimitOutflowAmountAvailable.toString(),
-    config.rateLimitMaxOutflow.toString(),
-    "Rate limit outflow amount available should match max outflow initially"
-  );
-  assert.equal(
-    reserve.rateLimitRemainder.toString(),
-    "0",
-    "Rate limit remainder should be 0 initially"
-  );
+  // Validate reserve fields using typed Omit<> to explicitly exclude fields we don't check
+  const expectedReserve: Omit<
+    typeof reserve,
+    "padding" | "lastRefreshTimestamp" | "lastRefreshSlot" | "lastBalance"
+  > = {
+    controller: address(config.controller),
+    mint: address(config.mint),
+    vault: address(vaultPda.toString()),
+    status: config.status,
+    rateLimitSlope: config.rateLimitSlope,
+    rateLimitMaxOutflow: config.rateLimitMaxOutflow,
+    rateLimitOutflowAmountAvailable: config.rateLimitMaxOutflow,
+    rateLimitRemainder: 0n,
+  };
+  assertContainsIn(expectedReserve, reserve);
 
   // Validate vault account is created
   const vaultResp = resp[vaultPda.toString()];

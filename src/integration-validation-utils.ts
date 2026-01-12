@@ -153,3 +153,24 @@ export const assertIntegrationCreated = (
   const integrationResp = resp[integrationPda];
   assert(integrationResp.after, "Integration should be created");
 };
+
+/**
+ * Checks if `sub` is a sub-object of `sup`.
+ * Uses deep strict equality for each property in `sub`.
+ * @param sub - Partial object containing expected values
+ * @param sup - Full object to check against
+ * @param message - Optional custom error message prefix
+ */
+export function assertContainsIn<T extends object>(
+  sub: Partial<T>,
+  sup: T,
+  message?: string
+) {
+  for (const [key, value] of Object.entries(sub)) {
+    assert.deepStrictEqual(
+      sup[key as keyof T],
+      value,
+      message || `Property "${key}" mismatch`
+    );
+  }
+}

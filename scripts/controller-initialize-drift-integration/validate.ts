@@ -1,6 +1,7 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
+  assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
@@ -153,21 +154,13 @@ const main = async () => {
   const actualDriftConfig = integration.config.fields[0];
   assert(actualDriftConfig, "Drift config should exist");
 
-  assert.equal(
-    actualDriftConfig.subAccountId,
-    config.subAccountId,
-    "Sub account ID should match config"
-  );
-  assert.equal(
-    actualDriftConfig.spotMarketIndex,
-    config.spotMarketIndex,
-    "Spot market index should match config"
-  );
-  assert.equal(
-    actualDriftConfig.poolId,
-    config.poolId,
-    "Pool ID should match config"
-  );
+  // Validate Drift config using typed Omit<> to explicitly exclude padding
+  const expectedDriftConfig: Omit<typeof actualDriftConfig, "padding"> = {
+    subAccountId: config.subAccountId,
+    spotMarketIndex: config.spotMarketIndex,
+    poolId: config.poolId,
+  };
+  assertContainsIn(expectedDriftConfig, actualDriftConfig);
 
   if (integration.state.__kind !== "Drift") {
     throw new Error("Expected Drift state");
@@ -175,11 +168,11 @@ const main = async () => {
 
   const actualDriftState = integration.state.fields[0];
 
-  assert.equal(
-    actualDriftState.balance.toString(),
-    "0",
-    "Integration state balance should be 0"
-  );
+  // Validate Drift state using typed Omit<> to explicitly exclude fields we don't check
+  const expectedDriftState: Omit<typeof actualDriftState, "padding"> = {
+    balance: 0n,
+  };
+  assertContainsIn(expectedDriftState, actualDriftState);
 
   validateSuccess(args.file);
 };
