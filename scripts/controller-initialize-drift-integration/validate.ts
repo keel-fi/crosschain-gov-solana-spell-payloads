@@ -130,6 +130,8 @@ const main = async () => {
     controllerProgramId: config.controllerProgramId,
     controllerAuthority,
     permissionPda,
+    integrationPda: integrationPda.toString(),
+    expectedHash: integrationHash,
     skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 

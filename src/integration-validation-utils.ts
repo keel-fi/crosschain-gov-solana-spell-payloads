@@ -1,6 +1,6 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
-import { Integration } from "@keel-fi/svm-alm-controller";
+import { Integration, getIntegrationCodec } from "@keel-fi/svm-alm-controller";
 import { assertNoAccountChanges } from "./simulation-assertions";
 import { BaseControllerIntegrationConfig } from "./controller-types";
 import { bytesToUtf8TrimNull } from "./utils";
@@ -21,6 +21,7 @@ type SimulateResponse = Record<
  * - Authority does not change
  * - Permission does not change (with optional check if permission exists)
  * - Controller program does not change
+ * - Integration controller and hash fields match expected values
  */
 export const assertInitializeIntegrationCommonAccountChanges = (
   resp: SimulateResponse,
@@ -31,6 +32,8 @@ export const assertInitializeIntegrationCommonAccountChanges = (
     controllerProgramId: string;
     controllerAuthority: string;
     permissionPda: string;
+    integrationPda: string;
+    expectedHash: Buffer | Uint8Array;
     skipSurfpoolChecks?: boolean;
   }
 ) => {
@@ -69,6 +72,29 @@ export const assertInitializeIntegrationCommonAccountChanges = (
       controllerProgramResp.after
     );
   }
+
+  // Assert integration is created and validate controller and hash fields
+  const integrationResp = resp[config.integrationPda];
+  assert(integrationResp.after, "Integration should be created");
+
+  // Decode integration account data
+  const integrationCodec = getIntegrationCodec();
+  const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
+
+  // Validate integration controller matches expected controller
+  assert.equal(
+    integration.controller.toString(),
+    config.controller,
+    "Integration controller should match config"
+  );
+
+  // Validate integration hash matches expected hash
+  const expectedHashBuffer = Buffer.from(config.expectedHash);
+  const actualHashBuffer = Buffer.from(integration.hash);
+  assert(
+    expectedHashBuffer.equals(actualHashBuffer),
+    "Integration hash should match expected hash"
+  );
 };
 
 /**
