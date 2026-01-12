@@ -21,6 +21,7 @@ import {
   derivePermissionPda,
   deriveIntegrationPda,
   computeIntegrationHash,
+  drift,
 } from "@keel-fi/svm-alm-controller";
 
 // In this script we validate that state and configuration
@@ -57,6 +58,53 @@ const main = async () => {
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
+  );
+
+  // Derive drift_user account
+  const driftUserPda = await drift.deriveUserPda(
+    address(controllerAuthority),
+    config.subAccountId
+  );
+
+  // Validate drift_user account exists
+  const driftUserResp = resp[driftUserPda.toString()];
+  assert(
+    driftUserResp,
+    "Drift user account should be in simulation response"
+  );
+  assert(
+    driftUserResp.after,
+    "Drift user account should exist"
+  );
+
+  // Validate drift_user account is owned by drift program
+  assert.equal(
+    driftUserResp.after.owner.toString(),
+    drift.DRIFT_PROGRAM_ID.toString(),
+    "Drift user account should be owned by drift program"
+  );
+
+  // Derive spot market PDA for the expected spot market index
+  const spotMarketPda = await drift.deriveSpotMarketPda(
+    config.spotMarketIndex
+  );
+
+  // Validate spot market account exists in simulation response
+  const spotMarketResp = resp[spotMarketPda.toString()];
+  assert(
+    spotMarketResp,
+    "Spot market account should be in simulation response"
+  );
+  assert(
+    spotMarketResp.after,
+    "Spot market account should exist"
+  );
+
+  // Validate spot market account is owned by drift program
+  assert.equal(
+    spotMarketResp.after.owner.toString(),
+    drift.DRIFT_PROGRAM_ID.toString(),
+    "Spot market account should be owned by drift program"
   );
 
   // Compute integration hash
