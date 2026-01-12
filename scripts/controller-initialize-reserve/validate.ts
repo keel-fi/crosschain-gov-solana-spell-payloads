@@ -74,6 +74,14 @@ const main = async () => {
     controllerAuthorityResp?.after
   );
 
+  // Compute vault PDA
+  const vaultPda = getAssociatedTokenAddressSync(
+    new web3.PublicKey(config.mint),
+    new web3.PublicKey(controllerAuthority),
+    true,
+    new web3.PublicKey(config.tokenProgram)
+  );
+
   // Assert authority does not change
   const authorityResp = resp[config.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
@@ -101,6 +109,13 @@ const main = async () => {
   // Validate reserve data matches config
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
+
+  // Validate vault matches reserve.vault
+  assert.equal(
+    reserve.vault.toString(),
+    vaultPda.toString(),
+    "Reserve vault should match vault PDA"
+  );
 
   assert.equal(
     reserve.controller.toString(),
@@ -144,12 +159,6 @@ const main = async () => {
   );
 
   // Validate vault account is created
-  const vaultPda = getAssociatedTokenAddressSync(
-    new web3.PublicKey(config.mint),
-    new web3.PublicKey(controllerAuthority),
-    true,
-    new web3.PublicKey(config.tokenProgram)
-  );
   const vaultResp = resp[vaultPda.toString()];
   assert(vaultResp, "Vault account should be in simulation response");
   assert(vaultResp.after, "Vault should be created");

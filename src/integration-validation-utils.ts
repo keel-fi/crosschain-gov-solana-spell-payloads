@@ -47,8 +47,8 @@ export const assertInitializeIntegrationCommonAccountChanges = (
   // Assert controller authority does not change
   const controllerAuthorityResp = resp[config.controllerAuthority];
   assertNoAccountChanges(
-    controllerAuthorityResp?.before,
-    controllerAuthorityResp?.after
+    controllerAuthorityResp.before,
+    controllerAuthorityResp.after
   );
 
   // Assert authority does not change

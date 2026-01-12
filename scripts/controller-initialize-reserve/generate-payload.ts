@@ -53,6 +53,8 @@ const printControllerInitializeReservePayload = async () => {
     payer: createNoopSigner(lzPayerSentinel),
     controller: address(config.controller),
     controllerAuthority: controllerAuthority,
+    // NOTE: we do not use sentinel here because it cannot be used
+    // above for PDA derivation.
     authority: createNoopSigner(address(config.authority)),
     permission: permissionPda,
     reserve: reservePda,

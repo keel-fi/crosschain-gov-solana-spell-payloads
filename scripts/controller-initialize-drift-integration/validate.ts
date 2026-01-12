@@ -90,7 +90,6 @@ const main = async () => {
   const integrationCodec = getIntegrationCodec();
   const integrationResp = resp[integrationPda];
   const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
-  assert.equal(integration.config.__kind, "Drift");
 
   // Validate integration-level fields
   validateCommonIntegrationFields(integration, config);

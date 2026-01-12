@@ -3,7 +3,7 @@ import {
   Network,
   SVM_ALM_CONTROLLER_PROGRAM_DATA,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
-  LZ_CPI_AUTHORITY_PLACEHOLDER,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
 } from "../../src";
 
 export const ACTION = "lz-program-upgrade";
@@ -29,7 +29,7 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   mainnet: {
     programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
     programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
-    programUpgradeAuthority: LZ_CPI_AUTHORITY_PLACEHOLDER.toString(),
+    programUpgradeAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
     // TODO: Replace with actual program buffer post audit
     newProgramBuffer: "",
     spillAccount: KEEL_DEPLOYER,
@@ -38,7 +38,7 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
   surfpool: {
     programAddress: SVM_ALM_CONTROLLER_PROGRAM_ID,
     programDataAddress: SVM_ALM_CONTROLLER_PROGRAM_DATA,
-    programUpgradeAuthority: LZ_CPI_AUTHORITY_PLACEHOLDER.toString(),
+    programUpgradeAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
     // TODO: Replace with actual program buffer post audit
     newProgramBuffer: "",
     spillAccount: KEEL_DEPLOYER,

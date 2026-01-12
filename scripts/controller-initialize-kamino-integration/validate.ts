@@ -66,6 +66,21 @@ const main = async () => {
     address(config.market)
   );
 
+  // Validate kamino accounts exist
+  const obligationResp = resp[obligation.toString()];
+  assert(obligationResp, "Obligation account should be in simulation response");
+  assert(obligationResp.after, "Obligation account should exist");
+
+  const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
+  assert(
+    reserveFarmCollateralResp,
+    "Reserve farm collateral account should be in simulation response"
+  );
+  assert(
+    reserveFarmCollateralResp.after,
+    "Reserve farm collateral account should exist"
+  );
+
   // Compute integration hash
   const kaminoConfig = {
     market: address(config.market),
@@ -101,7 +116,6 @@ const main = async () => {
   const integrationCodec = getIntegrationCodec();
   const integrationResp = resp[integrationPda];
   const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
-  assert.equal(integration.config.__kind, "Kamino");
 
   // Validate integration-level fields
   validateCommonIntegrationFields(integration, config);

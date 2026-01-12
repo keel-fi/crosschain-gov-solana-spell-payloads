@@ -5,15 +5,25 @@ import {
 export const ACTION = "controller-initialize-atomic-swap-integration";
 
 export type ControllerInitializeAtomicSwapIntegrationConfig = BaseControllerIntegrationConfig & {
-  outputFile: string;
-  // Atomic swap specific args
-  maxSlippageBps: number;
-  maxStaleness: bigint;
-  expiryTimestamp: bigint;
-  oraclePriceInverted: boolean;
-  inputTokenMint: string;
-  outputTokenMint: string;
-  oracle: string;
-  inputMintDecimals: number;
-  outputMintDecimals: number;
+    // Output file
+    outputFile: string;
+    // Atomic swap specific args
+    // Maximum slippage in basis points
+    maxSlippageBps: number;
+    // Maximum staleness
+    maxStaleness: bigint;
+    // Expiry timestamp
+    expiryTimestamp: bigint;
+    // Whether oracle price is inverted
+    oraclePriceInverted: boolean;
+    // Input token mint address
+    inputTokenMint: string;
+    // Output token mint address
+    outputTokenMint: string;
+    // Oracle address
+    oracle: string;
+    // Input mint decimals
+    inputMintDecimals: number;
+    // Output mint decimals
+    outputMintDecimals: number;
 };
