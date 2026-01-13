@@ -33,7 +33,8 @@ const main = async () => {
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
     cpiAuthority,
-    1n // nonce
+    1n, // nonce
+    { mode: "complete" } // Use full lz_receive simulation
   );
 
   const permissionPda = await derivePermissionPda(

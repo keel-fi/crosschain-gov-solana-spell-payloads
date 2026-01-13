@@ -186,3 +186,16 @@ export const convertLzSolanaGovernancePayloadToInstruction = (
 
   return instruction;
 };
+
+/**
+ * Deserialize a LZ Governance payload WITHOUT replacing placeholders.
+ * This is used for simulation where we want the governance program to
+ * see the actual placeholder values and return the correct AddressLocator types.
+ */
+export const deserializeLzGovernancePayloadWithPlaceholders = (
+  payload: Buffer,
+  targetProgram: web3.PublicKey
+): web3.TransactionInstruction => {
+  // Just deserialize the instruction - don't replace any placeholders
+  return deserializeLzInstruction(targetProgram, payload);
+};

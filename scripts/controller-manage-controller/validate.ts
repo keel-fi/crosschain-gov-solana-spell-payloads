@@ -5,7 +5,7 @@ import {
   readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
-  simulateControllerPayloadWithLayerZeroForValidation,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
 } from "../../src";
 import {
@@ -23,7 +23,7 @@ const main = async () => {
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
-  const resp = await simulateControllerPayloadWithLayerZeroForValidation(
+  const resp = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,

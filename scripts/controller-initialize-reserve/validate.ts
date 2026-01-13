@@ -5,7 +5,7 @@ import {
   readConfigFromFile,
   readArgs,
   readPayloadFile,
-  simulateControllerPayloadWithLayerZeroForValidation,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   SURFPOOL_URL,
 } from "../../src";
@@ -35,7 +35,7 @@ const main = async () => {
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
-  const resp = await simulateControllerPayloadWithLayerZeroForValidation(
+  const resp = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,

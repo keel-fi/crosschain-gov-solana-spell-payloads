@@ -3,6 +3,8 @@ export * from "./controller-types";
 export * from "./integration-validation-utils";
 export * from "./lz-controller-simulation";
 export * from "./lz-governance-codec";
+export * from "./lz-receive-types-v2";
+export * from "./lz-complete-simulation";
 export * from "./programs";
 export * from "./simulation-assertions";
 export * from "./utils";
