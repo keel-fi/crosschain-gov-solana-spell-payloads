@@ -28,6 +28,7 @@ import {
   SKY_LZ_GOVERNANCE_ACCOUNT,
   LayerZeroConfig,
   EthereumAddresses,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
 } from "./constants";
 import { getRpcUrl, ethereumAddressToBytes32 } from "./utils";
 import { SimulateResponse } from "./simulation-utils";
@@ -756,7 +757,7 @@ export function createCompleteSimulationConfig(
     sender: ethereumAddressToBytes32(EthereumAddresses.GOVERNANCE_OAPP_SENDER),
     receiver: new web3.PublicKey(SKY_LZ_GOVERNANCE_ACCOUNT),
     nonce,
-    originCaller: ethereumAddressToBytes32(EthereumAddresses.L1_GOVERNANCE_RELAY),
+    originCaller: ethereumAddressToBytes32(EthereumAddresses.KEEL_PROXY),
     payer,
     cpiAuthority,
   };

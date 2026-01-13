@@ -53,13 +53,20 @@ export const CASH_ORACLE_PDA = "H8uoMnbTruerEj2twgd7CjFydupvcGoK97LEJeHvkE8N";
 export const PYUSD_ORACLE_PDA = "EaUZnyqbcyHyJVy13aBhqd9k7NrsdDXzeD1VZnLNokid";
 export const USDG_ORACLE_PDA = "2XBgvU8h95BxHMFFenKBdHir4XeXrnx5nirGrLjPm8EJ";
 
-export const KAMINO_MAIN_MARKET = "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"; // link: https://explorer.solana.com/address/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF
-export const KAMINO_CASH_RESERVE = "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA
-export const KAMINO_CASH_FARM_COLLATERAL = "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA/anchor-account
-export const KAMINO_PYUSD_RESERVE = "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN"; // https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN
-export const KAMINO_PYUSD_FARM_COLLATERAL = "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN/anchor-account
-export const KAMINO_USDG_RESERVE = "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp
-export const KAMINO_USDG_FARM_COLLATERAL = "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp/anchor-account 
+export const KAMINO_MAIN_MARKET =
+  "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"; // link: https://explorer.solana.com/address/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF
+export const KAMINO_CASH_RESERVE =
+  "ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA
+export const KAMINO_CASH_FARM_COLLATERAL =
+  "8pkQoRJz4yKVpYLjqFNdNfN1mvkDQz4UHRtJenzS9yys"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ApQkX32ULJUzszZDe986aobLDLMNDoGQK8tRm6oD6SsA/anchor-account
+export const KAMINO_PYUSD_RESERVE =
+  "2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN"; // https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN
+export const KAMINO_PYUSD_FARM_COLLATERAL =
+  "DEe2NZ5dAXGxC7M8Gs9Esd9wZRPdQzG8jNamXqhL5yku"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/2gc9Dm1eB6UgVYFBUN9bWks6Kes9PbWSaPaa9DqyvEiN/anchor-account
+export const KAMINO_USDG_RESERVE =
+  "ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp"; // link: https://kamino.com/borrow/reserve/7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp
+export const KAMINO_USDG_FARM_COLLATERAL =
+  "3W4tNzMoRXCBhirSSoHf5413Cx9P8kqXk4QpZtkjiLCG"; // Farm collateral field in the Anchor Data tab: https://explorer.solana.com/address/ESCkPWKHmgNE7Msf77n9yzqJd5kQVWWGy3o5Mgxhvavp/anchor-account
 
 export const DRIFT_POOL_ID = 0;
 export const DRIFT_CASH_SPOT_MARKET_INDEX = 61; // link: https://github.com/drift-labs/protocol-v2/blob/024db6abba2bcefb0e9f494a2d4f42a8337f8ae9/sdk/src/constants/spotMarkets.ts#L998
@@ -80,39 +87,41 @@ export const DEVNET_CONTROLLER = "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6";
 export const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 
 /* Oracle addresses */
-export const USDC_TO_USDT_ORACLE = "E6QFLWgPoDHydKVwEc5Ar49k1zMQ19qM8A9NFxjoSitn";
+export const USDC_TO_USDT_ORACLE =
+  "E6QFLWgPoDHydKVwEc5Ar49k1zMQ19qM8A9NFxjoSitn";
 
-export const KAMINO_USDC_RESERVE = "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59";
+export const KAMINO_USDC_RESERVE =
+  "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59";
 
 // LayerZero configuration constants
 export namespace LayerZeroConfig {
   // LayerZero Solana Endpoint ID
   export const SOLANA_ENDPOINT_ID = 30168;
-  
+
   // Ethereum chain endpoint ID
   export const ETHEREUM_ENDPOINT_ID = 30101;
-  
+
   // LayerZero V2 Endpoint Program on Solana mainnet
   export const LAYERZERO_ENDPOINT_PROGRAM = new web3.PublicKey(
     "76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6"
   );
-  
+
   // Memo program for cross-chain text messages
   export const MEMO_PROGRAM = new web3.PublicKey(
     "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
   );
-  
+
   // Noop program for no-operation cross-chain instructions
   export const NOOP_PROGRAM = new web3.PublicKey(
     "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"
   );
-  
+
   // LayerZero account seeds
   export const OAPP_SEED = Buffer.from("OApp");
   export const NONCE_SEED = Buffer.from("Nonce");
   export const PAYLOAD_HASH_SEED = Buffer.from("PayloadHash");
   export const ENDPOINT_SEED = Buffer.from("Endpoint");
-  
+
   // Message type for governance transactions
   export const SEND_TX_TYPE = 1;
 }
@@ -120,12 +129,16 @@ export namespace LayerZeroConfig {
 // Ethereum contract addresses
 export namespace EthereumAddresses {
   // L1 Governance Relay contract address
-  export const L1_GOVERNANCE_RELAY = "0x2beBFe397D497b66cB14461cB6ee467b4C3B7D61";
-  
-  // Governance OApp Sender contract address
-  export const GOVERNANCE_OAPP_SENDER = "0x27FC1DD771817b53bE48Dc28789533BEa53C9CCA";
-  
-  // LayerZero Endpoint v2 address
-  export const LAYERZERO_ENDPOINT_V2 = "0x1a44076050125825900e736c501f859c50fE728c";
-}
+  export const L1_GOVERNANCE_RELAY =
+    "0x2beBFe397D497b66cB14461cB6ee467b4C3B7D61";
 
+  // Governance OApp Sender contract address
+  export const GOVERNANCE_OAPP_SENDER =
+    "0x27FC1DD771817b53bE48Dc28789533BEa53C9CCA";
+
+  // LayerZero Endpoint v2 address
+  export const LAYERZERO_ENDPOINT_V2 =
+    "0x1a44076050125825900e736c501f859c50fE728c";
+
+  export const KEEL_PROXY = "0x355CD90Ecb1b409Fdf8b64c4473C3B858dA2c310";
+}
