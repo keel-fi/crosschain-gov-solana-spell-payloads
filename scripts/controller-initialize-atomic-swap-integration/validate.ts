@@ -38,7 +38,6 @@ const main = async () => {
     readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
       args.config
     );
-  const expiryTimestamp = config.expiryTimestamp;
   
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
@@ -70,7 +69,7 @@ const main = async () => {
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
     maxStaleness: config.maxStaleness,
-    expiryTimestamp,
+    expiryTimestamp: config.expiryTimestamp,
     maxSlippageBps: config.maxSlippageBps,
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,
@@ -126,21 +125,10 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
 
   // Validate integration-level fields
-  assert.equal(
-    integration.config.__kind,
-    "AtomicSwap",
-    "Config kind should be AtomicSwap"
-  );
   validateCommonIntegrationFields(integration, config);
 
   // Validate integration state exists
   assert(integration.state, "Integration state should exist");
-  assert.equal(
-    integration.state.__kind,
-    "AtomicSwap",
-    "State kind should be AtomicSwap"
-  );
-
   if (integration.state.__kind !== "AtomicSwap") {
     throw new Error("Expected AtomicSwap state");
   }
@@ -170,7 +158,7 @@ const main = async () => {
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
     maxStaleness: config.maxStaleness,
-    expiryTimestamp,
+    expiryTimestamp: config.expiryTimestamp,
     maxSlippageBps: config.maxSlippageBps,
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,

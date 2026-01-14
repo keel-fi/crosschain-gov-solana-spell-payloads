@@ -77,12 +77,8 @@ const main = async () => {
   const superAuthorityResp = resp[config.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
-  // Assert super permission does not change when different
-  // from the managed permission.
-  if (permissionPda != superPermissionPda) {
-    const superPermission = resp[superPermissionPda];
-    assertNoAccountChanges(superPermission.before, superPermission.after);
-  }
+  const superPermission = resp[superPermissionPda];
+  assertNoAccountChanges(superPermission.before, superPermission.after);
 
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();
