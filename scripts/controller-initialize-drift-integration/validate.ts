@@ -4,6 +4,7 @@ import {
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
+  assertNoAccountChanges,
   validateCommonIntegrationFields,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
@@ -109,6 +110,11 @@ const main = async () => {
     "Spot market account should be owned by drift program"
   );
 
+  // Assert spot market does not change
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(spotMarketResp.before, spotMarketResp.after);
+  }
+
   // Compute integration hash
   const driftConfig = {
     subAccountId: config.subAccountId,
@@ -154,11 +160,12 @@ const main = async () => {
   const actualDriftConfig = integration.config.fields[0];
   assert(actualDriftConfig, "Drift config should exist");
 
-  // Validate Drift config using typed Omit<> to explicitly exclude padding
-  const expectedDriftConfig: Omit<typeof actualDriftConfig, "padding"> = {
+  // Validate Drift config fields including padding
+  const expectedDriftConfig: Omit<typeof actualDriftConfig, never> = {
     subAccountId: config.subAccountId,
     spotMarketIndex: config.spotMarketIndex,
     poolId: config.poolId,
+    padding: new Uint8Array(219),
   };
   assertContainsIn(expectedDriftConfig, actualDriftConfig);
 
@@ -168,9 +175,10 @@ const main = async () => {
 
   const actualDriftState = integration.state.fields[0];
 
-  // Validate Drift state using typed Omit<> to explicitly exclude fields we don't check
-  const expectedDriftState: Omit<typeof actualDriftState, "padding"> = {
+  // Validate Drift state fields including padding
+  const expectedDriftState: Omit<typeof actualDriftState, never> = {
     balance: 0n,
+    padding: new Uint8Array(24),
   };
   assertContainsIn(expectedDriftState, actualDriftState);
 

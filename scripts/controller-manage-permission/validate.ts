@@ -80,6 +80,13 @@ const main = async () => {
   const superPermission = resp[superPermissionPda];
   assertNoAccountChanges(superPermission.before, superPermission.after);
 
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
+
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();
   const permissionAccount = resp[permissionPda];
@@ -92,6 +99,13 @@ const main = async () => {
   // Only assert these changes if the Permission previously
   // existed.
   if (permissionAccount.before) {
+    // Validate that the existing permission was owned by the controller program
+    assert.equal(
+      permissionAccount.before.owner.toString(),
+      config.controllerProgramId,
+      "Existing permission should be owned by the controller program ID"
+    );
+
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1

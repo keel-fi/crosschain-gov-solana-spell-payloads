@@ -28,6 +28,10 @@ import {
   integrationConfig,
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
+import {
+  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 
 const main = async () => {
   const args = readArgs(ACTION);
@@ -98,20 +102,43 @@ const main = async () => {
     skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
-  // Assert input mint does not change
+  // Assert input mint exists and does not change
   const inputMintResp = resp[config.inputTokenMint];
+  assert(inputMintResp, "Input mint account should be in simulation response");
+  assert(inputMintResp.after, "Input mint account should exist");
+  
+  // Validate input mint is owned by a Token program
+  const inputMintOwner = inputMintResp.after.owner.toString();
+  assert(
+    inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Input mint should be owned by Token program or Token-2022 program"
+  );
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
   }
 
-  // Assert output mint does not change
+  // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
+  assert(outputMintResp, "Output mint account should be in simulation response");
+  assert(outputMintResp.after, "Output mint account should exist");
+  
+  // Validate output mint is owned by a Token program
+  const outputMintOwner = outputMintResp.after.owner.toString();
+  assert(
+    outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Output mint should be owned by Token program or Token-2022 program"
+  );
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
   }
 
-  // Assert oracle does not change
+  // Assert oracle exists and does not change
   const oracleResp = resp[config.oracle];
+  assert(oracleResp, "Oracle account should be in simulation response");
+  assert(oracleResp.after, "Oracle account should exist");
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(oracleResp.before, oracleResp.after);
   }
@@ -152,8 +179,7 @@ const main = async () => {
   const actualAtomicSwapConfig = integration.config.fields[0];
   assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
 
-  // Validate AtomicSwap config using typed Omit<> to explicitly exclude padding
-  const expectedConfigForValidation: Omit<typeof actualAtomicSwapConfig, "padding"> = {
+  const expectedConfigForValidation: Omit<typeof actualAtomicSwapConfig, never> = {
     inputToken: address(config.inputTokenMint),
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
@@ -163,6 +189,7 @@ const main = async () => {
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,
     oraclePriceInverted: config.oraclePriceInverted,
+    padding: new Uint8Array(107),
   };
   assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
 
