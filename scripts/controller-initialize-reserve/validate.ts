@@ -3,7 +3,6 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   assertContainsIn,
-  convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readConfigFromFile,
   readArgs,

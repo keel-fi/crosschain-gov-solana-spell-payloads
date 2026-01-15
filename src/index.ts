@@ -1,7 +1,6 @@
 export * from "./constants";
 export * from "./controller-types";
 export * from "./integration-validation-utils";
-export * from "./lz-controller-simulation";
 export * from "./lz-governance-codec";
 export * from "./lz-packet-decoder";
 export * from "./lz-receive-types-v2";
