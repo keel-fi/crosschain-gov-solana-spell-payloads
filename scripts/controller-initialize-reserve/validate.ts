@@ -2,6 +2,9 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
+  assertContainsIn,
+  convertLzSolanaGovernancePayloadToInstruction,
+  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
@@ -32,6 +35,7 @@ const main = async () => {
   );
 
   const payload = readPayloadFile(config.outputFile);
+  const rpcUrl = getRpcEndpoint();
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -69,6 +73,14 @@ const main = async () => {
     controllerAuthorityResp?.after
   );
 
+  // Compute vault PDA
+  const vaultPda = getAssociatedTokenAddressSync(
+    new web3.PublicKey(config.mint),
+    new web3.PublicKey(controllerAuthority),
+    true,
+    new web3.PublicKey(config.tokenProgram)
+  );
+
   // Assert authority does not change
   const authorityResp = resp[config.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
@@ -97,54 +109,23 @@ const main = async () => {
   const reserveCodec = getReserveCodec();
   const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
 
-  assert.equal(
-    reserve.controller.toString(),
-    config.controller.toString(),
-    "Reserve controller should match config"
-  );
-
-  assert.equal(
-    reserve.mint.toString(),
-    config.mint.toString(),
-    "Mint should match config"
-  );
-  assert.equal(
-    reserve.status,
-    config.status,
-    "Reserve status should match config"
-  );
-
-  // Validate rate limit fields
-  assert.equal(
-    reserve.rateLimitSlope,
-    config.rateLimitSlope,
-    "Reserve rateLimitSlope should match config"
-  );
-  assert.equal(
-    reserve.rateLimitMaxOutflow,
-    config.rateLimitMaxOutflow,
-    "Reserve rateLimitMaxOutflow should match config"
-  );
-
-  // Validate rate limit initial state
-  assert.equal(
-    reserve.rateLimitOutflowAmountAvailable.toString(),
-    config.rateLimitMaxOutflow.toString(),
-    "Rate limit outflow amount available should match max outflow initially"
-  );
-  assert.equal(
-    reserve.rateLimitRemainder.toString(),
-    "0",
-    "Rate limit remainder should be 0 initially"
-  );
+  // Validate reserve fields using typed Omit<> to explicitly exclude fields we don't check
+  const expectedReserve: Omit<
+    typeof reserve,
+    "padding" | "lastRefreshTimestamp" | "lastRefreshSlot" | "lastBalance"
+  > = {
+    controller: address(config.controller),
+    mint: address(config.mint),
+    vault: address(vaultPda.toString()),
+    status: config.status,
+    rateLimitSlope: config.rateLimitSlope,
+    rateLimitMaxOutflow: config.rateLimitMaxOutflow,
+    rateLimitOutflowAmountAvailable: config.rateLimitMaxOutflow,
+    rateLimitRemainder: 0n,
+  };
+  assertContainsIn(expectedReserve, reserve);
 
   // Validate vault account is created
-  const vaultPda = getAssociatedTokenAddressSync(
-    new web3.PublicKey(config.mint),
-    new web3.PublicKey(controllerAuthority),
-    true,
-    new web3.PublicKey(config.tokenProgram)
-  );
   const vaultResp = resp[vaultPda.toString()];
   assert(vaultResp, "Vault account should be in simulation response");
   assert(vaultResp.after, "Vault should be created");
@@ -166,6 +147,19 @@ const main = async () => {
     tokenAccount.owner.toString(),
     controllerAuthority.toString(),
     "Token account owner should be Controller Authority"
+  );
+
+  // Validate vault token mint matches config
+  assert.equal(
+    tokenAccount.mint.toString(),
+    config.mint,
+    "Vault token account mint must match configured mint"
+  );
+  // Validate reserve lastBalance was synced to vault amount
+  assert.equal(
+    reserve.lastBalance.toString(),
+    tokenAccount.amount.toString(),
+    "Reserve lastBalance should equal vault token amount after sync_balance"
   );
 
   validateSuccess(args.file);

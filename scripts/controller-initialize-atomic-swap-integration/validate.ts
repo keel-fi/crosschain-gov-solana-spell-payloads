@@ -2,6 +2,7 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
+  assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
@@ -26,6 +27,10 @@ import {
   integrationConfig,
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
+import {
+  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 
 const main = async () => {
   const args = readArgs(ACTION);
@@ -36,7 +41,6 @@ const main = async () => {
     readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
       args.config
     );
-  const expiryTimestamp = config.expiryTimestamp;
   
   const rpcUrl = getRpcEndpoint();
   const payload = readPayloadFile(config.outputFile);
@@ -65,7 +69,7 @@ const main = async () => {
     outputToken: address(config.outputTokenMint),
     oracle: address(config.oracle),
     maxStaleness: config.maxStaleness,
-    expiryTimestamp,
+    expiryTimestamp: config.expiryTimestamp,
     maxSlippageBps: config.maxSlippageBps,
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,
@@ -90,23 +94,48 @@ const main = async () => {
     controllerProgramId: config.controllerProgramId,
     controllerAuthority,
     permissionPda,
+    integrationPda: integrationPda.toString(),
+    expectedHash: integrationHash,
     skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
-  // Assert input mint does not change
+  // Assert input mint exists and does not change
   const inputMintResp = resp[config.inputTokenMint];
+  assert(inputMintResp, "Input mint account should be in simulation response");
+  assert(inputMintResp.after, "Input mint account should exist");
+  
+  // Validate input mint is owned by a Token program
+  const inputMintOwner = inputMintResp.after.owner.toString();
+  assert(
+    inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Input mint should be owned by Token program or Token-2022 program"
+  );
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
   }
 
-  // Assert output mint does not change
+  // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
+  assert(outputMintResp, "Output mint account should be in simulation response");
+  assert(outputMintResp.after, "Output mint account should exist");
+  
+  // Validate output mint is owned by a Token program
+  const outputMintOwner = outputMintResp.after.owner.toString();
+  assert(
+    outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Output mint should be owned by Token program or Token-2022 program"
+  );
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
   }
 
-  // Assert oracle does not change
+  // Assert oracle exists and does not change
   const oracleResp = resp[config.oracle];
+  assert(oracleResp, "Oracle account should be in simulation response");
+  assert(oracleResp.after, "Oracle account should exist");
+
   if (rpcUrl !== SURFPOOL_URL) {
     assertNoAccountChanges(oracleResp.before, oracleResp.after);
   }
@@ -120,58 +149,25 @@ const main = async () => {
   const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
 
   // Validate integration-level fields
-  assert.equal(
-    integration.config.__kind,
-    "AtomicSwap",
-    "Config kind should be AtomicSwap"
-  );
   validateCommonIntegrationFields(integration, config);
 
   // Validate integration state exists
   assert(integration.state, "Integration state should exist");
-  assert.equal(
-    integration.state.__kind,
-    "AtomicSwap",
-    "State kind should be AtomicSwap"
-  );
-
   if (integration.state.__kind !== "AtomicSwap") {
     throw new Error("Expected AtomicSwap state");
   }
 
-  assert.equal(
-    integration.state.fields[0].amountBorrowed.toString(),
-    "0",
-    "Amount borrowed should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].lastBalanceA.toString(),
-    "0",
-    "Amount borrowed should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].lastBalanceB.toString(),
-    "0",
-    "Last balance B should be 0"
-  );
-  const expectedPadding = new Uint8Array(8);
-  const actualPadding = integration.state.fields[0].padding;
-  assert.equal(actualPadding.length, 8, "Padding should be 8 bytes");
-  assert.deepStrictEqual(
-    Array.from(actualPadding),
-    Array.from(expectedPadding),
-    "Padding should be all zeros"
-  );
-  assert.equal(
-    integration.state.fields[0].recipientTokenAPre.toString(),
-    "0",
-    "Recipient token A pre should be 0"
-  );
-  assert.equal(
-    integration.state.fields[0].recipientTokenBPre.toString(),
-    "0",
-    "Recipient token A post should be 0"
-  );
+  // Validate AtomicSwap state fields using typed Omit<> to explicitly exclude fields we don't check
+  const actualAtomicSwapState = integration.state.fields[0];
+  const expectedAtomicSwapState: Omit<typeof actualAtomicSwapState, never> = {
+    amountBorrowed: 0n,
+    lastBalanceA: 0n,
+    lastBalanceB: 0n,
+    padding: new Uint8Array(8),
+    recipientTokenAPre: 0n,
+    recipientTokenBPre: 0n,
+  };
+  assertContainsIn(expectedAtomicSwapState, actualAtomicSwapState);
 
   // Validate AtomicSwap config fields
   if (integration.config.__kind !== "AtomicSwap") {
@@ -180,51 +176,19 @@ const main = async () => {
   const actualAtomicSwapConfig = integration.config.fields[0];
   assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
 
-  assert.equal(
-    actualAtomicSwapConfig.maxSlippageBps,
-    config.maxSlippageBps,
-    "Max slippage BPS should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.maxStaleness.toString(),
-    config.maxStaleness.toString(),
-    "Max staleness should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.expiryTimestamp.toString(),
-    expiryTimestamp.toString(),
-    "Expiry timestamp should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.oraclePriceInverted,
-    config.oraclePriceInverted,
-    "Oracle price inverted should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.inputToken.toString(),
-    address(config.inputTokenMint).toString(),
-    "Input token should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.outputToken.toString(),
-    address(config.outputTokenMint).toString(),
-    "Output token should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.oracle.toString(),
-    address(config.oracle).toString(),
-    "Oracle should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.inputMintDecimals,
-    config.inputMintDecimals,
-    "Input mint decimals should match config"
-  );
-  assert.equal(
-    actualAtomicSwapConfig.outputMintDecimals,
-    config.outputMintDecimals,
-    "Output mint decimals should match config"
-  );
+  const expectedConfigForValidation: Omit<typeof actualAtomicSwapConfig, never> = {
+    inputToken: address(config.inputTokenMint),
+    outputToken: address(config.outputTokenMint),
+    oracle: address(config.oracle),
+    maxStaleness: config.maxStaleness,
+    expiryTimestamp: config.expiryTimestamp,
+    maxSlippageBps: config.maxSlippageBps,
+    inputMintDecimals: config.inputMintDecimals,
+    outputMintDecimals: config.outputMintDecimals,
+    oraclePriceInverted: config.oraclePriceInverted,
+    padding: new Uint8Array(107),
+  };
+  assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
 
   validateSuccess(args.file);
 };

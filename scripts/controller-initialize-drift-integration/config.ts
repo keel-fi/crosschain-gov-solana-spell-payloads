@@ -1,16 +1,18 @@
-import {
-  BaseControllerIntegrationConfig,
-} from "../../src";
+import { BaseControllerIntegrationConfig } from "../../src";
 
 export const ACTION = "controller-initialize-drift-integration";
 
-export type ControllerInitializeDriftIntegrationConfig = BaseControllerIntegrationConfig & {
-  outputFile: string;
-  // Mint address
-  mint: string;
-  // Drift specific args
-  subAccountId: number;
-  spotMarketIndex: number;
-  poolId: number;
-};
-
+export type ControllerInitializeDriftIntegrationConfig =
+  BaseControllerIntegrationConfig & {
+    // Output file
+    outputFile: string;
+    // Mint address
+    mint: string;
+    // Drift specific args
+    // Sub account ID
+    subAccountId: number;
+    // Spot market index
+    spotMarketIndex: number;
+    // Pool ID
+    poolId: number;
+  };

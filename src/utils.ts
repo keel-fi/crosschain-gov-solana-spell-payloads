@@ -69,8 +69,8 @@ export const getRpcEndpoint = () => {
 export const readConfigFromFile = <T>(configPath: string): T => {
   // Resolve the absolute path - handle both relative and absolute paths
   let absolutePath: string;
-  if (configPath.startsWith("/") || configPath.startsWith("./") || configPath.startsWith("../")) {
-    // Relative path - resolve from current working directory
+  if (path.isAbsolute(configPath) || configPath.startsWith("./") || configPath.startsWith("../")) {
+    // Absolute or explicitly relative path - resolve from current working directory
     absolutePath = path.resolve(process.cwd(), configPath);
   } else {
     // Try to resolve as a module
@@ -326,7 +326,7 @@ export function bytesToUtf8TrimNull(bytes: ReadonlyUint8Array): string {
     bytes as Uint8Array
   );
 
-  return decoded.replace(/\0+$/g, "");
+  return decoded.replace(/\0+$/, "");
 }
 
 /**

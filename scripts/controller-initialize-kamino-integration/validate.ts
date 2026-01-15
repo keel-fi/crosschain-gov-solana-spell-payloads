@@ -1,14 +1,17 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
+  assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
+  assertNoAccountChanges,
   validateCommonIntegrationFields,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  SURFPOOL_URL,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
@@ -60,6 +63,82 @@ const main = async () => {
     address(config.market)
   );
 
+  // Validate kamino accounts exist
+  const obligationResp = resp[obligation.toString()];
+  assert(obligationResp, "Obligation account should be in simulation response");
+  assert(obligationResp.after, "Obligation account should exist");
+
+  // Validate obligation account is owned by Kamino Lend program
+  assert.equal(
+    obligationResp.after.owner.toString(),
+    kamino.KAMINO_LEND_PROGRAM_ID.toString(),
+    "Obligation account should be owned by Kamino Lend program"
+  );
+
+  const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
+  assert(
+    reserveFarmCollateralResp,
+    "Reserve farm collateral account should be in simulation response"
+  );
+  assert(
+    reserveFarmCollateralResp.after,
+    "Reserve farm collateral account should exist"
+  );
+
+  // Validate reserve farm collateral account is owned by Kamino Farm program
+  assert.equal(
+    reserveFarmCollateralResp.after.owner.toString(),
+    kamino.KAMINO_FARMS_PROGRAM_ID.toString(),
+    "Reserve farm collateral account should be owned by Kamino Farm program"
+  );
+
+  // Validate market account exists and is owned by Kamino Lend program
+  const marketResp = resp[config.market];
+  assert(marketResp, "Market account should be in simulation response");
+  assert(marketResp.after, "Market account should exist");
+  assert.equal(
+    marketResp.after.owner.toString(),
+    kamino.KAMINO_LEND_PROGRAM_ID.toString(),
+    "Market account should be owned by Kamino Lend program"
+  );
+
+  // Validate reserve account exists and is owned by Kamino Lend program
+  const reserveResp = resp[config.reserve];
+  assert(reserveResp, "Reserve account should be in simulation response");
+  assert(reserveResp.after, "Reserve account should exist");
+  assert.equal(
+    reserveResp.after.owner.toString(),
+    kamino.KAMINO_LEND_PROGRAM_ID.toString(),
+    "Reserve account should be owned by Kamino Lend program"
+  );
+
+  // Validate reserve liquidity mint account exists
+  const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
+  assert(reserveLiquidityMintResp, "Reserve liquidity mint account should be in simulation response");
+  assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
+
+  // Assert external read-only accounts do not change
+  if (rpcUrl !== SURFPOOL_URL) {
+    // Assert market does not change
+    const marketResp = resp[config.market];
+    assertNoAccountChanges(marketResp.before, marketResp.after);
+
+    // Assert reserve does not change
+    const reserveResp = resp[config.reserve];
+    assertNoAccountChanges(reserveResp.before, reserveResp.after);
+
+    // Assert reserve liquidity mint does not change
+    const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
+    assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
+
+    // Assert reserve farm collateral does not change
+    assertNoAccountChanges(reserveFarmCollateralResp.before, reserveFarmCollateralResp.after);
+
+    // Assert referrer does not change
+    const referrerResp = resp[config.referrer];
+    assertNoAccountChanges(referrerResp.before, referrerResp.after);
+  }
+
   // Compute integration hash
   const kaminoConfig = {
     market: address(config.market),
@@ -87,6 +166,9 @@ const main = async () => {
     controllerProgramId: config.controllerProgramId,
     controllerAuthority,
     permissionPda,
+    integrationPda: integrationPda.toString(),
+    expectedHash: integrationHash,
+    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert integration is created
@@ -96,7 +178,6 @@ const main = async () => {
   const integrationCodec = getIntegrationCodec();
   const integrationResp = resp[integrationPda];
   const [integration] = integrationCodec.read(integrationResp.after!.data, 1);
-  assert.equal(integration.config.__kind, "Kamino");
 
   // Validate integration-level fields
   validateCommonIntegrationFields(integration, config);
@@ -107,43 +188,29 @@ const main = async () => {
   }
   const actualKaminoConfig = integration.config.fields[0];
   assert(actualKaminoConfig, "Kamino config should exist");
-  
-  assert.equal(
-    actualKaminoConfig.obligationId,
-    config.obligationId,
-    "Obligation ID should match config"
-  );
-  assert.equal(
-    actualKaminoConfig.market.toString(),
-    address(config.market).toString(),
-    "Market should match config"
-  );
-  assert.equal(
-    actualKaminoConfig.reserve.toString(),
-    address(config.reserve).toString(),
-    "Reserve should match config"
-  );
-  assert.equal(
-    actualKaminoConfig.reserveLiquidityMint.toString(),
-    address(config.reserveLiquidityMint).toString(),
-    "Reserve liquidity mint should match config"
-  );
-  assert.equal(
-    actualKaminoConfig.obligation.toString(),
-    address(obligation).toString(),
-    "Obligation should match config"
-  );
+
+  // Validate Kamino config fields including padding
+  const expectedKaminoConfig: Omit<typeof actualKaminoConfig, never> = {
+    market: address(config.market),
+    reserve: address(config.reserve),
+    reserveLiquidityMint: address(config.reserveLiquidityMint),
+    obligation: address(obligation),
+    obligationId: config.obligationId,
+    padding: new Uint8Array(95),
+  };
+  assertContainsIn(expectedKaminoConfig, actualKaminoConfig);
 
   if (integration.state.__kind !== "Kamino") {
     throw new Error("Expected Kamino state");
   }
   const actualKaminoState = integration.state.fields[0];
-  
-  assert.equal(
-    actualKaminoState.balance.toString(),
-    "0",
-    "Integration state balance should be 0"
-  );
+
+  // Validate Kamino state fields including padding
+  const expectedKaminoState: Omit<typeof actualKaminoState, never> = {
+    balance: 0n,
+    padding: new Uint8Array(24),
+  };
+  assertContainsIn(expectedKaminoState, actualKaminoState);
 
   validateSuccess(args.file);
 };

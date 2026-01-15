@@ -90,11 +90,28 @@ const serializeInstruction = (
 const deserializeInstruction = (
   payload: Buffer
 ): web3.TransactionInstruction => {
+  // Minimum payload size: program_id (32) + accounts_length (2) = 34 bytes
+  const MIN_PAYLOAD_LEN = 34;
+  if (payload.length < MIN_PAYLOAD_LEN) {
+    throw new Error(
+      `Payload too short: expected at least ${MIN_PAYLOAD_LEN} bytes, got ${payload.length} bytes`
+    );
+  }
+
   let offset = 0;
   const programIdBytes = payload.subarray(offset, offset + 32);
   offset += 32;
   const accountLen = payload.readUInt16BE(offset);
   offset += 2;
+
+  // Validate payload has enough bytes for all accounts + data_length field
+  const accountsSize = accountLen * SERIALIZED_ACCOUNT_LEN;
+  const minRemainingLen = accountsSize + 2; // accounts + data_length
+  if (payload.length < offset + minRemainingLen) {
+    throw new Error(
+      `Payload does not have enough bytes for accounts: expected at least ${offset + minRemainingLen} bytes, got ${payload.length} bytes`
+    );
+  }
 
   const accounts: web3.AccountMeta[] = [];
   for (let i = 0; i < accountLen; i++) {
@@ -111,7 +128,14 @@ const deserializeInstruction = (
   offset += 2;
   const endOffset = offset + dataLen;
   if (payload.length < endOffset) {
-    throw new Error("Payload does not have enough data");
+    throw new Error(
+      `Payload does not have enough bytes for data: expected ${endOffset} bytes, got ${payload.length} bytes`
+    );
+  }
+  if (payload.length > endOffset) {
+    throw new Error(
+      `Payload has unexpected trailing data: expected ${endOffset} bytes, got ${payload.length} bytes`
+    );
   }
   const data = payload.subarray(offset, endOffset);
 

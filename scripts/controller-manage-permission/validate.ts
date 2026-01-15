@@ -38,8 +38,7 @@ const main = async () => {
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
     cpiAuthority,
-    1n, // nonce
-    { mode: "complete" } // Use full lz_receive simulation
+    1n // nonce
   );
 
   const permissionPda = await derivePermissionPda(
@@ -78,12 +77,15 @@ const main = async () => {
   const superAuthorityResp = resp[config.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
-  // Assert super permission does not change when different
-  // from the managed permission.
-  if (permissionPda != superPermissionPda) {
-    const superPermission = resp[superPermissionPda];
-    assertNoAccountChanges(superPermission.before, superPermission.after);
-  }
+  const superPermission = resp[superPermissionPda];
+  assertNoAccountChanges(superPermission.before, superPermission.after);
+
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
 
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();
@@ -98,6 +100,12 @@ const main = async () => {
   // and has valid data (not just an empty minimal account from simulation).
   // Permission account needs at least 65 bytes: 8 (discriminator) + 32 (controller) + 32 (authority) + fields
   if (permissionAccount.before && permissionAccount.before.data.length > 65) {
+    // Validate that the existing permission was owned by the controller program
+    assert.equal(
+      permissionAccount.before.owner.toString(),
+      config.controllerProgramId,
+      "Existing permission should be owned by the controller program ID"
+    );
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1

@@ -64,6 +64,14 @@ export const deserializeLzInstruction = (
   targetProgram: web3.PublicKey,
   payload: Buffer
 ): web3.TransactionInstruction => {
+  // Minimum payload size: accounts_length (2)
+  const MIN_PAYLOAD_LEN = 2;
+  if (payload.length < MIN_PAYLOAD_LEN) {
+    throw new Error(
+      `Payload too short: expected at least ${MIN_PAYLOAD_LEN} bytes, got ${payload.length} bytes`
+    );
+  }
+
   let offset = 0;
   
   if (payload.length < 2) {
@@ -75,10 +83,11 @@ export const deserializeLzInstruction = (
   const accountLen = payload.readUInt16BE(offset);
   offset += 2;
 
-  const expectedMinLength = 2 + accountLen * SERIALIZED_ACCOUNT_LEN;
-  if (payload.length < expectedMinLength) {
+  // Validate payload has enough bytes for all accounts
+  const accountsSize = accountLen * SERIALIZED_ACCOUNT_LEN;
+  if (payload.length < offset + accountsSize) {
     throw new Error(
-      `Payload too short: ${payload.length} bytes (expected at least ${expectedMinLength} bytes for ${accountLen} accounts)`
+      `Payload does not have enough bytes for accounts: expected at least ${offset + accountsSize} bytes, got ${payload.length} bytes`
     );
   }
 
