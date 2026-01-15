@@ -239,16 +239,12 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
   const contextVersion = data[offset];
   offset += 1;
   
-  console.log(`   🔍 Context Version: ${contextVersion}`);
-  
   // Parse number of ALTs (4 bytes LE)
   if (data.length < offset + 4) {
     throw new Error("Return data too short for ALT count");
   }
   const altCount = data.readUInt32LE(offset);
   offset += 4;
-  
-  console.log(`   🔍 ALT Count: ${altCount}`);
   
   // Parse ALTs
   const alts: web3.PublicKey[] = [];
@@ -261,8 +257,6 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
     const altPubkey = new web3.PublicKey(altBytes);
     alts.push(altPubkey);
     offset += 32;
-    
-    console.log(`   🔍 ALT[${i}]: ${altPubkey.toString()}`);
   }
   
   // Parse number of instructions (4 bytes LE)
@@ -271,8 +265,6 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
   }
   const instructionCount = data.readUInt32LE(offset);
   offset += 4;
-  
-  console.log(`   🔍 Instruction Count: ${instructionCount}`);
   
   // Parse instructions
   const instructions: ParsedInstructionInfo[] = [];
@@ -284,8 +276,6 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
     const instructionType = data[offset];
     offset += 1;
     
-    console.log(`   🔍 Instruction[${i}] Type: ${instructionType}`);
-    
     if (instructionType === 0) {
       // LzReceive instruction
       // Parse number of accounts (4 bytes LE)
@@ -295,26 +285,19 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
       const accountCount = data.readUInt32LE(offset);
       offset += 4;
       
-      console.log(`   🔍 Instruction[${i}] Account Count: ${accountCount}`);
-      
       // Parse accounts
       const accounts: ParsedAccountMetaWithLocator[] = [];
-      console.log(`   🔍 Remaining data for accounts: ${data.length - offset} bytes`);
       
       for (let j = 0; j < accountCount; j++) {
         const remainingData = data.length - offset;
-        console.log(`   🔍 Account[${j}] at offset ${offset}: ${remainingData} bytes remaining`);
         
         if (remainingData < 2) {
-          console.log(`   ⚠️ Not enough data for account ${j} (need at least 2, have ${remainingData})`);
           break;
         }
         
         // Read AddressLocator discriminator
         const discriminator = data[offset];
         offset += 1;
-        
-        console.log(`   🔍 Account[${j}] discriminator: 0x${discriminator.toString(16).padStart(2, '0')}`);
         
         // Parse AddressLocator based on discriminator
         let addressLocator: AddressLocator;
@@ -390,7 +373,6 @@ export function parseLzReceiveTypesV2ReturnData(data: Buffer): ParsedExecutionPl
         };
         
         accounts.push(parsedAccount);
-        console.log(`   🔍 Account[${j}]: ${JSON.stringify(addressLocator)} | ${pubkey.toString()} (signer: ${isSigner}, writable: ${isWritable})`);
       }
       
       instructions.push({ type: "LzReceive", accounts });
@@ -429,7 +411,6 @@ export function resolveAccountMeta(
       break;
     case "AltIndex":
       // For simulation, use a placeholder
-      console.log(`   🔧 Using placeholder for ALT reference`);
       pubkey = web3.Keypair.generate().publicKey;
       break;
     case "Signer":
@@ -443,7 +424,6 @@ export function resolveAccountMeta(
       } else {
         // Create placeholder context account
         pubkey = web3.Keypair.generate().publicKey;
-        console.log(`   🔧 Creating placeholder Context account: ${pubkey.toString()}`);
       }
       break;
     default:
