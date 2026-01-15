@@ -884,7 +884,7 @@ export interface SimulationOptions {
  * @param cpiAuthority - CPI authority public key (usually KEEL_SUB_PROXY_CPI_AUTHORITY)
  * @param nonce - Optional nonce (defaults to 1)
  * @param options - Optional simulation options
- * @returns Simulation response with before/after account states
+ * @returns Simulation response with before/after account states and the actual payer used
  */
 export async function simulateControllerPayloadWithLayerZeroForValidation(
   payload: Buffer,
@@ -893,7 +893,7 @@ export async function simulateControllerPayloadWithLayerZeroForValidation(
   cpiAuthority: web3.PublicKey,
   nonce: bigint = 1n,
   options: SimulationOptions = {}
-): Promise<SimulateResponse> {
+): Promise<{ accountStates: SimulateResponse; payer: web3.PublicKey }> {
   const { simulatePayloadWithCompleteCrossChainFlow } = await import(
     "./lz-complete-simulation"
   );

@@ -28,7 +28,7 @@ const main = async () => {
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.superAuthority);
 
-  const resp = await simulateControllerPayloadWithLayerZeroForValidation(
+  const { accountStates: resp, payer: simulationPayer } = await simulateControllerPayloadWithLayerZeroForValidation(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
@@ -47,7 +47,8 @@ const main = async () => {
   );
 
   // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
+  // Use the actual payer from simulation (it generates a new keypair)
+  const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert controller does not change
@@ -88,9 +89,10 @@ const main = async () => {
     1
   );
 
-  // Only assert these changes if the Permission previously
-  // existed.
-  if (permissionAccount.before) {
+  // Only assert these changes if the Permission previously existed
+  // and has valid data (not just an empty minimal account from simulation).
+  // Permission account needs at least 65 bytes: 8 (discriminator) + 32 (controller) + 32 (authority) + fields
+  if (permissionAccount.before && permissionAccount.before.data.length > 65) {
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1
@@ -104,6 +106,7 @@ const main = async () => {
       permissionBefore.authority.toString()
     );
   } else {
+    // Account didn't exist before or had empty data
     assert.equal(permissionAfter.controller.toString(), config.controller);
     assert.equal(permissionAfter.authority.toString(), config.authority);
   }

@@ -43,7 +43,7 @@ const main = async () => {
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
-  const resp = await simulatePayloadWithCompleteCrossChainFlow(
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
@@ -82,8 +82,9 @@ const main = async () => {
   );
 
   // Assert common account changes
+  // Use the actual payer from simulation (it generates a new keypair)
   assertInitializeIntegrationCommonAccountChanges(resp, {
-    payer: config.payer,
+    payer: simulationPayer.toString(),
     controller: config.controller,
     authority: config.authority,
     controllerProgramId: config.controllerProgramId,

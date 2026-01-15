@@ -35,6 +35,7 @@ export const assertInitializeIntegrationCommonAccountChanges = (
   }
 ) => {
   // Assert payer does not change, except for lamports
+  // Note: payer should be the actual simulation payer (simulationPayer.toString())
   const payerResp = resp[config.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 

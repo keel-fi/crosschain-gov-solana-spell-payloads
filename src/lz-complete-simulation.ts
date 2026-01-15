@@ -64,6 +64,8 @@ export interface LzCompleteSimulationResult {
   payload: CrossChainPayload;
   /** Before and after account states */
   accountStates: SimulateResponse;
+  /** The payer public key used in the simulation */
+  payer: web3.PublicKey;
   /** Error message if execution failed */
   error?: string;
 }
@@ -724,6 +726,7 @@ export async function simulateLzCompleteCrossChainInstruction(
       success,
       payload,
       accountStates,
+      payer: payer.publicKey,
       error: success ? undefined : `Simulation failed`,
     };
   } catch (error: any) {
@@ -738,6 +741,7 @@ export async function simulateLzCompleteCrossChainInstruction(
       success: false,
       payload,
       accountStates,
+      payer: payer.publicKey,
       error: error?.message || String(error),
     };
   }
@@ -779,7 +783,7 @@ export async function simulatePayloadWithCompleteCrossChainFlow(
   payer: web3.PublicKey,
   cpiAuthority: web3.PublicKey,
   nonce: bigint = 1n
-): Promise<SimulateResponse> {
+): Promise<{ accountStates: SimulateResponse; payer: web3.PublicKey }> {
   // Deserialize instruction WITHOUT replacing placeholders
   // This allows the governance program to recognize placeholders and return
   // AddressLocator::Payer for LZ_PAYER_PLACEHOLDER, etc.
@@ -808,5 +812,5 @@ export async function simulatePayloadWithCompleteCrossChainFlow(
     throw new Error(`Complete simulation failed: ${result.error}. Check logs above for details.`);
   }
   
-  return result.accountStates;
+  return { accountStates: result.accountStates, payer: result.payer };
 }

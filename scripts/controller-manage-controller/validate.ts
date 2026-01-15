@@ -23,7 +23,7 @@ const main = async () => {
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
-  const resp = await simulatePayloadWithCompleteCrossChainFlow(
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
@@ -37,7 +37,8 @@ const main = async () => {
   );
 
   // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
+  // Use the actual payer from simulation (it generates a new keypair)
+  const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert controller authority does not change
