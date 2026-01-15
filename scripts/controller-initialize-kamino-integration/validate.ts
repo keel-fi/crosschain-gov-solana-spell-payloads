@@ -12,6 +12,7 @@ import {
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   SURFPOOL_URL,
+  getRpcEndpoint,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
@@ -38,6 +39,7 @@ const main = async () => {
   }
   const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
   const payload = readPayloadFile(config.outputFile);
+  const rpcUrl = getRpcEndpoint();
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 

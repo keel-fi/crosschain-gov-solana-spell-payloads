@@ -12,6 +12,7 @@ import {
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   SURFPOOL_URL,
+  getRpcEndpoint,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -36,6 +37,7 @@ const main = async () => {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
   const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
+  const rpcUrl = getRpcEndpoint();
   const payload = readPayloadFile(config.outputFile);
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
