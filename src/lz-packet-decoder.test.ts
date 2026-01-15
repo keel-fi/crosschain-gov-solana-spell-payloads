@@ -578,5 +578,695 @@ describe("lz-packet-decoder", () => {
       
       assert.deepEqual(result.message, message);
     });
+    
+    describe("nonce edge cases", () => {
+      it("should handle nonce = 0 (minimum value)", () => {
+        const sender = create32ByteBuffer(100);
+        const receiver = create32ByteBuffer(101);
+        const guid = create32ByteBuffer(102);
+        const message = Buffer.from([0x01, 0x02]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(0),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.strictEqual(result.nonce, BigInt(0));
+      });
+      
+      it("should handle nonce = max uint64 (18446744073709551615)", () => {
+        const sender = create32ByteBuffer(103);
+        const receiver = create32ByteBuffer(104);
+        const guid = create32ByteBuffer(105);
+        const message = Buffer.from([0x03, 0x04]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt("18446744073709551615"),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.strictEqual(result.nonce, BigInt("18446744073709551615"));
+      });
+      
+      it("should correctly decode various nonce values (big-endian)", () => {
+        const sender = create32ByteBuffer(106);
+        const receiver = create32ByteBuffer(107);
+        const guid = create32ByteBuffer(108);
+        const message = Buffer.from([0x05]);
+        
+        // Test several different nonce values
+        const nonceValues = [
+          BigInt(1),
+          BigInt(255),
+          BigInt(256),
+          BigInt(65535),
+          BigInt(65536),
+          BigInt("4294967295"),      // max uint32
+          BigInt("4294967296"),      // max uint32 + 1
+          BigInt("9007199254740991"), // max safe integer in JS
+        ];
+        
+        for (const nonce of nonceValues) {
+          const packet = createLayerZeroPacket(
+            0x01,
+            nonce,
+            30101,
+            sender,
+            30168,
+            receiver,
+            guid,
+            message
+          );
+          
+          const result = decodeLayerZeroPacket(packet);
+          
+          assert.strictEqual(result.nonce, nonce, `Failed for nonce ${nonce}`);
+        }
+      });
+    });
+    
+    describe("endpoint ID edge cases", () => {
+      it("should handle srcEid = 0 (minimum value)", () => {
+        const sender = create32ByteBuffer(110);
+        const receiver = create32ByteBuffer(111);
+        const guid = create32ByteBuffer(112);
+        const message = Buffer.from([0x01]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          0, // srcEid = 0
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.strictEqual(result.srcEid, 0);
+      });
+      
+      it("should handle srcEid = max uint32 (4294967295)", () => {
+        const sender = create32ByteBuffer(113);
+        const receiver = create32ByteBuffer(114);
+        const guid = create32ByteBuffer(115);
+        const message = Buffer.from([0x02]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(2),
+          4294967295, // max uint32
+          sender,
+          4294967295, // dstEid also max
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.strictEqual(result.srcEid, 4294967295);
+      });
+      
+      it("should correctly decode various endpoint ID values (big-endian)", () => {
+        const sender = create32ByteBuffer(116);
+        const receiver = create32ByteBuffer(117);
+        const guid = create32ByteBuffer(118);
+        const message = Buffer.from([0x03]);
+        
+        // Test several different srcEid values including real-world LayerZero endpoint IDs
+        const srcEidValues = [
+          1,
+          255,
+          256,
+          65535,
+          65536,
+          30101,      // Ethereum mainnet
+          30102,      // BSC mainnet
+          30106,      // Avalanche mainnet
+          30109,      // Polygon mainnet
+          30110,      // Arbitrum mainnet
+          30111,      // Optimism mainnet
+          30168,      // Solana mainnet
+          16777215,   // 0xFFFFFF
+          16777216,   // 0x1000000
+        ];
+        
+        for (const srcEid of srcEidValues) {
+          const packet = createLayerZeroPacket(
+            0x01,
+            BigInt(1),
+            srcEid,
+            sender,
+            30168,
+            receiver,
+            guid,
+            message
+          );
+          
+          const result = decodeLayerZeroPacket(packet);
+          
+          assert.strictEqual(result.srcEid, srcEid, `Failed for srcEid ${srcEid}`);
+        }
+      });
+    });
+    
+    describe("packet boundary conditions", () => {
+      it("should succeed with packet exactly at minimum size (113 bytes, empty message)", () => {
+        const sender = create32ByteBuffer(120);
+        const receiver = create32ByteBuffer(121);
+        const guid = create32ByteBuffer(122);
+        const message = Buffer.alloc(0); // Empty message
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        // Verify packet is exactly 113 bytes
+        assert.strictEqual(packet.length, 113);
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.strictEqual(result.srcEid, 30101);
+        assert.deepEqual(result.message, Buffer.alloc(0));
+      });
+      
+      it("should throw error for packet at 112 bytes (one byte short of minimum)", () => {
+        const packet = Buffer.alloc(112);
+        packet[0] = 0x01; // Valid version
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Packet too short: 112 bytes \(minimum 113 bytes/
+        );
+      });
+      
+      it("should throw error for packet at 1 byte", () => {
+        const packet = Buffer.alloc(1);
+        packet[0] = 0x01;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Packet too short: 1 bytes/
+        );
+      });
+      
+      it("should handle message size of 1 byte", () => {
+        const sender = create32ByteBuffer(123);
+        const receiver = create32ByteBuffer(124);
+        const guid = create32ByteBuffer(125);
+        const message = Buffer.from([0xAB]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        assert.strictEqual(packet.length, 114); // 113 + 1
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+      });
+      
+      it("should handle message size of 2 bytes", () => {
+        const sender = create32ByteBuffer(126);
+        const receiver = create32ByteBuffer(127);
+        const guid = create32ByteBuffer(128);
+        const message = Buffer.from([0xAB, 0xCD]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        assert.strictEqual(packet.length, 115); // 113 + 2
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+      });
+      
+      it("should handle message size of 100 bytes", () => {
+        const sender = create32ByteBuffer(129);
+        const receiver = create32ByteBuffer(130);
+        const guid = create32ByteBuffer(131);
+        const message = Buffer.alloc(100);
+        for (let i = 0; i < 100; i++) {
+          message[i] = i;
+        }
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        assert.strictEqual(packet.length, 213); // 113 + 100
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+      });
+      
+      it("should handle message size of 1000 bytes", () => {
+        const sender = create32ByteBuffer(132);
+        const receiver = create32ByteBuffer(133);
+        const guid = create32ByteBuffer(134);
+        const message = Buffer.alloc(1000);
+        for (let i = 0; i < 1000; i++) {
+          message[i] = i % 256;
+        }
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        assert.strictEqual(packet.length, 1113); // 113 + 1000
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+      });
+    });
+    
+    describe("buffer content edge cases", () => {
+      it("should handle sender with all zeros", () => {
+        const sender = Buffer.alloc(32, 0x00);
+        const receiver = create32ByteBuffer(140);
+        const guid = create32ByteBuffer(141);
+        const message = Buffer.from([0x01]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.sender, sender);
+        assert.ok(result.sender.every((b: number) => b === 0x00));
+      });
+      
+      it("should handle sender with all 0xFF bytes", () => {
+        const sender = Buffer.alloc(32, 0xFF);
+        const receiver = create32ByteBuffer(142);
+        const guid = create32ByteBuffer(143);
+        const message = Buffer.from([0x02]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.sender, sender);
+        assert.ok(result.sender.every((b: number) => b === 0xFF));
+      });
+      
+      it("should handle GUID with all zeros", () => {
+        const sender = create32ByteBuffer(144);
+        const receiver = create32ByteBuffer(145);
+        const guid = Buffer.alloc(32, 0x00);
+        const message = Buffer.from([0x03]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.guid, guid);
+        assert.ok(result.guid.every((b: number) => b === 0x00));
+      });
+      
+      it("should handle GUID with all 0xFF bytes", () => {
+        const sender = create32ByteBuffer(146);
+        const receiver = create32ByteBuffer(147);
+        const guid = Buffer.alloc(32, 0xFF);
+        const message = Buffer.from([0x04]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.guid, guid);
+        assert.ok(result.guid.every((b: number) => b === 0xFF));
+      });
+      
+      it("should handle alternating pattern in sender (0xAA, 0x55 repeating)", () => {
+        const sender = Buffer.alloc(32);
+        for (let i = 0; i < 32; i++) {
+          sender[i] = i % 2 === 0 ? 0xAA : 0x55;
+        }
+        const receiver = create32ByteBuffer(148);
+        const guid = create32ByteBuffer(149);
+        const message = Buffer.from([0x05]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.sender, sender);
+        // Verify the pattern
+        for (let i = 0; i < 32; i++) {
+          const expected = i % 2 === 0 ? 0xAA : 0x55;
+          assert.strictEqual(result.sender[i], expected, `Byte ${i} mismatch`);
+        }
+      });
+      
+      it("should handle message with all zeros", () => {
+        const sender = create32ByteBuffer(150);
+        const receiver = create32ByteBuffer(151);
+        const guid = create32ByteBuffer(152);
+        const message = Buffer.alloc(50, 0x00);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+        assert.ok(result.message.every((b: number) => b === 0x00));
+      });
+      
+      it("should handle message with all 0xFF bytes", () => {
+        const sender = create32ByteBuffer(153);
+        const receiver = create32ByteBuffer(154);
+        const guid = create32ByteBuffer(155);
+        const message = Buffer.alloc(50, 0xFF);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        assert.deepEqual(result.message, message);
+        assert.ok(result.message.every((b: number) => b === 0xFF));
+      });
+    });
+    
+    describe("buffer immutability (returned buffers are copies)", () => {
+      it("should return sender as a copy - mutating result should not affect input", () => {
+        const sender = create32ByteBuffer(160);
+        const originalSenderCopy = Buffer.from(sender);
+        const receiver = create32ByteBuffer(161);
+        const guid = create32ByteBuffer(162);
+        const message = Buffer.from([0x01, 0x02, 0x03]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        const originalPacketCopy = Buffer.from(packet);
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        // Mutate the result sender
+        result.sender[0] = 0xFF;
+        result.sender[31] = 0xAA;
+        
+        // Verify original packet is unchanged
+        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
+        
+        // Verify result sender is different from original
+        assert.notDeepEqual(result.sender, originalSenderCopy);
+      });
+      
+      it("should return guid as a copy - mutating result should not affect input", () => {
+        const sender = create32ByteBuffer(163);
+        const receiver = create32ByteBuffer(164);
+        const guid = create32ByteBuffer(165);
+        const originalGuidCopy = Buffer.from(guid);
+        const message = Buffer.from([0x04, 0x05, 0x06]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        const originalPacketCopy = Buffer.from(packet);
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        // Mutate the result guid
+        result.guid[0] = 0xFF;
+        result.guid[31] = 0xBB;
+        
+        // Verify original packet is unchanged
+        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
+        
+        // Verify result guid is different from original
+        assert.notDeepEqual(result.guid, originalGuidCopy);
+      });
+      
+      it("should return message as a copy - mutating result should not affect input", () => {
+        const sender = create32ByteBuffer(166);
+        const receiver = create32ByteBuffer(167);
+        const guid = create32ByteBuffer(168);
+        const message = Buffer.from([0x07, 0x08, 0x09, 0x0A, 0x0B]);
+        const originalMessageCopy = Buffer.from(message);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        const originalPacketCopy = Buffer.from(packet);
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        // Mutate the result message
+        result.message[0] = 0xFF;
+        result.message[4] = 0xCC;
+        
+        // Verify original packet is unchanged
+        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
+        
+        // Verify result message is different from original
+        assert.notDeepEqual(result.message, originalMessageCopy);
+      });
+      
+      it("should not share references between input and output - mutating input after decode", () => {
+        const sender = create32ByteBuffer(169);
+        const receiver = create32ByteBuffer(170);
+        const guid = create32ByteBuffer(171);
+        const message = Buffer.from([0x0C, 0x0D, 0x0E]);
+        
+        const packet = createLayerZeroPacket(
+          0x01,
+          BigInt(1),
+          30101,
+          sender,
+          30168,
+          receiver,
+          guid,
+          message
+        );
+        
+        const result = decodeLayerZeroPacket(packet);
+        
+        // Save copies of the decoded values
+        const decodedSenderCopy = Buffer.from(result.sender);
+        const decodedGuidCopy = Buffer.from(result.guid);
+        const decodedMessageCopy = Buffer.from(result.message);
+        
+        // Mutate the input packet after decoding
+        packet[13] = 0xFF; // Part of sender in packet
+        packet[81] = 0xEE; // Part of guid in packet
+        packet[113] = 0xDD; // Part of message in packet
+        
+        // Verify the decoded result is unchanged (was a copy)
+        assert.deepEqual(result.sender, decodedSenderCopy, "Decoded sender should be independent copy");
+        assert.deepEqual(result.guid, decodedGuidCopy, "Decoded guid should be independent copy");
+        assert.deepEqual(result.message, decodedMessageCopy, "Decoded message should be independent copy");
+      });
+    });
+    
+    describe("additional invalid version values", () => {
+      it("should throw error for version 0xFF", () => {
+        const packet = Buffer.alloc(113);
+        packet[0] = 0xFF;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Invalid packet version: 0xff \(expected 0x00 or 0x01\)/
+        );
+      });
+      
+      it("should throw error for version 0xFE", () => {
+        const packet = Buffer.alloc(113);
+        packet[0] = 0xFE;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Invalid packet version: 0xfe \(expected 0x00 or 0x01\)/
+        );
+      });
+      
+      it("should throw error for version 0x03", () => {
+        const packet = Buffer.alloc(113);
+        packet[0] = 0x03;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Invalid packet version: 0x03 \(expected 0x00 or 0x01\)/
+        );
+      });
+      
+      it("should throw error for version 0x10", () => {
+        const packet = Buffer.alloc(113);
+        packet[0] = 0x10;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Invalid packet version: 0x10 \(expected 0x00 or 0x01\)/
+        );
+      });
+      
+      it("should throw error for version 0x80", () => {
+        const packet = Buffer.alloc(113);
+        packet[0] = 0x80;
+        
+        assert.throws(
+          () => decodeLayerZeroPacket(packet),
+          /Invalid packet version: 0x80 \(expected 0x00 or 0x01\)/
+        );
+      });
+      
+      it("should include version byte in error message for multiple invalid values", () => {
+        const invalidVersions = [0x02, 0x05, 0x0A, 0x20, 0x7F, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
+        
+        for (const version of invalidVersions) {
+          const packet = Buffer.alloc(113);
+          packet[0] = version;
+          
+          assert.throws(
+            () => decodeLayerZeroPacket(packet),
+            new RegExp(`Invalid packet version: 0x${version.toString(16).padStart(2, '0')}`),
+            `Should throw for version 0x${version.toString(16).padStart(2, '0')}`
+          );
+        }
+      });
+    });
   });
 });
