@@ -6,7 +6,7 @@ This repository contains scripts for the construction of TransactionInstructions
 
 Each spell has its own directory under `scripts/`, containing:
 
-- **`generate-payload.ts`** → Builds the governance payload for the spell, writing it to a file (default: `{action}-{network}.txt` or `{action}-{stablecoin}-{network}.txt`).
+- **`generate-payload.ts`** → Builds the governance payload for the spell, writing it to a file
 - **`validate.ts`** → Verifies the generated payload by simulating the transaction and checking account state changes.
 
 Available spell directories:
@@ -42,29 +42,13 @@ yarn install
 | Variable  | Type | Description                                                          |
 | --------- | ---- | -------------------------------------------------------------------- |
 | NETWORK   | env  | Required. Sets the network: `devnet`, `mainnet`, or `surfpool`      |
-| STABLECOIN| env  | Optional. Sets the stablecoin type: `USDG`, `PYUSD`, or `CASH`      |
 
 ### Command Line Arguments
 
 | Argument      | Type   | Description                                                                                    |
 | ------------- | ------ | ---------------------------------------------------------------------------------------------- |
-| `--file` / `-f` | string | Optional. Output file name prefix. Defaults to `{action}-{network}.txt` or `{action}-{stablecoin}-{network}.txt` if STABLECOIN is set |
 | `--config` / `-c` | string | Required for some scripts. Path to a TypeScript config file (e.g., `configs/CASH-mainnet.ts`) |
-| `--packet-bytes` / `-b` | string | Optional (validate only). Hex string of LayerZero Packet bytes to decode and validate         |
-| `--bytes`     | string | Optional (validate only). Alternative to `--packet-bytes`. Can be `@/path/to/file` to read from file |
-
-### Basic Workflow
-
-1. **Generate the payload**
-
-   ```bash
-   NETWORK=devnet ts-node ./scripts/controller-manage-permission/generate-payload.ts --file manage-permissions.txt
-   ```
-
-2. **Validate the payload**
-   ```bash
-   NETWORK=devnet ts-node ./scripts/controller-manage-permission/validate.ts --file manage-permissions.txt
-   ```
+| `--bytes`     | string | Optional (validate only). Raw bytes to validate |
 
 ### Examples
 
