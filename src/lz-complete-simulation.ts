@@ -321,6 +321,8 @@ async function initializeLiteSvmWithPrograms(
     const governanceBinary = fs.readFileSync(governancePath);
     svm.addProgram(governanceProgram, governanceBinary);
     console.log(`   ✅ Loaded governance program (${Math.floor(governanceBinary.length / 1024)} KB)`);
+  } else {
+    console.warn(`   ⚠️  Governance program not found at ${governancePath} - simulation may fail`);
   }
   
   // Load LayerZero endpoint
@@ -638,11 +640,11 @@ export async function simulateLzCompleteCrossChainInstruction(
   console.log(`   ✅ Created and funded payer: ${payer.publicKey.toString()}`);
   
   // Step 4: Load essential governance accounts
-  console.log("📋 Step 3: Loading essential governance accounts");
+  console.log("📋 Step 4: Loading essential governance accounts");
   await loadEssentialGovernanceAccounts(svm, config, connection);
   
   // Step 5: Dynamically load all accounts referenced in instruction
-  console.log("🔍 Step 4: Dynamically loading instruction-specific accounts");
+  console.log("🔍 Step 5: Dynamically loading instruction-specific accounts");
   await loadInstructionAccounts(svm, instruction, connection);
   
   // Step 6: Create spoofed LayerZero accounts

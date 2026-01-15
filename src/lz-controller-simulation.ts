@@ -458,6 +458,10 @@ async function createSpoofedLayerZeroAccounts(
       const adjustedNonce = adjustNonceAccountData(existingNonce, config.nonce);
       svm.setAccount(nonceAccount, adjustedNonce);
       console.log(`   ✅ Adjusted nonce account: ${nonceAccount.toString()}`);
+    } else {
+      const newNonce = createNonceAccountData(config.nonce);
+      svm.setAccount(nonceAccount, newNonce);
+      console.log(`   ✅ Created nonce account: ${nonceAccount.toString()}`);
     }
   } catch (error) {
     const newNonce = createNonceAccountData(config.nonce);
@@ -758,15 +762,12 @@ export async function simulateControllerInstructionWithLayerZero(
   // Step 7: Execute simulation using RPC
   // Note: We simulate the target instruction directly (not through governance program)
   // because the governance program would deserialize the payload and execute this same
-  // instruction via CPI. By simulating the target instruction directly with all LayerZero
-  // accounts properly set up, we get equivalent validation results without needing the
-  // exact governance program instruction format.
-  console.log("🚀 Step 6: Executing simulation via RPC");
   try {
     const connection = new Connection(rpcUrl, "confirmed");
-    // Convert payload to instruction (this is what the governance program would execute)
-    const targetInstruction = convertLzSolanaGovernancePayloadToInstruction(
-      payload.serializedInstruction,
+
+     const accountStates = await simulateInstructions(connection, config.payer, [
+       targetInstruction,
+     ]);
       instruction.programId,
       config.cpiAuthority,
       config.payer
@@ -891,8 +892,7 @@ export async function simulateControllerPayloadWithLayerZeroForValidation(
   targetProgram: web3.PublicKey,
   payer: web3.PublicKey,
   cpiAuthority: web3.PublicKey,
-  nonce: bigint = 1n,
-  options: SimulationOptions = {}
+  nonce: bigint = 1n
 ): Promise<{ accountStates: SimulateResponse; payer: web3.PublicKey }> {
   const { simulatePayloadWithCompleteCrossChainFlow } = await import(
     "./lz-complete-simulation"
