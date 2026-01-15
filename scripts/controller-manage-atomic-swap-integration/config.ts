@@ -1,17 +1,12 @@
-import {
-  IntegrationStatus,
-} from "@keel-fi/svm-alm-controller";
+import { BaseControllerIntegrationConfig } from "../../src";
+import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
 
 export const ACTION = "controller-manage-atomic-swap-integration";
 
-export type ControllerManageAtomicSwapIntegrationConfig = {
-  outputFile: string;
-  controllerProgramId: string;
-  // Controller that the Integration applies to
-  controller: string;
-  // Authority that has permission to manage the integration
-  authority: string;
-  payer: string;
+export type ControllerManageAtomicSwapIntegrationConfig = Omit<
+  BaseControllerIntegrationConfig,
+  "status" | "description" | "rateLimitSlope" | "rateLimitMaxOutflow" | "permitLiquidation"
+> & {
   // Integration status (optional - null means no change)
   status: IntegrationStatus | null;
   // Description of the integration (optional - null means no change)
