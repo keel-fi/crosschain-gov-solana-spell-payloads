@@ -84,6 +84,13 @@ export interface CompleteSimulationConfig extends CrossChainConfig {
 
 /**
  * Create payload hash account data with Anchor discriminator
+ * 
+ * The payload hash is a LayerZero security mechanism used to prevent replay attacks.
+ * It's calculated as Keccak256(GUID + message) and stored in a PayloadHash PDA account
+ * owned by the LayerZero endpoint program. When a cross-chain message is received,
+ * LayerZero checks if this payload hash already exists - if it does, the message is
+ * rejected as a duplicate. This ensures each message can only be processed once,
+ * even if the same nonce is reused or the message is retransmitted.
  */
 function createPayloadHashAccountData(payloadHash: Buffer): Buffer {
   const discriminator = Buffer.from([96, 28, 106, 145, 103, 32, 186, 70]); // Anchor discriminator
@@ -96,6 +103,19 @@ function createPayloadHashAccountData(payloadHash: Buffer): Buffer {
 
 /**
  * Adjust nonce account data to allow target nonce
+ * 
+ * This function modifies an existing LayerZero nonce account owned by the
+ * LayerZero Endpoint Program to set the allowed inbound nonce value. The nonce
+ * account tracks both outbound and inbound nonces for cross-chain message
+ * ordering and replay protection.
+ * 
+ * Account structure (17 bytes):
+ * - [0]: bump seed (1 byte)
+ * - [1-8]: outbound nonce (8 bytes, little-endian u64)
+ * - [9-16]: inbound nonce (8 bytes, little-endian u64)
+ * 
+ * The allowed nonce is set to (targetNonce - 1) to ensure the target nonce
+ * can be accepted when the message is processed.
  */
 function adjustNonceAccountData(
   account: web3.AccountInfo<Buffer>,
@@ -115,7 +135,21 @@ function adjustNonceAccountData(
 }
 
 /**
- * Create nonce account data
+ * Create nonce account data for LayerZero Endpoint Program
+ * 
+ * Creates a new nonce account owned by the LayerZero Endpoint Program that
+ * tracks nonces for cross-chain message ordering and replay protection. This
+ * account is a PDA (Program Derived Address) derived from the OApp, source
+ * endpoint ID, and sender address.
+ * 
+ * Account structure (17 bytes):
+ * - [0]: bump seed (1 byte, set to 255 for simulation)
+ * - [1-8]: outbound nonce (8 bytes, little-endian u64, initialized to 0)
+ * - [9-16]: inbound nonce (8 bytes, little-endian u64, set to targetNonce - 1)
+ * 
+ * The inbound nonce is set to (targetNonce - 1) to ensure the target nonce
+ * can be accepted when the cross-chain message is processed by the LayerZero
+ * Endpoint Program's lz_receive instruction.
  */
 function createNonceAccountData(targetNonce: bigint): web3.AccountInfo<Buffer> {
   const data = Buffer.alloc(17);
@@ -215,44 +249,28 @@ async function loadAccount(
     return;
   }
   
-  try {
-    const accountData = await safeGetAccountInfo(connection, pubkey);
-    if (accountData) {
-      const fixedAccount = fixRentEpoch(accountData);
-      
-      // Skip executable accounts - they should be loaded via addProgram
-      if (fixedAccount.executable) {
-        console.log(`   ⚠️  Skipped executable ${logPrefix} (use addProgram): ${pubkey.toString()}`);
-        return;
-      }
-      
-      try {
-        svm.setAccount(pubkey, fixedAccount);
-        console.log(`   ✅ Loaded ${logPrefix}: ${pubkey.toString()}`);
-      } catch (setError: any) {
-        // If setAccount fails, try creating a minimal account
-        try {
-          createMinimalAccount(svm, pubkey);
-          console.log(`   ✅ Created minimal ${logPrefix} (setAccount failed): ${pubkey.toString()}`);
-        } catch {
-          console.log(`   ⚠️  Skipped ${logPrefix} (all attempts failed): ${pubkey.toString()}`);
-        }
-      }
-    } else {
-      try {
-        createMinimalAccount(svm, pubkey);
-        console.log(`   ✅ Created minimal ${logPrefix}: ${pubkey.toString()}`);
-      } catch {
-        console.log(`   ⚠️  Skipped ${logPrefix} (could not create): ${pubkey.toString()}`);
-      }
+  const accountData = await safeGetAccountInfo(connection, pubkey);
+  if (accountData) {
+    const fixedAccount = fixRentEpoch(accountData);
+    
+    // Skip executable accounts - they should be loaded via addProgram
+    if (fixedAccount.executable) {
+      return;
     }
-  } catch {
+    
     try {
-      createMinimalAccount(svm, pubkey);
-      console.log(`   ✅ Created minimal ${logPrefix} (error): ${pubkey.toString()}`);
+      svm.setAccount(pubkey, fixedAccount);
+      return;
     } catch {
-      console.log(`   ⚠️  Skipped ${logPrefix} (all attempts failed): ${pubkey.toString()}`);
+      // If setAccount fails, fall through to create minimal account
     }
+  }
+  
+  // Create minimal account if account doesn't exist or setAccount failed
+  try {
+    createMinimalAccount(svm, pubkey);
+  } catch {
+    // Silently fail if we can't create the account
   }
 }
 
@@ -288,7 +306,6 @@ async function loadProgramFromRpc(
           if (programDataAccount.data.length > PROGRAM_DATA_HEADER_SIZE) {
             const programBytecode = programDataAccount.data.slice(PROGRAM_DATA_HEADER_SIZE);
             svm.addProgram(programId, programBytecode);
-            console.log(`   ✅ Loaded program from RPC: ${programId.toString()} (${Math.floor(programBytecode.length / 1024)} KB)`);
             return true;
           }
         }
@@ -296,11 +313,10 @@ async function loadProgramFromRpc(
     } else {
       // For non-upgradeable programs, the data is the bytecode directly
       svm.addProgram(programId, programAccount.data);
-      console.log(`   ✅ Loaded program from RPC: ${programId.toString()} (${Math.floor(programAccount.data.length / 1024)} KB)`);
       return true;
     }
-  } catch (error) {
-    console.log(`   ⚠️  Could not load program from RPC: ${programId.toString()}`);
+  } catch {
+    // Silently fail if program can't be loaded
   }
   return false;
 }
@@ -320,9 +336,6 @@ async function initializeLiteSvmWithPrograms(
   if (fs.existsSync(governancePath)) {
     const governanceBinary = fs.readFileSync(governancePath);
     svm.addProgram(governanceProgram, governanceBinary);
-    console.log(`   ✅ Loaded governance program (${Math.floor(governanceBinary.length / 1024)} KB)`);
-  } else {
-    console.warn(`   ⚠️  Governance program not found at ${governancePath} - simulation may fail`);
   }
   
   // Load LayerZero endpoint
@@ -330,7 +343,6 @@ async function initializeLiteSvmWithPrograms(
   if (fs.existsSync(endpointPath)) {
     const endpointBinary = fs.readFileSync(endpointPath);
     svm.addProgram(LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM, endpointBinary);
-    console.log(`   ✅ Loaded LayerZero endpoint (${Math.floor(endpointBinary.length / 1024)} KB)`);
   }
   
   // Load memo program
@@ -338,7 +350,6 @@ async function initializeLiteSvmWithPrograms(
   if (fs.existsSync(memoPath)) {
     const memoBinary = fs.readFileSync(memoPath);
     svm.addProgram(LayerZeroConfig.MEMO_PROGRAM, memoBinary);
-    console.log(`   ✅ Loaded memo program (${Math.floor(memoBinary.length / 1024)} KB)`);
   }
   
   return svm;
@@ -383,10 +394,7 @@ async function loadInstructionAccounts(
   // Load target program if not already loaded
   // Try to load from RPC using addProgram (for upgradeable programs)
   if (!svm.getAccount(instruction.programId)) {
-    const loaded = await loadProgramFromRpc(svm, connection, instruction.programId);
-    if (!loaded) {
-      console.log(`   ⚠️  Target program not loaded: ${instruction.programId.toString()}`);
-    }
+    await loadProgramFromRpc(svm, connection, instruction.programId);
   }
 }
 
@@ -417,24 +425,15 @@ async function createCompleteSpoofedAccounts(
     executable: false,
     rentEpoch: 0,
   });
-  console.log(`   ✅ Created PayloadHash account: ${payloadHashAccount.toString()}`);
   
   // Create or adjust nonce account
-  try {
-    const existingNonce = await connection.getAccountInfo(nonceAccount);
-    if (existingNonce) {
-      const adjustedNonce = adjustNonceAccountData(existingNonce, config.nonce);
-      svm.setAccount(nonceAccount, fixRentEpoch(adjustedNonce));
-      console.log(`   ✅ Adjusted nonce account: ${nonceAccount.toString()}`);
-    } else {
-      const newNonce = createNonceAccountData(config.nonce);
-      svm.setAccount(nonceAccount, newNonce);
-      console.log(`   ✅ Created nonce account: ${nonceAccount.toString()}`);
-    }
-  } catch {
+  const existingNonce = await safeGetAccountInfo(connection, nonceAccount);
+  if (existingNonce) {
+    const adjustedNonce = adjustNonceAccountData(existingNonce, config.nonce);
+    svm.setAccount(nonceAccount, fixRentEpoch(adjustedNonce));
+  } else {
     const newNonce = createNonceAccountData(config.nonce);
     svm.setAccount(nonceAccount, newNonce);
-    console.log(`   ✅ Created nonce account: ${nonceAccount.toString()}`);
   }
   
   // Load governance account
@@ -461,7 +460,6 @@ async function createCompleteSpoofedAccounts(
     executable: false,
     rentEpoch: 0,
   });
-  console.log(`   ✅ Created CPI Authority: ${cpiAuthority.toString()}`);
   
   // Create EndpointSettings account
   const [endpointSettings, endpointBump] = web3.PublicKey.findProgramAddressSync(
@@ -476,7 +474,6 @@ async function createCompleteSpoofedAccounts(
     executable: false,
     rentEpoch: 0,
   });
-  console.log(`   ✅ Created EndpointSettings: ${endpointSettings.toString()}`);
 }
 
 /**
@@ -502,15 +499,13 @@ async function executeLzReceive(
   }
   
   const lzReceiveAccounts = lzReceiveInstruction.accounts;
-  console.log(`   📋 Found ${lzReceiveAccounts.length} accounts for lz_receive`);
   
   // Resolve AddressLocator to actual AccountMeta
   const resolvedAccounts: web3.AccountMeta[] = [];
   for (let i = 0; i < lzReceiveAccounts.length; i++) {
     const accountRef = lzReceiveAccounts[i];
     const accountMeta = resolveAccountMeta(accountRef, payer.publicKey);
-    console.log(`   [${i}] ${accountMeta.pubkey.toString()} (signer: ${accountMeta.isSigner}, writable: ${accountMeta.isWritable})`);
-    
+
     // Ensure account exists in SVM (load from mainnet if needed)
     await loadAccount(svm, connection, accountMeta.pubkey, `lz_receive account [${i}]`);
     
@@ -524,8 +519,6 @@ async function executeLzReceive(
     lzParams
   );
   
-  console.log(`   📦 Instruction data: ${lzReceiveIx.data.length} bytes`);
-  
   // Build and send transaction
   const blockhash = svm.latestBlockhash();
   const messageV0 = new web3.TransactionMessage({
@@ -537,30 +530,16 @@ async function executeLzReceive(
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  console.log("   🔗 Sending lz_receive transaction...");
-  
   const result = svm.sendTransaction(transaction);
   
   // Check if it's a failure
   if (result instanceof FailedTransactionMetadata) {
     const logs = result.meta().logs();
-    console.log("   ❌ lz_receive execution failed!");
-    console.log(`   🔥 Error: ${result.err()}`);
-    console.log(`\n📜 FAILURE LOGS (${logs.length} entries):`);
-    for (let i = 0; i < logs.length; i++) {
-      console.log(`   [${i + 1}] ${logs[i]}`);
-    }
-    
     return { logs, success: false, signature: "failed" };
   }
   
   // Success
   const logs = result.logs();
-  console.log("   ✅ lz_receive executed successfully!");
-  console.log(`\n📜 SUCCESS LOGS (${logs.length} entries):`);
-  for (let i = 0; i < logs.length; i++) {
-    console.log(`   [${i + 1}] ${logs[i]}`);
-  }
   
   const signature = result.signature().toString();
   return { logs, success: true, signature };
@@ -614,14 +593,11 @@ export async function simulateLzCompleteCrossChainInstruction(
   instruction: web3.TransactionInstruction,
   config: CompleteSimulationConfig
 ): Promise<LzCompleteSimulationResult> {
-  console.log("🚀 Starting complete cross-chain simulation...");
-  
   const connection = new Connection(getRpcUrl(), "confirmed");
   
   // Step 1: Generate cross-chain payload
   console.log("📦 Step 1: Generating cross-chain payload");
   const payload = generateCrossChainPayload(instruction, config);
-  console.log(`   ✅ Generated ${payload.serializedInstruction.length} byte payload`);
   
   // Step 2: Initialize LiteSVM
   console.log("🔧 Step 2: Initializing LiteSVM environment");
@@ -637,7 +613,6 @@ export async function simulateLzCompleteCrossChainInstruction(
     executable: false,
     rentEpoch: 0,
   });
-  console.log(`   ✅ Created and funded payer: ${payer.publicKey.toString()}`);
   
   // Step 4: Load essential governance accounts
   console.log("📋 Step 4: Loading essential governance accounts");
@@ -719,8 +694,6 @@ export async function simulateLzCompleteCrossChainInstruction(
     
     const accountStates = getAccountStates(svm, uniqueKeys, preState);
     
-    console.log("✅ Complete simulation finished!");
-    
     return {
       serializedPayload: payload.serializedInstruction,
       transactionSignature: signature,
@@ -732,8 +705,6 @@ export async function simulateLzCompleteCrossChainInstruction(
       error: success ? undefined : `Simulation failed`,
     };
   } catch (error: any) {
-    console.error("❌ Simulation failed:", error);
-    
     const accountStates = getAccountStates(svm, uniqueKeys, preState);
     
     return {
@@ -801,16 +772,6 @@ export async function simulatePayloadWithCompleteCrossChainFlow(
   const result = await simulateLzCompleteCrossChainInstruction(instruction, config);
   
   if (!result.success) {
-    // Log detailed error info but also show the execution logs for debugging
-    console.log("\n⚠️  Cross-chain simulation completed with errors:");
-    console.log(`   Error: ${result.error}`);
-    if (result.executionLogs.length > 0) {
-      console.log("   Last 5 execution logs:");
-      const lastLogs = result.executionLogs.slice(-5);
-      for (const log of lastLogs) {
-        console.log(`     ${log}`);
-      }
-    }
     throw new Error(`Complete simulation failed: ${result.error}. Check logs above for details.`);
   }
   
