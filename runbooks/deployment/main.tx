@@ -1,0 +1,21 @@
+################################################################
+# Manage crosschain payload deployments
+################################################################
+
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+variable "svm_alm_controller_file" {
+  description = "Path to the SVM ALM controller .so file"
+  value = input.svm_alm_controller_file
+  editable = true
+}
+
+action "setup" "svm::setup_surfnet" {
+    deploy_program {
+        program_id = "ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd"
+        binary_path = variable.svm_alm_controller_file
+    }
+}
