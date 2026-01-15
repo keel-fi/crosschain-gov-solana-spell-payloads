@@ -28,7 +28,6 @@ import {
   SKY_LZ_GOVERNANCE_ACCOUNT,
   LayerZeroConfig,
   EthereumAddresses,
-  KEEL_SUB_PROXY_CPI_AUTHORITY,
 } from "./constants";
 import { getRpcUrl, ethereumAddressToBytes32 } from "./utils";
 import { SimulateResponse } from "./simulation-utils";
@@ -40,10 +39,7 @@ import {
   createLzReceiveInstruction,
   createLzReceiveParams,
 } from "./lz-receive-types-v2";
-import {
-  convertLzSolanaGovernancePayloadToInstruction,
-  deserializeLzGovernancePayloadWithPlaceholders,
-} from "./lz-governance-codec";
+import { deserializeLzInstruction } from "./lz-governance-codec";
 
 // Default directory for mainnet programs
 const MAINNET_PROGRAMS_DIR = "./mainnet_programs";
@@ -760,9 +756,9 @@ export async function simulatePayloadWithCompleteCrossChainFlow(
   // Deserialize instruction WITHOUT replacing placeholders
   // This allows the governance program to recognize placeholders and return
   // AddressLocator::Payer for LZ_PAYER_PLACEHOLDER, etc.
-  const instruction = deserializeLzGovernancePayloadWithPlaceholders(
+  const instruction = deserializeLzInstruction(
+    targetProgram,
     payload,
-    targetProgram
   );
   
   // Create config - the payer here is used for account states comparison only

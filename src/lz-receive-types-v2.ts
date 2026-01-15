@@ -11,7 +11,6 @@
 import { web3 } from "@coral-xyz/anchor";
 import { createHash } from "crypto";
 import { LiteSVM } from "litesvm";
-import { SKY_LZ_GOVERNANCE_PROGRAM_ID } from "./constants";
 
 /**
  * Parameters for lz_receive instruction (matches LayerZero SDK)
