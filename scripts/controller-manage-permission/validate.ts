@@ -4,7 +4,7 @@ import {
   assertNoAccountChanges,
   readAndValidateNetworkConfig,
   readArgs,
-  readPayloadFile,
+  readPayloadOrDecodePacket,
   simulateControllerPayloadWithLayerZeroForValidation,
   validateSuccess,
 } from "../../src";
@@ -24,7 +24,12 @@ import {
 const main = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  const payload = readPayloadOrDecodePacket({
+    file: args.file as string | undefined,
+    packetBytes,
+  });
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.superAuthority);
 
@@ -137,7 +142,9 @@ const main = async () => {
     `Permission mismatch:\nExpected: ${JSON.stringify(EXPECTED_PERMISSIONS, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
 
-  validateSuccess(args.file);
+  // Use file path for success message if available, otherwise indicate Packet bytes were used
+  const sourceName = packetBytes ? "Packet bytes" : (args.file as string);
+  validateSuccess(sourceName);
 };
 
 main();

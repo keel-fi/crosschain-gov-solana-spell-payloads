@@ -65,11 +65,30 @@ export const deserializeLzInstruction = (
   payload: Buffer
 ): web3.TransactionInstruction => {
   let offset = 0;
+  
+  if (payload.length < 2) {
+    throw new Error(
+      `Payload too short: ${payload.length} bytes (minimum 2 bytes for account length)`
+    );
+  }
+  
   const accountLen = payload.readUInt16BE(offset);
   offset += 2;
 
+  const expectedMinLength = 2 + accountLen * SERIALIZED_ACCOUNT_LEN;
+  if (payload.length < expectedMinLength) {
+    throw new Error(
+      `Payload too short: ${payload.length} bytes (expected at least ${expectedMinLength} bytes for ${accountLen} accounts)`
+    );
+  }
+
   const accounts: web3.AccountMeta[] = [];
   for (let i = 0; i < accountLen; i++) {
+    if (offset + SERIALIZED_ACCOUNT_LEN > payload.length) {
+      throw new Error(
+        `Not enough bytes for account ${i + 1}/${accountLen}: offset ${offset}, need ${SERIALIZED_ACCOUNT_LEN} bytes, but only ${payload.length - offset} bytes remaining`
+      );
+    }
     const serializedAccount = payload.subarray(
       offset,
       offset + SERIALIZED_ACCOUNT_LEN

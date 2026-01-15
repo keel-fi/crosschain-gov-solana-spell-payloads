@@ -11,6 +11,7 @@ import {
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
 import { SURFPOOL_URL } from "./constants";
+import { extractGovernancePayloadFromHex } from "./lz-packet-decoder";
 
 export type Network = "devnet" | "mainnet" | "surfpool";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";
@@ -122,11 +123,20 @@ export const readArgs = (action: string) => {
         type: "boolean",
         short: "s",
       },
+      "packet-bytes": {
+        type: "string",
+        short: "b",
+      },
+      bytes: {
+        type: "string",
+      },
     },
   }).values;
 
-  if (!args.file) {
-    throw new Error("Must include file prefix '--file [FILE_NAME]'");
+  // If packet bytes are provided, file is optional
+  // Otherwise, file is required
+  if (!args["packet-bytes"] && !args.bytes && !args.file) {
+    throw new Error("Must include either '--file [FILE_NAME]' or '--packet-bytes [HEX_BYTES]' or '--bytes [HEX_BYTES]'");
   }
 
   return args;
@@ -140,6 +150,41 @@ export const readPayloadFile = (file: string): Buffer => {
     encoding: "utf-8",
   });
   return Buffer.from(payloadString, "hex");
+};
+
+/**
+ * Read payload from file or decode from LayerZero Packet bytes
+ * 
+ * If packetBytes is provided (via --packet-bytes or --bytes CLI arg),
+ * it will decode the full LayerZero Packet and extract the governance payload.
+ * Otherwise, it will read the payload from the file (existing behavior).
+ * 
+ * @param options - Object with optional file path and/or packet bytes
+ * @returns The governance payload (instruction data) as Buffer
+ */
+export const readPayloadOrDecodePacket = (options: {
+  file?: string;
+  packetBytes?: string;
+}): Buffer => {
+  // If packet bytes are provided, decode the Packet
+  if (options.packetBytes) {
+    // Handle file path format (--bytes @/path/to/file)
+    if (options.packetBytes.startsWith("@")) {
+      const filePath = options.packetBytes.slice(1);
+      const fileContent = fs.readFileSync(filePath, { encoding: "utf-8" });
+      return extractGovernancePayloadFromHex(fileContent.trim());
+    } else {
+      // Direct hex string
+      return extractGovernancePayloadFromHex(options.packetBytes);
+    }
+  }
+
+  // Otherwise, use existing file-based behavior
+  if (!options.file) {
+    throw new Error("Either file or packetBytes must be provided");
+  }
+
+  return readPayloadFile(options.file);
 };
 
 /**
