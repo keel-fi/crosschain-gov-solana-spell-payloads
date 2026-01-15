@@ -11,7 +11,7 @@ import {
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
 import { SURFPOOL_URL } from "./constants";
-import { extractGovernancePayloadFromHex } from "./lz-packet-decoder";
+import { extractGovernancePayloadFromHex } from "./lz/lz-packet-decoder";
 
 export type Network = "devnet" | "mainnet" | "surfpool";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";

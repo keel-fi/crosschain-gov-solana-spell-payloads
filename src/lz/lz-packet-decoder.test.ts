@@ -4,7 +4,7 @@ import {
   extractGovernancePayloadFromPacket,
   decodeLayerZeroPacket,
 } from "./lz-packet-decoder";
-import { SERIALIZED_ACCOUNT_LEN } from "./shared-governance-codec";
+import { SERIALIZED_ACCOUNT_LEN } from "../shared-governance-codec";
 
 /**
  * Helper function to create valid instruction data with deterministic pubkeys

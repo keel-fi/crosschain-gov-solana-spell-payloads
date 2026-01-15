@@ -7,8 +7,8 @@
 
 import { Buffer } from "buffer";
 import { LzReceiveParams } from "./lz-receive-types-v2";
-import { extractInstructionData } from "./xchain-gov-payload";
-import { hexStringToBytes } from "./utils";
+import { extractInstructionData } from "../xchain-gov-payload";
+import { hexStringToBytes } from "../utils";
 
 /**
  * Decode a LayerZero Packet from raw bytes

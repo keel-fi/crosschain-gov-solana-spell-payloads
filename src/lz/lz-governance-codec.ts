@@ -4,7 +4,7 @@ import {
   generateSentinelPubkey,
   serializeAccountToBytes,
   SERIALIZED_ACCOUNT_LEN,
-} from "./shared-governance-codec";
+} from "../shared-governance-codec";
 
 const EXECUTOR_ID = new web3.PublicKey(
   "6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn"

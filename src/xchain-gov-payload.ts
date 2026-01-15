@@ -10,7 +10,7 @@ import { createHash } from "crypto";
 import keccak from "keccak";
 import {
   convertInstructionToSolanaGovernancePayload,
-} from "./lz-governance-codec";
+} from "./lz/lz-governance-codec";
 
 /**
  * Configuration for cross-chain governance simulation

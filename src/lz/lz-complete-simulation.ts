@@ -17,20 +17,20 @@ import {
   generateCrossChainPayload,
   CrossChainConfig,
   CrossChainPayload,
-} from "./xchain-gov-payload";
+} from "../xchain-gov-payload";
 import {
   deriveLayerZeroAccounts,
   deriveRemoteAccount,
   deriveCpiAuthority,
-} from "./xchain-gov-spoof";
+} from "../xchain-gov-spoof";
 import {
   SKY_LZ_GOVERNANCE_PROGRAM_ID,
   SKY_LZ_GOVERNANCE_ACCOUNT,
   LayerZeroConfig,
   EthereumAddresses,
-} from "./constants";
-import { getRpcUrl, ethereumAddressToBytes32 } from "./utils";
-import { SimulateResponse } from "./simulation-utils";
+} from "../constants";
+import { getRpcUrl, ethereumAddressToBytes32 } from "../utils";
+import { SimulateResponse } from "../simulation-utils";
 import {
   LzReceiveParams,
   LzReceiveTypesV2Result,
