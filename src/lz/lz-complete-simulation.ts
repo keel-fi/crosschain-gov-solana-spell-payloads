@@ -619,11 +619,11 @@ export async function simulateLzCompleteCrossChainInstruction(
   await loadInstructionAccounts(svm, instruction, connection);
   
   // Step 6: Create spoofed LayerZero accounts
-  console.log("🎭 Step 5: Creating spoofed LayerZero accounts");
+  console.log("🎭 Step 6: Creating spoofed LayerZero accounts");
   await createCompleteSpoofedAccounts(svm, payload, config, connection);
   
   // Step 7: Call lz_receive_types_v2 to get account resolution
-  console.log("📋 Step 6: Calling lz_receive_types_v2 for account resolution");
+  console.log("📋 Step 7: Calling lz_receive_types_v2 for account resolution");
   const senderBuffer = Buffer.from(config.sender);
   const lzParams = createLzReceiveParams(
     config.srcEid,
@@ -677,7 +677,7 @@ export async function simulateLzCompleteCrossChainInstruction(
   }
   
   // Step 8: Build and execute real lz_receive instruction
-  console.log("🚀 Step 7: Building and executing real lz_receive instruction");
+  console.log("🚀 Step 8: Building and executing real lz_receive instruction");
   try {
     const { logs, success, signature } = await executeLzReceive(
       svm,

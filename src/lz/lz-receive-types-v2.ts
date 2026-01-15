@@ -395,7 +395,6 @@ export function resolveAccountMeta(
   accountRef: ParsedAccountMetaWithLocator,
   payer: web3.PublicKey,
   context?: web3.PublicKey,
-  alts?: web3.PublicKey[]
 ): web3.AccountMeta {
   let pubkey: web3.PublicKey;
   // Use the signer status from the execution plan, but Payer is always a signer
