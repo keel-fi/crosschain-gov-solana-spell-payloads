@@ -4,7 +4,7 @@ import {
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   MAINNET_PAYER,
-  ATOMIC_SWAP_PYUSD_INTEGRATION,
+  ATOMIC_SWAP_PYUSD_TO_USDC_INTEGRATION,
 } from "../../../src";
 
 export default {
@@ -17,5 +17,5 @@ export default {
   description: null,
   rateLimitSlope: null,
   rateLimitMaxOutflow: null,
-  integration: ATOMIC_SWAP_PYUSD_INTEGRATION,
+  integration: ATOMIC_SWAP_PYUSD_TO_USDC_INTEGRATION,
 };

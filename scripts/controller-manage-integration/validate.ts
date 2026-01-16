@@ -71,7 +71,8 @@ const main = async () => {
 
   // Assert integration exists and changes
   const integrationResp = resp[config.integration];
-  assert(integrationResp.after, "Integration should exist");
+  assert(integrationResp.before, "Integration should before exist");
+  assert(integrationResp.after, "Integration should after exist");
   assert.notDeepEqual(
     integrationResp.after.data,
     integrationResp.before.data,
