@@ -72,11 +72,37 @@ const main = async () => {
 
   // Validate controller data matches config
   const controllerCodec = getControllerCodec();
-  const [controller] = controllerCodec.read(controllerResp.after.data, 1);
+  const [controllerAfter] = controllerCodec.read(controllerResp.after.data, 1);
+  const [controllerBefore] = controllerCodec.read(controllerResp.before.data, 1);
   assert.equal(
-    controller.status,
+    controllerAfter.status,
     config.status,
     "Controller status should match config"
+  );
+  assert.equal(
+    controllerBefore.authority.toString(),
+    controllerAfter.authority.toString(),
+    "Controller authority should match after"
+  );
+  assert.equal(
+    controllerBefore.authorityBump,
+    controllerAfter.authorityBump,
+    "Controller authority bump should match after"
+  );
+  assert.equal(
+    controllerBefore.bump,
+    controllerAfter.bump,
+    "Controller bump should match after"
+  );
+  assert.equal(
+    controllerBefore.id,
+    controllerAfter.id,
+    "Controller id should match after"
+  );
+  assert.equal(
+    controllerBefore.padding,
+    controllerAfter.padding,
+    "Controller padding should match after"
   );
 
   validateSuccess(args.file);

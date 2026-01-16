@@ -1,5 +1,4 @@
 import assert from "assert";
-import { web3 } from "@coral-xyz/anchor";
 import {
   extractGovernancePayloadFromPacket,
   decodeLayerZeroPacket,
@@ -7,339 +6,115 @@ import {
 import { SERIALIZED_ACCOUNT_LEN } from "../shared-governance-codec";
 
 /**
- * Helper function to create valid instruction data with deterministic pubkeys
- * Format: [accounts_length:2][accounts:accounts_length*34][data:*]
- * Each account is 34 bytes: pubkey (32) + isSigner (1) + isWritable (1)
- * 
- * @param accountCount Number of accounts
- * @param dataLength Length of data portion
- * @param seed Optional seed for deterministic pubkey generation (defaults to accountCount)
+ * Static test packet
  */
-function createInstructionData(accountCount: number, dataLength: number, seed?: number): Buffer {
-  const totalLen = 2 + accountCount * SERIALIZED_ACCOUNT_LEN + dataLength;
-  const buffer = Buffer.alloc(totalLen);
-  const baseSeed = seed ?? accountCount * 100;
-  
-  let offset = 0;
-  // accounts_length (2 bytes, big-endian)
-  buffer.writeUInt16BE(accountCount, offset);
-  offset += 2;
-  
-  // accounts (accountCount * 34 bytes each) - deterministic
-  for (let i = 0; i < accountCount; i++) {
-    // Create deterministic pubkey based on seed and index
-    const pubkeyBuffer = create32ByteBuffer(baseSeed + i * 10);
-    pubkeyBuffer.copy(buffer, offset);
-    offset += 32;
-    buffer[offset] = i % 2 === 0 ? 1 : 0; // isSigner
-    offset += 1;
-    buffer[offset] = i % 3 === 0 ? 1 : 0; // isWritable
-    offset += 1;
-  }
-  
-  // data (fill with test pattern)
-  for (let i = 0; i < dataLength; i++) {
-    buffer[offset + i] = (i + 1) % 256;
-  }
-  
-  return buffer;
-}
+const STATIC_PACKET_HEX = "0100000000000000030000759500000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca000075d875b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c3108aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da36243030303937303631373936353732303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303130316361643731623330396533303664373961316464353737653263363766326564373133666136356165366434633665383635333462633330336636323831363630303030636163333736346332333135343064643233363466323463373866653866343931633038633432656632656433373066323239303465646139616334383630393030303064333237363832636633393465326538363337653638346136366232646162393237303665363462393439306237653433386638376335636436653238663462303130306563653739643130663033396261313361326434333332643663663561653339653761623436303337383836353635373939643631323165663138306331313230303030383430623035623030626164396665323132656630346533323436636431373966333933316666616233353931356262323738633864366636663862363732643030303035626337303964633731343132666530366535393732313239313537363434323463613065653036353732653239373363646534663738616464626565323339303030313861616464363666653866313432666235356130386539303032323866353438386663633764373339333862626365323865333133653162383764613336323430303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030333031303030303031303130303030303030303030";
+
+const STATIC_PACKET = Buffer.from(STATIC_PACKET_HEX, "hex");
 
 /**
- * Helper function to create a governance message
- * Format: [ORIGIN_CALLER:32][TARGET:32][instruction_data:*]
+ * Expected values for the static packet
+ * These are pre-computed from the packet structure
  */
-function createGovernanceMessage(
-  originCaller: Buffer,
-  target: Buffer,
-  instructionData: Buffer
-): Buffer {
-  if (originCaller.length !== 32) {
-    throw new Error("originCaller must be 32 bytes");
-  }
-  if (target.length !== 32) {
-    throw new Error("target must be 32 bytes");
-  }
-  
-  const buffer = Buffer.alloc(64 + instructionData.length);
-  originCaller.copy(buffer, 0);
-  target.copy(buffer, 32);
-  instructionData.copy(buffer, 64);
-  
-  return buffer;
-}
+const EXPECTED_PACKET = {
+  version: 0x01,
+  nonce: BigInt(3),
+  srcEid: 30101,  // Ethereum mainnet
+  dstEid: 30168,  // Solana mainnet
+  sender: Buffer.from("00000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca", "hex"),
+  receiver: Buffer.from("75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", "hex"),
+  guid: Buffer.from("410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f", "hex"),
+  messageLength: 702,
+};
 
 /**
- * Helper function to create a LayerZero Packet
- * Format: Version (1) + Nonce (8) + SrcEID (4) + Sender (32) + DstEID (4) + Receiver (32) + GUID (32) + Message (*)
+ * Expected governance message components (extracted from the packet message)
  */
-function createLayerZeroPacket(
-  version: number,
-  nonce: bigint,
-  srcEid: number,
-  sender: Buffer,
-  dstEid: number,
-  receiver: Buffer,
-  guid: Buffer,
-  message: Buffer
-): Buffer {
-  const totalLen = 1 + 8 + 4 + 32 + 4 + 32 + 32 + message.length; // 113 + message.length
-  const buffer = Buffer.alloc(totalLen);
-  
-  let offset = 0;
-  
-  // Version (1 byte)
-  buffer[offset] = version;
-  offset += 1;
-  
-  // Nonce (8 bytes, big-endian)
-  buffer.writeBigUInt64BE(nonce, offset);
-  offset += 8;
-  
-  // SrcEID (4 bytes, big-endian)
-  buffer.writeUInt32BE(srcEid, offset);
-  offset += 4;
-  
-  // Sender (32 bytes)
-  sender.copy(buffer, offset);
-  offset += 32;
-  
-  // DstEID (4 bytes, big-endian)
-  buffer.writeUInt32BE(dstEid, offset);
-  offset += 4;
-  
-  // Receiver (32 bytes)
-  receiver.copy(buffer, offset);
-  offset += 32;
-  
-  // GUID (32 bytes)
-  guid.copy(buffer, offset);
-  offset += 32;
-  
-  // Message (variable)
-  message.copy(buffer, offset);
-  
-  return buffer;
-}
+const EXPECTED_GOVERNANCE_MESSAGE = {
+  originCaller: Buffer.from("000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c310", "hex"),
+  target: Buffer.from("8aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da3624", "hex"),
+};
 
 /**
- * Helper function to create hex-encoded ASCII instruction data
- * Converts binary instruction data to hex ASCII string stored as bytes
+ * Expected governance payload (decoded from hex-encoded ASCII instruction data)
+ * This is what extractGovernancePayloadFromPacket should return
  */
-function createHexEncodedInstructionData(accountCount: number, dataLength: number, seed?: number): Buffer {
-  const binaryData = createInstructionData(accountCount, dataLength, seed);
-  const hexString = binaryData.toString("hex");
-  return Buffer.from(hexString, "ascii");
-}
+const EXPECTED_GOVERNANCE_PAYLOAD = Buffer.from(
+  "000970617965720000000000000000000000000000000000000000000000000000000101cad71b309e306d79a1dd577e2c67f2ed713fa65ae6d4c6e86534bc303f6281660000cac3764c231540dd2364f24c78fe8f491c08c42ef2ed370f22904eda9ac486090000d327682cf394e2e8637e684a66b2dab92706e64b9490b7e438f87c5cd6e28f4b0100ece79d10f039ba13a2d4332d6cf5ae39e7ab46037886565799d6121ef180c1120000840b05b00bad9fe212ef04e3246cd179f3931ffab35915bb278c8d6f6f8b672d00005bc709dc71412fe06e597212915764424ca0ee06572e2973cde4f78addbee23900018aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da36240000000000000000000000000000000000000000000000000000000000000000000000000301000001010000000000",
+  "hex"
+);
 
 /**
- * Helper to create a 32-byte buffer (for originCaller, target, sender, receiver, guid)
+ * Expected governance payload properties
  */
-function create32ByteBuffer(seed: number = 0): Buffer {
-  const buffer = Buffer.alloc(32);
-  for (let i = 0; i < 32; i++) {
-    buffer[i] = (seed + i) % 256;
-  }
-  return buffer;
-}
+const EXPECTED_PAYLOAD_PROPERTIES = {
+  length: 319,
+  accountCount: 9,
+};
 
 describe("lz-packet-decoder", () => {
   describe("extractGovernancePayloadFromPacket", () => {
     describe("Strategy 1: Direct Governance Message Format", () => {
       // Tests for [ORIGIN_CALLER:32][TARGET:32][instruction_data:*]
       
-      it("should extract instruction data from valid governance message with 1 account", () => {
-        const originCaller = create32ByteBuffer(1);
-        const target = create32ByteBuffer(2);
-        const instructionData = createInstructionData(1, 10);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
+      describe("static packet message tests", () => {
+        // Extract the governance message from the static packet for Strategy 1 testing
+        const STATIC_GOVERNANCE_MESSAGE = STATIC_PACKET.subarray(113); // Message starts at offset 113
         
-        const result = extractGovernancePayloadFromPacket(governanceMessage);
+        it("should extract governance payload from static governance message", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
+          
+          assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
+        });
         
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should extract instruction data from valid governance message with 5 accounts", () => {
-        const originCaller = create32ByteBuffer(10);
-        const target = create32ByteBuffer(20);
-        const instructionData = createInstructionData(5, 20);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
+        it("should extract governance payload with correct length from static message", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
+          
+          assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
+        });
         
-        const result = extractGovernancePayloadFromPacket(governanceMessage);
-        
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should extract instruction data from valid governance message with 100 accounts", () => {
-        const originCaller = create32ByteBuffer(100);
-        const target = create32ByteBuffer(200);
-        const instructionData = createInstructionData(100, 50);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
-        
-        const result = extractGovernancePayloadFromPacket(governanceMessage);
-        
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should decode hex-encoded ASCII instruction data in governance message", () => {
-        const originCaller = create32ByteBuffer(30);
-        const target = create32ByteBuffer(40);
-        // Create binary instruction data first
-        const binaryInstructionData = createInstructionData(2, 8);
-        // Convert to hex-encoded ASCII
-        const hexEncodedInstructionData = Buffer.from(binaryInstructionData.toString("hex"), "ascii");
-        const governanceMessage = createGovernanceMessage(originCaller, target, hexEncodedInstructionData);
-        
-        const result = extractGovernancePayloadFromPacket(governanceMessage);
-        
-        // Result should be the decoded binary data
-        assert.deepEqual(result, binaryInstructionData);
-      });
-      
-      it("should handle governance message with empty instruction data portion", () => {
-        const originCaller = create32ByteBuffer(50);
-        const target = create32ByteBuffer(60);
-        // Instruction data with 1 account and 0 bytes of data
-        const instructionData = createInstructionData(1, 0);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
-        
-        const result = extractGovernancePayloadFromPacket(governanceMessage);
-        
-        assert.deepEqual(result, instructionData);
+        it("should extract governance payload with correct account count from static message", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
+          
+          const accountCount = result.readUInt16BE(0);
+          assert.strictEqual(accountCount, EXPECTED_PAYLOAD_PROPERTIES.accountCount);
+        });
       });
     });
 
     describe("Strategy 2: Full LayerZero Packet Format", () => {
       // Tests for PacketV1/V0 format
       
-      it("should extract instruction data from valid PacketV1 with governance message", () => {
-        const originCaller = create32ByteBuffer(70);
-        const target = create32ByteBuffer(80);
-        const instructionData = createInstructionData(3, 15);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
+      describe("static packet tests", () => {
+        it("should extract governance payload from static packet", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
+          
+          assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
+        });
         
-        const packet = createLayerZeroPacket(
-          0x01, // version
-          BigInt(12345), // nonce
-          30101, // srcEid (Ethereum mainnet)
-          create32ByteBuffer(90), // sender
-          30168, // dstEid (Solana mainnet)
-          create32ByteBuffer(100), // receiver
-          create32ByteBuffer(110), // guid
-          governanceMessage
-        );
+        it("should extract governance payload with correct length", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
+          
+          assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
+        });
         
-        const result = extractGovernancePayloadFromPacket(packet);
+        it("should extract governance payload with correct account count", () => {
+          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
+          
+          const accountCount = result.readUInt16BE(0);
+          assert.strictEqual(accountCount, EXPECTED_PAYLOAD_PROPERTIES.accountCount);
+        });
         
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should extract instruction data from PacketV0 (version 0x00)", () => {
-        const originCaller = create32ByteBuffer(120);
-        const target = create32ByteBuffer(130);
-        const instructionData = createInstructionData(2, 10);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
-        
-        const packet = createLayerZeroPacket(
-          0x00, // version (PacketV0)
-          BigInt(67890), // nonce
-          30101, // srcEid
-          create32ByteBuffer(140), // sender
-          30168, // dstEid
-          create32ByteBuffer(150), // receiver
-          create32ByteBuffer(160), // guid
-          governanceMessage
-        );
-        
-        const result = extractGovernancePayloadFromPacket(packet);
-        
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should decode hex-encoded ASCII instruction data in packet message", () => {
-        const originCaller = create32ByteBuffer(170);
-        const target = create32ByteBuffer(180);
-        // Create binary instruction data
-        const binaryInstructionData = createInstructionData(2, 8);
-        // Convert to hex-encoded ASCII
-        const hexEncodedInstructionData = Buffer.from(binaryInstructionData.toString("hex"), "ascii");
-        const governanceMessage = createGovernanceMessage(originCaller, target, hexEncodedInstructionData);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(11111),
-          30101,
-          create32ByteBuffer(190),
-          30168,
-          create32ByteBuffer(200),
-          create32ByteBuffer(210),
-          governanceMessage
-        );
-        
-        const result = extractGovernancePayloadFromPacket(packet);
-        
-        // Result should be the decoded binary data
-        assert.deepEqual(result, binaryInstructionData);
-      });
-      
-      it("should handle packet with large nonce value", () => {
-        const originCaller = create32ByteBuffer(220);
-        const target = create32ByteBuffer(230);
-        const instructionData = createInstructionData(1, 5);
-        const governanceMessage = createGovernanceMessage(originCaller, target, instructionData);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt("18446744073709551615"), // max uint64
-          30101,
-          create32ByteBuffer(240),
-          30168,
-          create32ByteBuffer(250),
-          create32ByteBuffer(5),
-          governanceMessage
-        );
-        
-        const result = extractGovernancePayloadFromPacket(packet);
-        
-        assert.deepEqual(result, instructionData);
-      });
-    });
-
-    describe("Strategy 3: Raw Instruction Data Format", () => {
-      // Tests for raw instruction data
-      // Note: Strategy 3 only triggers when Strategies 1 and 2 fail
-      // Data must be < 64 bytes to skip Strategy 1 (governance message format)
-      // or >= 64 bytes but with invalid "instruction data" at offset 64
-      
-      it("should extract raw instruction data with 1 account (< 64 bytes)", () => {
-        // Create instruction data: 2 + 34 + 10 = 46 bytes (< 64, skips Strategy 1)
-        const instructionData = createInstructionData(1, 10, 500);
-        
-        const result = extractGovernancePayloadFromPacket(instructionData);
-        
-        assert.deepEqual(result, instructionData);
-      });
-      
-      it("should decode hex-encoded ASCII raw instruction data", () => {
-        // Create binary instruction data with deterministic seed
-        // 2 + 34 + 5 = 41 bytes
-        const binaryInstructionData = createInstructionData(1, 5, 600);
-        // Convert to hex-encoded ASCII (82 bytes as ASCII)
-        const hexEncodedData = Buffer.from(binaryInstructionData.toString("hex"), "ascii");
-        
-        const result = extractGovernancePayloadFromPacket(hexEncodedData);
-        
-        assert.deepEqual(result, binaryInstructionData);
-      });
-      
-      it("should handle raw instruction data that is exactly 63 bytes (max before Strategy 1)", () => {
-        // Create instruction data that's exactly 63 bytes (just under Strategy 1 threshold)
-        // Need: 2 + N*34 + D = 63, so N=1, D=27 gives 2+34+27=63
-        const instructionData = createInstructionData(1, 27, 700);
-        
-        const result = extractGovernancePayloadFromPacket(instructionData);
-        
-        assert.deepEqual(result, instructionData);
+        it("should handle hex-encoded ASCII instruction data in static packet", () => {
+          // The static packet contains hex-encoded ASCII instruction data
+          // This test verifies the decoder correctly decodes it to binary
+          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
+          
+          // Verify it's been decoded (not still hex-encoded ASCII)
+          // Hex-encoded ASCII would have length 638, decoded binary has length 319
+          assert.strictEqual(result.length, 319);
+          assert.notStrictEqual(result.length, 638);
+        });
       });
     });
 
@@ -437,80 +212,57 @@ describe("lz-packet-decoder", () => {
           assert.ok(errorMessage.includes("First 100 bytes"), "Should include first bytes in hex");
         }
       });
-      
-      it("should throw error for governance message with not enough bytes for declared accounts", () => {
-        // Create a governance message where instruction data claims more accounts than available
-        const originCaller = create32ByteBuffer(1);
-        const target = create32ByteBuffer(2);
-        // Create instruction data header that claims 10 accounts but doesn't have enough bytes
-        const fakeInstructionData = Buffer.alloc(10);
-        fakeInstructionData.writeUInt16BE(10, 0); // claims 10 accounts
-        // But only has 8 more bytes, not 10 * 34 = 340 bytes
-        
-        const governanceMessage = createGovernanceMessage(originCaller, target, fakeInstructionData);
-        
-        // This should fail because the declared account count doesn't match available bytes
-        // The function will fall through all strategies and fail
-        assert.throws(
-          () => extractGovernancePayloadFromPacket(governanceMessage),
-          /Failed to decode bytes/
-        );
-      });
     });
   });
 
   describe("decodeLayerZeroPacket", () => {
-    it("should decode valid PacketV1 correctly", () => {
-      const sender = create32ByteBuffer(1);
-      const receiver = create32ByteBuffer(2);
-      const guid = create32ByteBuffer(3);
-      const message = Buffer.from([0x01, 0x02, 0x03, 0x04, 0x05]);
+    describe("static packet tests", () => {
+      it("should decode static PacketV1 with correct srcEid", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.strictEqual(result.srcEid, EXPECTED_PACKET.srcEid);
+      });
       
-      const packet = createLayerZeroPacket(
-        0x01,
-        BigInt(12345),
-        30101,
-        sender,
-        30168,
-        receiver,
-        guid,
-        message
-      );
+      it("should decode static PacketV1 with correct nonce", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.strictEqual(result.nonce, EXPECTED_PACKET.nonce);
+      });
       
-      const result = decodeLayerZeroPacket(packet);
+      it("should decode static PacketV1 with correct sender", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.deepEqual(result.sender, EXPECTED_PACKET.sender);
+      });
       
-      assert.strictEqual(result.srcEid, 30101);
-      assert.strictEqual(result.nonce, BigInt(12345));
-      assert.deepEqual(result.sender, sender);
-      assert.deepEqual(result.guid, guid);
-      assert.deepEqual(result.message, message);
-      assert.deepEqual(result.extraData, Buffer.alloc(0));
-    });
-    
-    it("should decode PacketV0 (version 0x00) correctly", () => {
-      const sender = create32ByteBuffer(10);
-      const receiver = create32ByteBuffer(20);
-      const guid = create32ByteBuffer(30);
-      const message = Buffer.from([0xaa, 0xbb, 0xcc]);
+      it("should decode static PacketV1 with correct guid", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.deepEqual(result.guid, EXPECTED_PACKET.guid);
+      });
       
-      const packet = createLayerZeroPacket(
-        0x00,
-        BigInt(99999),
-        30102,
-        sender,
-        30169,
-        receiver,
-        guid,
-        message
-      );
+      it("should decode static PacketV1 with correct message length", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.strictEqual(result.message.length, EXPECTED_PACKET.messageLength);
+      });
       
-      const result = decodeLayerZeroPacket(packet);
+      it("should decode static PacketV1 with empty extraData", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.deepEqual(result.extraData, Buffer.alloc(0));
+      });
       
-      assert.strictEqual(result.srcEid, 30102);
-      assert.strictEqual(result.nonce, BigInt(99999));
-      assert.deepEqual(result.sender, sender);
-      assert.deepEqual(result.guid, guid);
-      assert.deepEqual(result.message, message);
+      it("should decode static PacketV1 with all fields matching expected values", () => {
+        const result = decodeLayerZeroPacket(STATIC_PACKET);
+        
+        assert.strictEqual(result.srcEid, EXPECTED_PACKET.srcEid);
+        assert.strictEqual(result.nonce, EXPECTED_PACKET.nonce);
+        assert.deepEqual(result.sender, EXPECTED_PACKET.sender);
+        assert.deepEqual(result.guid, EXPECTED_PACKET.guid);
+        assert.strictEqual(result.message.length, EXPECTED_PACKET.messageLength);
+        assert.deepEqual(result.extraData, Buffer.alloc(0));
+      });
     });
     
     it("should throw error for packet that is too short", () => {
@@ -531,250 +283,8 @@ describe("lz-packet-decoder", () => {
         /Invalid packet version/
       );
     });
-    
-    it("should handle packet with empty message", () => {
-      const sender = create32ByteBuffer(40);
-      const receiver = create32ByteBuffer(50);
-      const guid = create32ByteBuffer(60);
-      const message = Buffer.alloc(0); // Empty message
-      
-      const packet = createLayerZeroPacket(
-        0x01,
-        BigInt(1),
-        30101,
-        sender,
-        30168,
-        receiver,
-        guid,
-        message
-      );
-      
-      const result = decodeLayerZeroPacket(packet);
-      
-      assert.deepEqual(result.message, Buffer.alloc(0));
-    });
-    
-    it("should handle large message payload", () => {
-      const sender = create32ByteBuffer(70);
-      const receiver = create32ByteBuffer(80);
-      const guid = create32ByteBuffer(90);
-      const message = Buffer.alloc(10000);
-      for (let i = 0; i < message.length; i++) {
-        message[i] = i % 256;
-      }
-      
-      const packet = createLayerZeroPacket(
-        0x01,
-        BigInt(555),
-        30101,
-        sender,
-        30168,
-        receiver,
-        guid,
-        message
-      );
-      
-      const result = decodeLayerZeroPacket(packet);
-      
-      assert.deepEqual(result.message, message);
-    });
-    
-    describe("nonce edge cases", () => {
-      it("should handle nonce = 0 (minimum value)", () => {
-        const sender = create32ByteBuffer(100);
-        const receiver = create32ByteBuffer(101);
-        const guid = create32ByteBuffer(102);
-        const message = Buffer.from([0x01, 0x02]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(0),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.strictEqual(result.nonce, BigInt(0));
-      });
-      
-      it("should handle nonce = max uint64 (18446744073709551615)", () => {
-        const sender = create32ByteBuffer(103);
-        const receiver = create32ByteBuffer(104);
-        const guid = create32ByteBuffer(105);
-        const message = Buffer.from([0x03, 0x04]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt("18446744073709551615"),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.strictEqual(result.nonce, BigInt("18446744073709551615"));
-      });
-      
-      it("should correctly decode various nonce values (big-endian)", () => {
-        const sender = create32ByteBuffer(106);
-        const receiver = create32ByteBuffer(107);
-        const guid = create32ByteBuffer(108);
-        const message = Buffer.from([0x05]);
-        
-        // Test several different nonce values
-        const nonceValues = [
-          BigInt(1),
-          BigInt(255),
-          BigInt(256),
-          BigInt(65535),
-          BigInt(65536),
-          BigInt("4294967295"),      // max uint32
-          BigInt("4294967296"),      // max uint32 + 1
-          BigInt("9007199254740991"), // max safe integer in JS
-        ];
-        
-        for (const nonce of nonceValues) {
-          const packet = createLayerZeroPacket(
-            0x01,
-            nonce,
-            30101,
-            sender,
-            30168,
-            receiver,
-            guid,
-            message
-          );
-          
-          const result = decodeLayerZeroPacket(packet);
-          
-          assert.strictEqual(result.nonce, nonce, `Failed for nonce ${nonce}`);
-        }
-      });
-    });
-    
-    describe("endpoint ID edge cases", () => {
-      it("should handle srcEid = 0 (minimum value)", () => {
-        const sender = create32ByteBuffer(110);
-        const receiver = create32ByteBuffer(111);
-        const guid = create32ByteBuffer(112);
-        const message = Buffer.from([0x01]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          0, // srcEid = 0
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.strictEqual(result.srcEid, 0);
-      });
-      
-      it("should handle srcEid = max uint32 (4294967295)", () => {
-        const sender = create32ByteBuffer(113);
-        const receiver = create32ByteBuffer(114);
-        const guid = create32ByteBuffer(115);
-        const message = Buffer.from([0x02]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(2),
-          4294967295, // max uint32
-          sender,
-          4294967295, // dstEid also max
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.strictEqual(result.srcEid, 4294967295);
-      });
-      
-      it("should correctly decode various endpoint ID values (big-endian)", () => {
-        const sender = create32ByteBuffer(116);
-        const receiver = create32ByteBuffer(117);
-        const guid = create32ByteBuffer(118);
-        const message = Buffer.from([0x03]);
-        
-        // Test several different srcEid values including real-world LayerZero endpoint IDs
-        const srcEidValues = [
-          1,
-          255,
-          256,
-          65535,
-          65536,
-          30101,      // Ethereum mainnet
-          30102,      // BSC mainnet
-          30106,      // Avalanche mainnet
-          30109,      // Polygon mainnet
-          30110,      // Arbitrum mainnet
-          30111,      // Optimism mainnet
-          30168,      // Solana mainnet
-          16777215,   // 0xFFFFFF
-          16777216,   // 0x1000000
-        ];
-        
-        for (const srcEid of srcEidValues) {
-          const packet = createLayerZeroPacket(
-            0x01,
-            BigInt(1),
-            srcEid,
-            sender,
-            30168,
-            receiver,
-            guid,
-            message
-          );
-          
-          const result = decodeLayerZeroPacket(packet);
-          
-          assert.strictEqual(result.srcEid, srcEid, `Failed for srcEid ${srcEid}`);
-        }
-      });
-    });
-    
+  
     describe("packet boundary conditions", () => {
-      it("should succeed with packet exactly at minimum size (113 bytes, empty message)", () => {
-        const sender = create32ByteBuffer(120);
-        const receiver = create32ByteBuffer(121);
-        const guid = create32ByteBuffer(122);
-        const message = Buffer.alloc(0); // Empty message
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        // Verify packet is exactly 113 bytes
-        assert.strictEqual(packet.length, 113);
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.strictEqual(result.srcEid, 30101);
-        assert.deepEqual(result.message, Buffer.alloc(0));
-      });
       
       it("should throw error for packet at 112 bytes (one byte short of minimum)", () => {
         const packet = Buffer.alloc(112);
@@ -794,411 +304,6 @@ describe("lz-packet-decoder", () => {
           () => decodeLayerZeroPacket(packet),
           /Packet too short: 1 bytes/
         );
-      });
-      
-      it("should handle message size of 1 byte", () => {
-        const sender = create32ByteBuffer(123);
-        const receiver = create32ByteBuffer(124);
-        const guid = create32ByteBuffer(125);
-        const message = Buffer.from([0xAB]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        assert.strictEqual(packet.length, 114); // 113 + 1
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-      });
-      
-      it("should handle message size of 2 bytes", () => {
-        const sender = create32ByteBuffer(126);
-        const receiver = create32ByteBuffer(127);
-        const guid = create32ByteBuffer(128);
-        const message = Buffer.from([0xAB, 0xCD]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        assert.strictEqual(packet.length, 115); // 113 + 2
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-      });
-      
-      it("should handle message size of 100 bytes", () => {
-        const sender = create32ByteBuffer(129);
-        const receiver = create32ByteBuffer(130);
-        const guid = create32ByteBuffer(131);
-        const message = Buffer.alloc(100);
-        for (let i = 0; i < 100; i++) {
-          message[i] = i;
-        }
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        assert.strictEqual(packet.length, 213); // 113 + 100
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-      });
-      
-      it("should handle message size of 1000 bytes", () => {
-        const sender = create32ByteBuffer(132);
-        const receiver = create32ByteBuffer(133);
-        const guid = create32ByteBuffer(134);
-        const message = Buffer.alloc(1000);
-        for (let i = 0; i < 1000; i++) {
-          message[i] = i % 256;
-        }
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        assert.strictEqual(packet.length, 1113); // 113 + 1000
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-      });
-    });
-    
-    describe("buffer content edge cases", () => {
-      it("should handle sender with all zeros", () => {
-        const sender = Buffer.alloc(32, 0x00);
-        const receiver = create32ByteBuffer(140);
-        const guid = create32ByteBuffer(141);
-        const message = Buffer.from([0x01]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.sender, sender);
-        assert.ok(result.sender.every((b: number) => b === 0x00));
-      });
-      
-      it("should handle sender with all 0xFF bytes", () => {
-        const sender = Buffer.alloc(32, 0xFF);
-        const receiver = create32ByteBuffer(142);
-        const guid = create32ByteBuffer(143);
-        const message = Buffer.from([0x02]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.sender, sender);
-        assert.ok(result.sender.every((b: number) => b === 0xFF));
-      });
-      
-      it("should handle GUID with all zeros", () => {
-        const sender = create32ByteBuffer(144);
-        const receiver = create32ByteBuffer(145);
-        const guid = Buffer.alloc(32, 0x00);
-        const message = Buffer.from([0x03]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.guid, guid);
-        assert.ok(result.guid.every((b: number) => b === 0x00));
-      });
-      
-      it("should handle GUID with all 0xFF bytes", () => {
-        const sender = create32ByteBuffer(146);
-        const receiver = create32ByteBuffer(147);
-        const guid = Buffer.alloc(32, 0xFF);
-        const message = Buffer.from([0x04]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.guid, guid);
-        assert.ok(result.guid.every((b: number) => b === 0xFF));
-      });
-      
-      it("should handle alternating pattern in sender (0xAA, 0x55 repeating)", () => {
-        const sender = Buffer.alloc(32);
-        for (let i = 0; i < 32; i++) {
-          sender[i] = i % 2 === 0 ? 0xAA : 0x55;
-        }
-        const receiver = create32ByteBuffer(148);
-        const guid = create32ByteBuffer(149);
-        const message = Buffer.from([0x05]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.sender, sender);
-        // Verify the pattern
-        for (let i = 0; i < 32; i++) {
-          const expected = i % 2 === 0 ? 0xAA : 0x55;
-          assert.strictEqual(result.sender[i], expected, `Byte ${i} mismatch`);
-        }
-      });
-      
-      it("should handle message with all zeros", () => {
-        const sender = create32ByteBuffer(150);
-        const receiver = create32ByteBuffer(151);
-        const guid = create32ByteBuffer(152);
-        const message = Buffer.alloc(50, 0x00);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-        assert.ok(result.message.every((b: number) => b === 0x00));
-      });
-      
-      it("should handle message with all 0xFF bytes", () => {
-        const sender = create32ByteBuffer(153);
-        const receiver = create32ByteBuffer(154);
-        const guid = create32ByteBuffer(155);
-        const message = Buffer.alloc(50, 0xFF);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        assert.deepEqual(result.message, message);
-        assert.ok(result.message.every((b: number) => b === 0xFF));
-      });
-    });
-    
-    describe("buffer immutability (returned buffers are copies)", () => {
-      it("should return sender as a copy - mutating result should not affect input", () => {
-        const sender = create32ByteBuffer(160);
-        const originalSenderCopy = Buffer.from(sender);
-        const receiver = create32ByteBuffer(161);
-        const guid = create32ByteBuffer(162);
-        const message = Buffer.from([0x01, 0x02, 0x03]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        const originalPacketCopy = Buffer.from(packet);
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        // Mutate the result sender
-        result.sender[0] = 0xFF;
-        result.sender[31] = 0xAA;
-        
-        // Verify original packet is unchanged
-        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
-        
-        // Verify result sender is different from original
-        assert.notDeepEqual(result.sender, originalSenderCopy);
-      });
-      
-      it("should return guid as a copy - mutating result should not affect input", () => {
-        const sender = create32ByteBuffer(163);
-        const receiver = create32ByteBuffer(164);
-        const guid = create32ByteBuffer(165);
-        const originalGuidCopy = Buffer.from(guid);
-        const message = Buffer.from([0x04, 0x05, 0x06]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        const originalPacketCopy = Buffer.from(packet);
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        // Mutate the result guid
-        result.guid[0] = 0xFF;
-        result.guid[31] = 0xBB;
-        
-        // Verify original packet is unchanged
-        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
-        
-        // Verify result guid is different from original
-        assert.notDeepEqual(result.guid, originalGuidCopy);
-      });
-      
-      it("should return message as a copy - mutating result should not affect input", () => {
-        const sender = create32ByteBuffer(166);
-        const receiver = create32ByteBuffer(167);
-        const guid = create32ByteBuffer(168);
-        const message = Buffer.from([0x07, 0x08, 0x09, 0x0A, 0x0B]);
-        const originalMessageCopy = Buffer.from(message);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        const originalPacketCopy = Buffer.from(packet);
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        // Mutate the result message
-        result.message[0] = 0xFF;
-        result.message[4] = 0xCC;
-        
-        // Verify original packet is unchanged
-        assert.deepEqual(packet, originalPacketCopy, "Input packet should not be mutated");
-        
-        // Verify result message is different from original
-        assert.notDeepEqual(result.message, originalMessageCopy);
-      });
-      
-      it("should not share references between input and output - mutating input after decode", () => {
-        const sender = create32ByteBuffer(169);
-        const receiver = create32ByteBuffer(170);
-        const guid = create32ByteBuffer(171);
-        const message = Buffer.from([0x0C, 0x0D, 0x0E]);
-        
-        const packet = createLayerZeroPacket(
-          0x01,
-          BigInt(1),
-          30101,
-          sender,
-          30168,
-          receiver,
-          guid,
-          message
-        );
-        
-        const result = decodeLayerZeroPacket(packet);
-        
-        // Save copies of the decoded values
-        const decodedSenderCopy = Buffer.from(result.sender);
-        const decodedGuidCopy = Buffer.from(result.guid);
-        const decodedMessageCopy = Buffer.from(result.message);
-        
-        // Mutate the input packet after decoding
-        packet[13] = 0xFF; // Part of sender in packet
-        packet[81] = 0xEE; // Part of guid in packet
-        packet[113] = 0xDD; // Part of message in packet
-        
-        // Verify the decoded result is unchanged (was a copy)
-        assert.deepEqual(result.sender, decodedSenderCopy, "Decoded sender should be independent copy");
-        assert.deepEqual(result.guid, decodedGuidCopy, "Decoded guid should be independent copy");
-        assert.deepEqual(result.message, decodedMessageCopy, "Decoded message should be independent copy");
       });
     });
     

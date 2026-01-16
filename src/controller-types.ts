@@ -42,4 +42,3 @@ export type BaseControllerManageIntegrationConfig = {
   // Rate limit max outflow (optional - null means no change)
   rateLimitMaxOutflow: bigint | null;
 };
-

@@ -41,5 +41,12 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManageController> = {
     payer: MAINNET_PAYER,
     status: ControllerStatus.PushPullFrozen,
   },
+  surfpool: {
+    controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
+    controller: SVM_ALM_CONTROLLER,
+    authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
+    payer: MAINNET_PAYER,
+    status: ControllerStatus.PushPullFrozen,
+  },
 };
 
