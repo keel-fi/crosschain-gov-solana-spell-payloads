@@ -137,8 +137,8 @@ const main = async () => {
     const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
     assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
 
-    // Assert reserve farm collateral does not change
-    assertNoAccountChanges(reserveFarmCollateralResp.before, reserveFarmCollateralResp.after);
+    // Note: reserve farm collateral account will change as the number of users increases
+    // when initializing a new integration, so we don't assert it remains unchanged
 
     // Assert referrer does not change
     const referrerResp = resp[config.referrer];
@@ -201,7 +201,7 @@ const main = async () => {
     reserveLiquidityMint: address(config.reserveLiquidityMint),
     obligation: address(obligation),
     obligationId: config.obligationId,
-    padding: new Uint8Array(95),
+    padding: Buffer.from(new Uint8Array(95)),
   };
   assertContainsIn(expectedKaminoConfig, actualKaminoConfig);
 
@@ -213,7 +213,7 @@ const main = async () => {
   // Validate Kamino state fields including padding
   const expectedKaminoState: Omit<typeof actualKaminoState, never> = {
     balance: 0n,
-    padding: new Uint8Array(24),
+    padding: Buffer.from(new Uint8Array(40)),
   };
   assertContainsIn(expectedKaminoState, actualKaminoState);
 

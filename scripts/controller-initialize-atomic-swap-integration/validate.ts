@@ -166,7 +166,7 @@ const main = async () => {
     amountBorrowed: 0n,
     lastBalanceA: 0n,
     lastBalanceB: 0n,
-    padding: new Uint8Array(8),
+    padding: Buffer.from(new Uint8Array(8)),
     recipientTokenAPre: 0n,
     recipientTokenBPre: 0n,
   };
@@ -189,7 +189,7 @@ const main = async () => {
     inputMintDecimals: config.inputMintDecimals,
     outputMintDecimals: config.outputMintDecimals,
     oraclePriceInverted: config.oraclePriceInverted,
-    padding: new Uint8Array(107),
+    padding: Buffer.from(new Uint8Array(107)),
   };
   assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
 

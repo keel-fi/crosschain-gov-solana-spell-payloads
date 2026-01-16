@@ -165,7 +165,7 @@ const main = async () => {
     subAccountId: config.subAccountId,
     spotMarketIndex: config.spotMarketIndex,
     poolId: config.poolId,
-    padding: new Uint8Array(219),
+    padding: Buffer.from(new Uint8Array(219)),
   };
   assertContainsIn(expectedDriftConfig, actualDriftConfig);
 
@@ -178,7 +178,7 @@ const main = async () => {
   // Validate Drift state fields including padding
   const expectedDriftState: Omit<typeof actualDriftState, never> = {
     balance: 0n,
-    padding: new Uint8Array(24),
+    padding: Buffer.from(new Uint8Array(40)),
   };
   assertContainsIn(expectedDriftState, actualDriftState);
 
