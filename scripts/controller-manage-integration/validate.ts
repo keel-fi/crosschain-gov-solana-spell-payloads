@@ -10,17 +10,11 @@ import {
   bytesToUtf8TrimNull,
 } from "../../src";
 import { address } from "@solana/kit";
+import { ControllerManageIntegrationConfig, ACTION } from "./config";
 import {
-  ControllerManageDriftIntegrationConfig,
-  ACTION,
-} from "./config";
-import {
-  getIntegrationCodec,
-  integrationConfig,
   deriveControllerAuthorityPda,
   derivePermissionPda,
-  deriveIntegrationPda,
-  computeIntegrationHash,
+  getIntegrationCodec,
 } from "@keel-fi/svm-alm-controller";
 
 const main = async () => {
@@ -28,7 +22,7 @@ const main = async () => {
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerManageDriftIntegrationConfig>(args.config);
+  const config = readConfigFromFile<ControllerManageIntegrationConfig>(args.config);
   const payload = readPayloadFile(config.outputFile);
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
@@ -44,20 +38,6 @@ const main = async () => {
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority)
-  );
-
-  // Compute integration hash to derive integration PDA
-  const driftConfig = {
-    subAccountId: config.subAccountId,
-    spotMarketIndex: config.spotMarketIndex,
-    poolId: config.poolId,
-    padding: new Uint8Array(219),
-  };
-  const integrationConfigData = integrationConfig("Drift", [driftConfig]);
-  const integrationHash = computeIntegrationHash(integrationConfigData);
-  const integrationPda = await deriveIntegrationPda(
-    address(config.controller),
-    integrationHash
   );
 
   // Assert payer does not change, except for lamports
@@ -90,7 +70,7 @@ const main = async () => {
   }
 
   // Assert integration exists and changes
-  const integrationResp = resp[integrationPda];
+  const integrationResp = resp[config.integration];
   assert(integrationResp.after, "Integration should exist");
   assert.notDeepEqual(
     integrationResp.after.data,
@@ -101,7 +81,7 @@ const main = async () => {
   // Validate integration data matches config (only validate non-null fields)
   const integrationCodec = getIntegrationCodec();
   const [integration] = integrationCodec.read(integrationResp.after.data, 1);
-  
+
   if (config.status !== null) {
     assert.equal(integration.status, config.status, "Status should match config");
   }
@@ -131,4 +111,3 @@ const main = async () => {
 };
 
 main();
-

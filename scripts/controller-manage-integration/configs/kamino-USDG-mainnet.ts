@@ -1,16 +1,14 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
 import {
-  CASH_MINT,
-  DRIFT_CASH_SPOT_MARKET_INDEX,
-  DRIFT_POOL_ID,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   MAINNET_PAYER,
   SVM_ALM_CONTROLLER,
   SVM_ALM_CONTROLLER_PROGRAM_ID,
+  KAMINO_USDG_INTEGRATION,
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-drift-integration-CASH-mainnet.txt",
+  outputFile: "controller-manage-integration-kamino-USDG-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
@@ -19,8 +17,5 @@ export default {
   description: null,
   rateLimitSlope: null,
   rateLimitMaxOutflow: null,
-  mint: CASH_MINT,
-  subAccountId: 0,
-  spotMarketIndex: DRIFT_CASH_SPOT_MARKET_INDEX,
-  poolId: DRIFT_POOL_ID,
+  integration: KAMINO_USDG_INTEGRATION,
 };

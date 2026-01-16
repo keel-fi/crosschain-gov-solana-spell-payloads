@@ -1,16 +1,14 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
 import {
-  DRIFT_POOL_ID,
-  DRIFT_PYUSD_SPOT_MARKET_INDEX,
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
   MAINNET_PAYER,
-  PYUSD_MINT,
-  SVM_ALM_CONTROLLER,
-  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  ATOMIC_SWAP_PYUSD_INTEGRATION,
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-drift-integration-PYUSD-mainnet.txt",
+  outputFile: "controller-manage-integration-atomic-swap-PYUSD-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
@@ -19,8 +17,5 @@ export default {
   description: null,
   rateLimitSlope: null,
   rateLimitMaxOutflow: null,
-  mint: PYUSD_MINT,
-  subAccountId: 0,
-  spotMarketIndex: DRIFT_PYUSD_SPOT_MARKET_INDEX,
-  poolId: DRIFT_POOL_ID,
+  integration: ATOMIC_SWAP_PYUSD_INTEGRATION,
 };

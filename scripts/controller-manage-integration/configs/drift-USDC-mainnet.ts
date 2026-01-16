@@ -3,28 +3,19 @@ import {
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
-  USDG_MINT,
   MAINNET_PAYER,
+  DRIFT_USDC_INTEGRATION,
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-atomic-swap-integration-USDG-mainnet.txt",
+  outputFile: "controller-manage-integration-drift-USDC-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
-  description: null,
-  rateLimitSlope: null,
-  rateLimitMaxOutflow: null,
-  maxSlippageBps: 10,
-  maxStaleness: 100n,
-  expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
-  oraclePriceInverted: false,
-  inputTokenMint: USDG_MINT,
-  outputTokenMint: "",
-  oracle: "",
-  inputMintDecimals: 6,
-  outputMintDecimals: 6,
+  description: "Drift Main USDC",
+  rateLimitSlope: 10_000_000_000_000n,
+  rateLimitMaxOutflow: 25_000_000_000_000n,
+  integration: DRIFT_USDC_INTEGRATION,
 };
-

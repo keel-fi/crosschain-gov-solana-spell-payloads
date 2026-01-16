@@ -3,24 +3,19 @@ import {
   SVM_ALM_CONTROLLER_PROGRAM_ID,
   SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
-  USDC_MINT,
-  DRIFT_POOL_ID,
   MAINNET_PAYER,
+  ATOMIC_SWAP_USDG_INTEGRATION,
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-drift-integration-USDC-mainnet.txt",
+  outputFile: "controller-manage-integration-atomic-swap-USDG-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
-  description: "Drift Main USDC",
-  rateLimitSlope: 10_000_000_000_000n,
-  rateLimitMaxOutflow: 25_000_000_000_000n,
-  mint: USDC_MINT,
-  subAccountId: 0,
-  spotMarketIndex: 0,
-  poolId: DRIFT_POOL_ID,
+  description: null,
+  rateLimitSlope: null,
+  rateLimitMaxOutflow: null,
+  integration: ATOMIC_SWAP_USDG_INTEGRATION,
 };
-

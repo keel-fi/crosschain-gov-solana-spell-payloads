@@ -1,14 +1,14 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
 import {
-  SVM_ALM_CONTROLLER_PROGRAM_ID,
-  SVM_ALM_CONTROLLER,
   KEEL_SUB_PROXY_CPI_AUTHORITY,
-  PYUSD_MINT,
   MAINNET_PAYER,
+  SVM_ALM_CONTROLLER,
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+  DRIFT_CASH_INTEGRATION,
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-atomic-swap-integration-PYUSD-mainnet.txt",
+  outputFile: "controller-manage-integration-drift-CASH-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
@@ -17,14 +17,5 @@ export default {
   description: null,
   rateLimitSlope: null,
   rateLimitMaxOutflow: null,
-  maxSlippageBps: 10,
-  maxStaleness: 100n,
-  expiryTimestamp: 2n ** 63n - 1n, // i64::MAX
-  oraclePriceInverted: false,
-  inputTokenMint: PYUSD_MINT,
-  outputTokenMint: "",
-  oracle: "",
-  inputMintDecimals: 6,
-  outputMintDecimals: 6,
+  integration: DRIFT_CASH_INTEGRATION,
 };
-

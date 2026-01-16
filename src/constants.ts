@@ -86,6 +86,24 @@ export const USDC_TO_USDT_ORACLE =
 export const KAMINO_USDC_RESERVE =
   "D6q6wuQSrifJKZYpR1M8R4YawnLDtDsMmWM1NbBmgJ59";
 
+// Integration PDA addresses (hardcoded)
+// Atomic Swap Integrations
+export const ATOMIC_SWAP_CASH_TO_USDC_INTEGRATION = "Ccra5MR5aoxTnUK1hYSGBhCHJQ8FUGzg13Lr8JaULs5e"
+export const ATOMIC_SWAP_USDC_TO_USDT_INTEGRATION = "Efy1EWHmJzckFqpAbDzxnsMXwBu5Jf13BMXXf2fMUUcs"
+export const ATOMIC_SWAP_PYUSD_TO_USDC_INTEGRATION = "B7NzceNVVEqbNrDJhDmgVnUnJPMaNS3ihM8Ycv3D8Dg9"
+export const ATOMIC_SWAP_USDG_TO_USDC_INTEGRATION = "8a32LthhDseXiDMAAPJ6pH2mgKGJxWvtYMKqPUdXZ9z1"
+
+// Kamino Integrations
+export const KAMINO_CASH_INTEGRATION = "2WwcSKqA9DE1SJB6w7HNBWTqbxsJZorzzME1jRG5xpEX"
+export const KAMINO_PYUSD_INTEGRATION = "9DULRsF4Cfj2BbYZp9n6deLf16yYnR5EcFicvzLNMC2s"
+export const KAMINO_USDC_INTEGRATION = "GZ6vUcBZk4QiaBUhhn1TpX6S7FiXK71Pogke1RnBc3zA"
+export const KAMINO_USDG_INTEGRATION = "5JYk4vbZTFcBiHK5HzQTmYcT6kosEKJV62tYTCTpT6xy"
+
+// Drift Integrations
+export const DRIFT_CASH_INTEGRATION = "3i99KS1PRkVArW1LTTGzVKTkXZ2yEyCA8fMYhH4YZKQo"
+export const DRIFT_PYUSD_INTEGRATION = "5rqJu2NrbMBnW2B2mejSPUV589gb7pvHSGrWQyQqnQz5"
+export const DRIFT_USDC_INTEGRATION = "ET3k7uBeXLmeVQW5Tm8xBnLte9FgUSRebgneT57wjuqL"
+
 // LayerZero configuration constants
 export namespace LayerZeroConfig {
   // LayerZero Solana Endpoint ID

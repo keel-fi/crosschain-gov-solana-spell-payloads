@@ -1,4 +1,4 @@
-// Generates a payload for managing a Kamino Integration account
+// Generates a payload for managing an Integration account
 
 import {
   convertKitInstructionToWeb3Js,
@@ -7,27 +7,20 @@ import {
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import {
-  address,
-  createNoopSigner,
-} from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import {
   getManageIntegrationInstruction,
   deriveControllerAuthorityPda,
   derivePermissionPda,
-  deriveIntegrationPda,
-  integrationConfig,
-  computeIntegrationHash,
-  kamino,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, ControllerManageKaminoIntegrationConfig } from "./config";
+import { ACTION, ControllerManageIntegrationConfig } from "./config";
 
-const printControllerManageKaminoIntegrationPayload = async () => {
+const printControllerManageIntegrationPayload = async () => {
   const args = readArgs(ACTION);
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerManageKaminoIntegrationConfig>(args.config);
+  const config = readConfigFromFile<ControllerManageIntegrationConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller)
@@ -35,29 +28,6 @@ const printControllerManageKaminoIntegrationPayload = async () => {
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority)
-  );
-  const obligation = await kamino.deriveVanillaObligationAddress(
-    config.obligationId,
-    address(controllerAuthority),
-    address(config.market)
-  );
-
-  // Compute integration hash to derive integration PDA
-  const kaminoConfig = {
-    market: address(config.market),
-    reserve: address(config.reserve),
-    reserveLiquidityMint: address(config.reserveLiquidityMint),
-    obligation: address(obligation),
-    obligationId: config.obligationId,
-    reserveFarmCollateral: address(config.reserveFarmCollateral),
-    referrer: address(config.referrer),
-    padding: new Uint8Array(128),
-  };
-  const integrationConfigData = integrationConfig("Kamino", [kaminoConfig]);
-  const integrationHash = computeIntegrationHash(integrationConfigData);
-  const integrationPda = await deriveIntegrationPda(
-    address(config.controller),
-    integrationHash
   );
 
   // Convert description to bytes if provided
@@ -75,7 +45,7 @@ const printControllerManageKaminoIntegrationPayload = async () => {
     controllerAuthority: controllerAuthority,
     authority: createNoopSigner(address(config.authority)),
     permission: permissionPda,
-    integration: integrationPda,
+    integration: address(config.integration),
     programId: address(config.controllerProgramId),
     status: config.status,
     description: descriptionBytes,
@@ -90,5 +60,4 @@ const printControllerManageKaminoIntegrationPayload = async () => {
   writeOutputFile(config.outputFile, payload);
 };
 
-printControllerManageKaminoIntegrationPayload();
-
+printControllerManageIntegrationPayload();
