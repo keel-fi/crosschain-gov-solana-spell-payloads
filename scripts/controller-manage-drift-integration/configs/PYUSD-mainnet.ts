@@ -1,12 +1,20 @@
 import { IntegrationStatus } from "@keel-fi/svm-alm-controller";
-import { DRIFT_POOL_ID, DRIFT_PYUSD_SPOT_MARKET_INDEX, KEEL_SUB_PROXY_CPI_AUTHORITY, MAINNET_PAYER_2, PYUSD_MINT, SVM_ALM_CONTROLLER, SVM_ALM_CONTROLLER_PROGRAM_ID } from "../../../src";
+import {
+  DRIFT_POOL_ID,
+  DRIFT_PYUSD_SPOT_MARKET_INDEX,
+  KEEL_SUB_PROXY_CPI_AUTHORITY,
+  MAINNET_PAYER,
+  PYUSD_MINT,
+  SVM_ALM_CONTROLLER,
+  SVM_ALM_CONTROLLER_PROGRAM_ID,
+} from "../../../src";
 
 export default {
   outputFile: "controller-manage-drift-integration-PYUSD-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
-  payer: MAINNET_PAYER_2,
+  payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: null,
   rateLimitSlope: null,
@@ -16,4 +24,3 @@ export default {
   spotMarketIndex: DRIFT_PYUSD_SPOT_MARKET_INDEX,
   poolId: DRIFT_POOL_ID,
 };
-

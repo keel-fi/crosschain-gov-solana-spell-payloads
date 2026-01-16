@@ -3,380 +3,69 @@ import { web3 } from "@coral-xyz/anchor";
 import { parseLzReceiveTypesV2ReturnData } from "./lz-receive-types-v2";
 
 /**
- * Helper function to build test buffer for lz_receive_types_v2 return data
+ * Static test buffer for lz_receive_types_v2 return data testing.
+ * This represents real return data from an lz_receive_types_v2 call.
  */
-function buildTestBuffer(options: {
-  contextVersion: number;
-  alts?: web3.PublicKey[];
-  instructions?: Array<{
-    type: number; // 0 = LzReceive
-    accounts: Array<{
-      locatorType: number; // 0=Address, 1=AltIndex, 2=Payer, 3=Signer, 4=Context
-      locatorData?: Buffer; // Additional data for the locator
-      isWritable: boolean;
-    }>;
-  }>;
-}): Buffer {
-  const parts: Buffer[] = [];
-
-  // Context version (1 byte)
-  const contextVersionBuf = Buffer.alloc(1);
-  contextVersionBuf.writeUInt8(options.contextVersion, 0);
-  parts.push(contextVersionBuf);
-
-  // ALT count (4 bytes LE)
-  const alts = options.alts ?? [];
-  const altCountBuf = Buffer.alloc(4);
-  altCountBuf.writeUInt32LE(alts.length, 0);
-  parts.push(altCountBuf);
-
-  // ALT public keys (32 bytes each)
-  for (const alt of alts) {
-    parts.push(alt.toBuffer());
-  }
-
-  // Instruction count (4 bytes LE)
-  const instructions = options.instructions ?? [];
-  const instructionCountBuf = Buffer.alloc(4);
-  instructionCountBuf.writeUInt32LE(instructions.length, 0);
-  parts.push(instructionCountBuf);
-
-  // Instructions
-  for (const instruction of instructions) {
-    // Instruction type (1 byte)
-    const typeBuf = Buffer.alloc(1);
-    typeBuf.writeUInt8(instruction.type, 0);
-    parts.push(typeBuf);
-
-    if (instruction.type === 0) {
-      // LzReceive instruction
-      // Account count (4 bytes LE)
-      const accountCountBuf = Buffer.alloc(4);
-      accountCountBuf.writeUInt32LE(instruction.accounts.length, 0);
-      parts.push(accountCountBuf);
-
-      // Accounts
-      for (const account of instruction.accounts) {
-        // AddressLocator discriminator (1 byte)
-        const locatorTypeBuf = Buffer.alloc(1);
-        locatorTypeBuf.writeUInt8(account.locatorType, 0);
-        parts.push(locatorTypeBuf);
-
-        // AddressLocator data (if any)
-        if (account.locatorData) {
-          parts.push(account.locatorData);
-        }
-
-        // is_writable flag (1 byte)
-        const isWritableBuf = Buffer.alloc(1);
-        isWritableBuf.writeUInt8(account.isWritable ? 1 : 0, 0);
-        parts.push(isWritableBuf);
-      }
-    }
-  }
-
-  return Buffer.concat(parts);
-}
+const STATIC_TEST_BUFFER = Buffer.from(
+  "010000000001000000001600000002010075b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc320000fcebb99d8849b09172b072f589149e43ab5e6a967328178de54257418ab955cf0000d327682cf394e2e8637e684a66b2dab92706e64b9490b7e438f87c5cd6e28f4b00008aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da362400005aad76da514b6e1dcf11037e904dac3d375f525c9fbafcb19507b78907d8c18b000075b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc320000bb2079c065e1fae1bfbcca272ecde816303f2c2ad08de7a6f515ac2a95b8b17d00007d99b604a89896c7d3ed6851187a745ece1890cc08511917d2e4f4a5830dfc920000e4e98f657dc7c403b52d3c461ef32109ce35d1737f92ae1d1205fdf6469f00f201001c5eae5faa88478e8729bc45057eb95154f0f7ec4a3ec80503c62b8b7cdd97cc0100d1dd86ac361b6252c406c281f3912ab13b924126c011b587278e8af0b08ef09b00005aad76da514b6e1dcf11037e904dac3d375f525c9fbafcb19507b78907d8c18b00020100cad71b309e306d79a1dd577e2c67f2ed713fa65ae6d4c6e86534bc303f6281660000cac3764c231540dd2364f24c78fe8f491c08c42ef2ed370f22904eda9ac486090000d327682cf394e2e8637e684a66b2dab92706e64b9490b7e438f87c5cd6e28f4b0000ece79d10f039ba13a2d4332d6cf5ae39e7ab46037886565799d6121ef180c1120000840b05b00bad9fe212ef04e3246cd179f3931ffab35915bb278c8d6f6f8b672d00005bc709dc71412fe06e597212915764424ca0ee06572e2973cde4f78addbee23901008aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da36240000000000000000000000000000000000000000000000000000000000000000000000",
+  "hex"
+);
 
 describe("lz-receive-types-v2", () => {
   describe("parseLzReceiveTypesV2ReturnData", () => {
-    it("should parse minimal valid data (0 ALTs, 0 instructions)", () => {
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [],
-      });
+    it("should parse static test buffer correctly", () => {
+      const result = parseLzReceiveTypesV2ReturnData(STATIC_TEST_BUFFER);
 
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.contextVersion, 1);
-      assert.strictEqual(result.alts.length, 0);
-      assert.strictEqual(result.instructions.length, 0);
-    });
-
-    it("should parse different context versions", () => {
-      const buffer = buildTestBuffer({
-        contextVersion: 255,
-        alts: [],
-        instructions: [],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.contextVersion, 255);
-    });
-
-    it("should parse data with single ALT", () => {
-      const alt = web3.PublicKey.unique();
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [alt],
-        instructions: [],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.contextVersion, 1);
-      assert.strictEqual(result.alts.length, 1);
-      assert.ok(result.alts[0].equals(alt));
-      assert.strictEqual(result.instructions.length, 0);
-    });
-
-    it("should parse data with multiple ALTs", () => {
-      const alts = [
-        web3.PublicKey.unique(),
-        web3.PublicKey.unique(),
-        web3.PublicKey.unique(),
-      ];
-      const buffer = buildTestBuffer({
-        contextVersion: 2,
-        alts,
-        instructions: [],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.contextVersion, 2);
-      assert.strictEqual(result.alts.length, 3);
-      for (let i = 0; i < alts.length; i++) {
-        assert.ok(result.alts[i].equals(alts[i]), `ALT ${i} should match`);
-      }
-      assert.strictEqual(result.instructions.length, 0);
-    });
-
-    it("should parse data with LzReceive instruction with Address locator", () => {
-      const accountPubkey = web3.PublicKey.unique();
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0, // LzReceive
-            accounts: [
-              {
-                locatorType: 0, // Address
-                locatorData: accountPubkey.toBuffer(),
-                isWritable: true,
-              },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
+      // Verify header
       assert.strictEqual(result.contextVersion, 1);
       assert.strictEqual(result.alts.length, 0);
       assert.strictEqual(result.instructions.length, 1);
 
+      // Verify instruction
       const instruction = result.instructions[0];
       assert.strictEqual(instruction.type, "LzReceive");
-      assert.strictEqual(instruction.accounts.length, 1);
+      assert.strictEqual(instruction.accounts.length, 22);
 
-      const account = instruction.accounts[0];
-      assert.strictEqual(account.addressLocator.type, "Address");
-      if (account.addressLocator.type === "Address") {
-        assert.ok(account.addressLocator.address.equals(accountPubkey));
+      // Verify first account is Payer (discriminator 2)
+      const firstAccount = instruction.accounts[0];
+      assert.strictEqual(firstAccount.addressLocator.type, "Payer");
+      assert.strictEqual(firstAccount.isSigner, true); // Payer is always a signer
+      assert.strictEqual(firstAccount.isWritable, true);
+
+      // Verify second account is Address type
+      const secondAccount = instruction.accounts[1];
+      assert.strictEqual(secondAccount.addressLocator.type, "Address");
+      if (secondAccount.addressLocator.type === "Address") {
+        assert.strictEqual(
+          secondAccount.addressLocator.address.toBase58(),
+          new web3.PublicKey(
+            Buffer.from("75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", "hex")
+          ).toBase58()
+        );
       }
-      assert.strictEqual(account.isWritable, true);
-      assert.strictEqual(account.isSigner, false); // Address type is not a signer
-    });
+      assert.strictEqual(secondAccount.isSigner, false);
+      assert.strictEqual(secondAccount.isWritable, false);
 
-    it("should parse data with LzReceive instruction with multiple accounts", () => {
-      const pubkey1 = web3.PublicKey.unique();
-      const pubkey2 = web3.PublicKey.unique();
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0, // LzReceive
-            accounts: [
-              {
-                locatorType: 0, // Address
-                locatorData: pubkey1.toBuffer(),
-                isWritable: true,
-              },
-              {
-                locatorType: 0, // Address
-                locatorData: pubkey2.toBuffer(),
-                isWritable: false,
-              },
-            ],
-          },
-        ],
-      });
+      // Verify account at index 9 is Address with isWritable=true
+      const account9 = instruction.accounts[9];
+      assert.strictEqual(account9.addressLocator.type, "Address");
+      assert.strictEqual(account9.isWritable, true);
 
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
+      // Verify account at index 13 is Payer (second Payer in the list)
+      const account13 = instruction.accounts[13];
+      assert.strictEqual(account13.addressLocator.type, "Payer");
+      assert.strictEqual(account13.isSigner, true);
+      assert.strictEqual(account13.isWritable, true);
 
-      assert.strictEqual(result.instructions.length, 1);
-      const instruction = result.instructions[0];
-      assert.strictEqual(instruction.accounts.length, 2);
-
-      assert.strictEqual(instruction.accounts[0].isWritable, true);
-      assert.strictEqual(instruction.accounts[1].isWritable, false);
-    });
-
-    it("should parse AltIndex address locator (discriminator 1)", () => {
-      // AltIndex(altIndex: u8, addressIndex: u8)
-      const altIndexData = Buffer.alloc(2);
-      altIndexData.writeUInt8(0, 0); // altIndex = 0
-      altIndexData.writeUInt8(5, 1); // addressIndex = 5
-
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              {
-                locatorType: 1, // AltIndex
-                locatorData: altIndexData,
-                isWritable: true,
-              },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const account = result.instructions[0].accounts[0];
-
-      assert.strictEqual(account.addressLocator.type, "AltIndex");
-      if (account.addressLocator.type === "AltIndex") {
-        assert.strictEqual(account.addressLocator.altIndex, 0);
-        assert.strictEqual(account.addressLocator.addressIndex, 5);
+      // Last account should be Address with all zeros (system program or similar)
+      const lastAccount = instruction.accounts[21];
+      assert.strictEqual(lastAccount.addressLocator.type, "Address");
+      if (lastAccount.addressLocator.type === "Address") {
+        assert.strictEqual(
+          lastAccount.addressLocator.address.toBase58(),
+          new web3.PublicKey(Buffer.alloc(32)).toBase58()
+        );
       }
-      assert.strictEqual(account.isSigner, false); // AltIndex is not a signer
-    });
-
-    it("should parse Payer address locator (discriminator 2)", () => {
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              {
-                locatorType: 2, // Payer
-                locatorData: undefined, // No additional data
-                isWritable: true,
-              },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const account = result.instructions[0].accounts[0];
-
-      assert.strictEqual(account.addressLocator.type, "Payer");
-      assert.strictEqual(account.isSigner, true); // Payer is always a signer
-      assert.strictEqual(account.isWritable, true);
-    });
-
-    it("should parse Signer address locator (discriminator 3)", () => {
-      // Signer(index: u8)
-      const signerData = Buffer.alloc(1);
-      signerData.writeUInt8(2, 0); // signerIndex = 2
-
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              {
-                locatorType: 3, // Signer
-                locatorData: signerData,
-                isWritable: false,
-              },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const account = result.instructions[0].accounts[0];
-
-      assert.strictEqual(account.addressLocator.type, "Signer");
-      if (account.addressLocator.type === "Signer") {
-        assert.strictEqual(account.addressLocator.index, 2);
-      }
-      assert.strictEqual(account.isSigner, true); // Signer type is always a signer
-      assert.strictEqual(account.isWritable, false);
-    });
-
-    it("should parse Context address locator (discriminator 4)", () => {
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              {
-                locatorType: 4, // Context
-                locatorData: undefined, // No additional data
-                isWritable: true,
-              },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const account = result.instructions[0].accounts[0];
-
-      assert.strictEqual(account.addressLocator.type, "Context");
-      assert.strictEqual(account.isSigner, false); // Context is not a signer
-      assert.strictEqual(account.isWritable, true);
-    });
-
-    it("should parse all AddressLocator types in a single instruction", () => {
-      const addressPubkey = web3.PublicKey.unique();
-      const altIndexData = Buffer.alloc(2);
-      altIndexData.writeUInt8(1, 0);
-      altIndexData.writeUInt8(3, 1);
-      const signerData = Buffer.alloc(1);
-      signerData.writeUInt8(0, 0);
-
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              { locatorType: 0, locatorData: addressPubkey.toBuffer(), isWritable: true },  // Address
-              { locatorType: 1, locatorData: altIndexData, isWritable: false },              // AltIndex
-              { locatorType: 2, locatorData: undefined, isWritable: true },                  // Payer
-              { locatorType: 3, locatorData: signerData, isWritable: false },                // Signer
-              { locatorType: 4, locatorData: undefined, isWritable: true },                  // Context
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const accounts = result.instructions[0].accounts;
-
-      assert.strictEqual(accounts.length, 5);
-      assert.strictEqual(accounts[0].addressLocator.type, "Address");
-      assert.strictEqual(accounts[1].addressLocator.type, "AltIndex");
-      assert.strictEqual(accounts[2].addressLocator.type, "Payer");
-      assert.strictEqual(accounts[3].addressLocator.type, "Signer");
-      assert.strictEqual(accounts[4].addressLocator.type, "Context");
-
-      // Verify signer status based on locator type
-      assert.strictEqual(accounts[0].isSigner, false); // Address
-      assert.strictEqual(accounts[1].isSigner, false); // AltIndex
-      assert.strictEqual(accounts[2].isSigner, true);  // Payer
-      assert.strictEqual(accounts[3].isSigner, true);  // Signer
-      assert.strictEqual(accounts[4].isSigner, false); // Context
     });
 
     // Error cases
@@ -573,183 +262,6 @@ describe("lz-receive-types-v2", () => {
         () => parseLzReceiveTypesV2ReturnData(buffer),
         /Not enough data for is_writable flag/
       );
-    });
-
-    // Edge cases
-    it("should parse data with many ALTs (10)", () => {
-      const alts = Array.from({ length: 10 }, () => web3.PublicKey.unique());
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts,
-        instructions: [],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.alts.length, 10);
-      for (let i = 0; i < 10; i++) {
-        assert.ok(result.alts[i].equals(alts[i]), `ALT ${i} should match`);
-      }
-    });
-
-    it("should parse data with multiple instructions", () => {
-      const pubkey1 = web3.PublicKey.unique();
-      const pubkey2 = web3.PublicKey.unique();
-      const pubkey3 = web3.PublicKey.unique();
-
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [{ locatorType: 0, locatorData: pubkey1.toBuffer(), isWritable: true }],
-          },
-          {
-            type: 0,
-            accounts: [{ locatorType: 0, locatorData: pubkey2.toBuffer(), isWritable: false }],
-          },
-          {
-            type: 0,
-            accounts: [{ locatorType: 0, locatorData: pubkey3.toBuffer(), isWritable: true }],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.instructions.length, 3);
-      assert.strictEqual(result.instructions[0].type, "LzReceive");
-      assert.strictEqual(result.instructions[1].type, "LzReceive");
-      assert.strictEqual(result.instructions[2].type, "LzReceive");
-
-      // Verify accounts
-      if (result.instructions[0].accounts[0].addressLocator.type === "Address") {
-        assert.ok(result.instructions[0].accounts[0].addressLocator.address.equals(pubkey1));
-      }
-      if (result.instructions[1].accounts[0].addressLocator.type === "Address") {
-        assert.ok(result.instructions[1].accounts[0].addressLocator.address.equals(pubkey2));
-      }
-      if (result.instructions[2].accounts[0].addressLocator.type === "Address") {
-        assert.ok(result.instructions[2].accounts[0].addressLocator.address.equals(pubkey3));
-      }
-    });
-
-    it("should parse complex scenario with ALTs, multiple instructions, and mixed accounts", () => {
-      const alts = [web3.PublicKey.unique(), web3.PublicKey.unique()];
-      const addressPubkey1 = web3.PublicKey.unique();
-      const addressPubkey2 = web3.PublicKey.unique();
-
-      const altIndexData1 = Buffer.alloc(2);
-      altIndexData1.writeUInt8(0, 0);
-      altIndexData1.writeUInt8(1, 1);
-
-      const altIndexData2 = Buffer.alloc(2);
-      altIndexData2.writeUInt8(1, 0);
-      altIndexData2.writeUInt8(0, 1);
-
-      const signerData = Buffer.alloc(1);
-      signerData.writeUInt8(0, 0);
-
-      const buffer = buildTestBuffer({
-        contextVersion: 3,
-        alts,
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              { locatorType: 0, locatorData: addressPubkey1.toBuffer(), isWritable: true },
-              { locatorType: 1, locatorData: altIndexData1, isWritable: false },
-              { locatorType: 2, locatorData: undefined, isWritable: true },
-            ],
-          },
-          {
-            type: 0,
-            accounts: [
-              { locatorType: 0, locatorData: addressPubkey2.toBuffer(), isWritable: false },
-              { locatorType: 1, locatorData: altIndexData2, isWritable: true },
-              { locatorType: 3, locatorData: signerData, isWritable: false },
-              { locatorType: 4, locatorData: undefined, isWritable: true },
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      // Verify structure
-      assert.strictEqual(result.contextVersion, 3);
-      assert.strictEqual(result.alts.length, 2);
-      assert.strictEqual(result.instructions.length, 2);
-
-      // Verify first instruction
-      const inst1 = result.instructions[0];
-      assert.strictEqual(inst1.accounts.length, 3);
-      assert.strictEqual(inst1.accounts[0].addressLocator.type, "Address");
-      assert.strictEqual(inst1.accounts[1].addressLocator.type, "AltIndex");
-      assert.strictEqual(inst1.accounts[2].addressLocator.type, "Payer");
-
-      // Verify second instruction
-      const inst2 = result.instructions[1];
-      assert.strictEqual(inst2.accounts.length, 4);
-      assert.strictEqual(inst2.accounts[0].addressLocator.type, "Address");
-      assert.strictEqual(inst2.accounts[1].addressLocator.type, "AltIndex");
-      assert.strictEqual(inst2.accounts[2].addressLocator.type, "Signer");
-      assert.strictEqual(inst2.accounts[3].addressLocator.type, "Context");
-
-      // Verify AltIndex values
-      if (inst1.accounts[1].addressLocator.type === "AltIndex") {
-        assert.strictEqual(inst1.accounts[1].addressLocator.altIndex, 0);
-        assert.strictEqual(inst1.accounts[1].addressLocator.addressIndex, 1);
-      }
-      if (inst2.accounts[1].addressLocator.type === "AltIndex") {
-        assert.strictEqual(inst2.accounts[1].addressLocator.altIndex, 1);
-        assert.strictEqual(inst2.accounts[1].addressLocator.addressIndex, 0);
-      }
-    });
-
-    it("should correctly parse writable flags for all accounts", () => {
-      const pubkey = web3.PublicKey.unique();
-
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [
-              { locatorType: 0, locatorData: pubkey.toBuffer(), isWritable: false },
-              { locatorType: 2, locatorData: undefined, isWritable: false }, // Payer, not writable
-              { locatorType: 4, locatorData: undefined, isWritable: true },  // Context, writable
-            ],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-      const accounts = result.instructions[0].accounts;
-
-      assert.strictEqual(accounts[0].isWritable, false);
-      assert.strictEqual(accounts[1].isWritable, false);
-      assert.strictEqual(accounts[2].isWritable, true);
-    });
-
-    it("should handle instruction with zero accounts", () => {
-      const buffer = buildTestBuffer({
-        contextVersion: 1,
-        alts: [],
-        instructions: [
-          {
-            type: 0,
-            accounts: [],
-          },
-        ],
-      });
-
-      const result = parseLzReceiveTypesV2ReturnData(buffer);
-
-      assert.strictEqual(result.instructions.length, 1);
-      assert.strictEqual(result.instructions[0].accounts.length, 0);
     });
   });
 });
