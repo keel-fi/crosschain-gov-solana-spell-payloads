@@ -377,12 +377,10 @@ export function hexStringToBytes(hexStr: string): Buffer {
 export function getRpcUrl(): string {
   // Check environment variables in order of preference
   if (process.env.SOLANA_RPC_URL && process.env.SOLANA_RPC_URL.length > 0) {
-    console.log(`   🌐 Using RPC from SOLANA_RPC_URL: ${process.env.SOLANA_RPC_URL}`);
     return process.env.SOLANA_RPC_URL;
   }
   
   if (process.env.SOLANA_RPC_ENDPOINT && process.env.SOLANA_RPC_ENDPOINT.length > 0) {
-    console.log(`   🌐 Using RPC from SOLANA_RPC_ENDPOINT: ${process.env.SOLANA_RPC_ENDPOINT}`);
     return process.env.SOLANA_RPC_ENDPOINT;
   }
   

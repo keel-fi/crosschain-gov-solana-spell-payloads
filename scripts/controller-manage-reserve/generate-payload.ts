@@ -34,4 +34,7 @@ const printControllerManageReservePayload = async () => {
   writeOutputFile(config.outputFile, payload);
 };
 
-printControllerManageReservePayload();
+printControllerManageReservePayload().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
