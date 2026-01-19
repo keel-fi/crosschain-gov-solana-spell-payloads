@@ -14,7 +14,7 @@ export default {
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
-  description: "Kamino Main USDC",
+  description: "Kamino Main USDC2",
   rateLimitSlope: 10_000_000_000_000n,
   rateLimitMaxOutflow: 25_000_000_000_000n,
   integration: KAMINO_USDC_INTEGRATION,

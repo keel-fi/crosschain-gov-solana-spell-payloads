@@ -11,6 +11,65 @@ const STATIC_TEST_BUFFER = Buffer.from(
   "hex"
 );
 
+/**
+ * Expected account data for the static test buffer.
+ * Each entry contains the expected type, address (hex for Address types), isSigner, and isWritable.
+ * Each account comes from the STATIC_TEST_BUFFER.
+ */
+type ExpectedAccount = {
+  type: "Payer" | "Address";
+  addressHex: string | null;
+  isSigner: boolean;
+  isWritable: boolean;
+};
+
+const EXPECTED_ACCOUNTS: ExpectedAccount[] = [
+  // Account 0: Payer
+  { type: "Payer", addressHex: null, isSigner: true, isWritable: true },
+  // Account 1: Address
+  { type: "Address", addressHex: "75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", isSigner: false, isWritable: false },
+  // Account 2: Address
+  { type: "Address", addressHex: "fcebb99d8849b09172b072f589149e43ab5e6a967328178de54257418ab955cf", isSigner: false, isWritable: false },
+  // Account 3: Address
+  { type: "Address", addressHex: "d327682cf394e2e8637e684a66b2dab92706e64b9490b7e438f87c5cd6e28f4b", isSigner: false, isWritable: false },
+  // Account 4: Address
+  { type: "Address", addressHex: "8aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da3624", isSigner: false, isWritable: false },
+  // Account 5: Address
+  { type: "Address", addressHex: "5aad76da514b6e1dcf11037e904dac3d375f525c9fbafcb19507b78907d8c18b", isSigner: false, isWritable: false },
+  // Account 6: Address (same as account 1)
+  { type: "Address", addressHex: "75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", isSigner: false, isWritable: false },
+  // Account 7: Address
+  { type: "Address", addressHex: "bb2079c065e1fae1bfbcca272ecde816303f2c2ad08de7a6f515ac2a95b8b17d", isSigner: false, isWritable: false },
+  // Account 8: Address
+  { type: "Address", addressHex: "7d99b604a89896c7d3ed6851187a745ece1890cc08511917d2e4f4a5830dfc92", isSigner: false, isWritable: false },
+  // Account 9: Address (writable)
+  { type: "Address", addressHex: "e4e98f657dc7c403b52d3c461ef32109ce35d1737f92ae1d1205fdf6469f00f2", isSigner: false, isWritable: true },
+  // Account 10: Address (writable)
+  { type: "Address", addressHex: "1c5eae5faa88478e8729bc45057eb95154f0f7ec4a3ec80503c62b8b7cdd97cc", isSigner: false, isWritable: true },
+  // Account 11: Address
+  { type: "Address", addressHex: "d1dd86ac361b6252c406c281f3912ab13b924126c011b587278e8af0b08ef09b", isSigner: false, isWritable: false },
+  // Account 12: Address (same as account 5)
+  { type: "Address", addressHex: "5aad76da514b6e1dcf11037e904dac3d375f525c9fbafcb19507b78907d8c18b", isSigner: false, isWritable: false },
+  // Account 13: Payer
+  { type: "Payer", addressHex: null, isSigner: true, isWritable: true },
+  // Account 14: Address
+  { type: "Address", addressHex: "cad71b309e306d79a1dd577e2c67f2ed713fa65ae6d4c6e86534bc303f628166", isSigner: false, isWritable: false },
+  // Account 15: Address
+  { type: "Address", addressHex: "cac3764c231540dd2364f24c78fe8f491c08c42ef2ed370f22904eda9ac48609", isSigner: false, isWritable: false },
+  // Account 16: Address (same as account 3)
+  { type: "Address", addressHex: "d327682cf394e2e8637e684a66b2dab92706e64b9490b7e438f87c5cd6e28f4b", isSigner: false, isWritable: false },
+  // Account 17: Address
+  { type: "Address", addressHex: "ece79d10f039ba13a2d4332d6cf5ae39e7ab46037886565799d6121ef180c112", isSigner: false, isWritable: false },
+  // Account 18: Address
+  { type: "Address", addressHex: "840b05b00bad9fe212ef04e3246cd179f3931ffab35915bb278c8d6f6f8b672d", isSigner: false, isWritable: false },
+  // Account 19: Address (writable)
+  { type: "Address", addressHex: "5bc709dc71412fe06e597212915764424ca0ee06572e2973cde4f78addbee239", isSigner: false, isWritable: true },
+  // Account 20: Address (same as account 4)
+  { type: "Address", addressHex: "8aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da3624", isSigner: false, isWritable: false },
+  // Account 21: Address (zero address)
+  { type: "Address", addressHex: "0000000000000000000000000000000000000000000000000000000000000000", isSigner: false, isWritable: false },
+];
+
 describe("lz-receive-types-v2", () => {
   describe("parseLzReceiveTypesV2ReturnData", () => {
     it("should parse static test buffer correctly", () => {
@@ -26,44 +85,44 @@ describe("lz-receive-types-v2", () => {
       assert.strictEqual(instruction.type, "LzReceive");
       assert.strictEqual(instruction.accounts.length, 22);
 
-      // Verify first account is Payer (discriminator 2)
-      const firstAccount = instruction.accounts[0];
-      assert.strictEqual(firstAccount.addressLocator.type, "Payer");
-      assert.strictEqual(firstAccount.isSigner, true); // Payer is always a signer
-      assert.strictEqual(firstAccount.isWritable, true);
+      // Verify all accounts match expected values
+      for (let i = 0; i < EXPECTED_ACCOUNTS.length; i++) {
+        const account = instruction.accounts[i];
+        const expected = EXPECTED_ACCOUNTS[i];
 
-      // Verify second account is Address type
-      const secondAccount = instruction.accounts[1];
-      assert.strictEqual(secondAccount.addressLocator.type, "Address");
-      if (secondAccount.addressLocator.type === "Address") {
+        // Verify address locator type
         assert.strictEqual(
-          secondAccount.addressLocator.address.toBase58(),
-          new web3.PublicKey(
-            Buffer.from("75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", "hex")
-          ).toBase58()
+          account.addressLocator.type,
+          expected.type,
+          `Account ${i}: type should be ${expected.type}`
         );
-      }
-      assert.strictEqual(secondAccount.isSigner, false);
-      assert.strictEqual(secondAccount.isWritable, false);
 
-      // Verify account at index 9 is Address with isWritable=true
-      const account9 = instruction.accounts[9];
-      assert.strictEqual(account9.addressLocator.type, "Address");
-      assert.strictEqual(account9.isWritable, true);
+        // Verify address for Address-type accounts
+        if (expected.type === "Address" && expected.addressHex !== null) {
+          if (account.addressLocator.type === "Address") {
+            const expectedAddress = new web3.PublicKey(
+              Buffer.from(expected.addressHex, "hex")
+            );
+            assert.strictEqual(
+              account.addressLocator.address.toBase58(),
+              expectedAddress.toBase58(),
+              `Account ${i}: address should be ${expectedAddress.toBase58()}`
+            );
+          }
+        }
 
-      // Verify account at index 13 is Payer (second Payer in the list)
-      const account13 = instruction.accounts[13];
-      assert.strictEqual(account13.addressLocator.type, "Payer");
-      assert.strictEqual(account13.isSigner, true);
-      assert.strictEqual(account13.isWritable, true);
-
-      // Last account should be Address with all zeros (system program or similar)
-      const lastAccount = instruction.accounts[21];
-      assert.strictEqual(lastAccount.addressLocator.type, "Address");
-      if (lastAccount.addressLocator.type === "Address") {
+        // Verify isSigner
         assert.strictEqual(
-          lastAccount.addressLocator.address.toBase58(),
-          new web3.PublicKey(Buffer.alloc(32)).toBase58()
+          account.isSigner,
+          expected.isSigner,
+          `Account ${i}: isSigner should be ${expected.isSigner}`
+        );
+
+        // Verify isWritable
+        assert.strictEqual(
+          account.isWritable,
+          expected.isWritable,
+          `Account ${i}: isWritable should be ${expected.isWritable}`
         );
       }
     });

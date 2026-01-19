@@ -14,8 +14,8 @@ export default {
   authority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   mint: USDC_MINT,
   payer: MAINNET_PAYER,
-  status: ReserveStatus.Active,
-  rateLimitSlope: 0n,
-  rateLimitMaxOutflow: 0n,
+  status: ReserveStatus.Suspended,
+  rateLimitSlope: 10_000_000_000_000n,
+  rateLimitMaxOutflow: 25_000_000_000_000n,
 };
 

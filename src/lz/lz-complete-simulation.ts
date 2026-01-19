@@ -529,8 +529,16 @@ async function executeLzReceive(
   const result = svm.sendTransaction(transaction);
   
   // Check if it's a failure
-  if (result instanceof FailedTransactionMetadata) {
+  if ('meta' in result && 'err' in result) {
+    // Failed transaction
     const logs = result.meta().logs();
+    const err = result.err();
+    console.log("❌ lz_receive execution failed!");
+    console.log(`📜 ERROR LOGS (${logs.length} entries):`);
+    for (let i = 0; i < logs.length; i++) {
+      console.log(`   [${i + 1}] ${logs[i]}`);
+    }
+    console.log(`🔥 Error: ${err}`);
     return { logs, success: false, signature: "failed" };
   }
   
@@ -688,6 +696,14 @@ export async function simulateLzCompleteCrossChainInstruction(
       connection
     );
     
+    if (!success) {
+      console.log("❌ lz_receive execution failed!");
+      console.log(`📜 ERROR LOGS (${logs.length} entries):`);
+      for (let i = 0; i < logs.length; i++) {
+        console.log(`   [${i + 1}] ${logs[i]}`);
+      }
+    }
+    
     const accountStates = getAccountStates(svm, uniqueKeys, preState);
     
     return {
@@ -698,9 +714,11 @@ export async function simulateLzCompleteCrossChainInstruction(
       payload,
       accountStates,
       payer: payer.publicKey,
-      error: success ? undefined : `Simulation failed`,
+      error: success ? undefined : `Simulation failed. Logs:\n${logs.join('\n')}`,
     };
   } catch (error: any) {
+    console.log("❌ Exception during lz_receive execution:");
+    console.log(`   Error: ${error?.message || String(error)}`);
     const accountStates = getAccountStates(svm, uniqueKeys, preState);
     
     return {

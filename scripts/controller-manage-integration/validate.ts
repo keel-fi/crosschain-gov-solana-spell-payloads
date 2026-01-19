@@ -8,6 +8,7 @@ import {
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   bytesToUtf8TrimNull,
+  assertContainsIn,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ControllerManageIntegrationConfig, ACTION } from "./config";
@@ -22,18 +23,21 @@ const main = async () => {
   if (!args.config) {
     throw new Error("Must include config file '--config [CONFIG_FILE]'");
   }
-  const config = readConfigFromFile<ControllerManageIntegrationConfig>(args.config);
+  const config = readConfigFromFile<ControllerManageIntegrationConfig>(
+    args.config
+  );
   const payload = readPayloadFile(config.outputFile);
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
-  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
-    payload,
-    new web3.PublicKey(config.controllerProgramId),
-    payerPubkey,
-    cpiAuthority,
-    1n // nonce
-  );
+  const { accountStates: resp, payer: simulationPayer } =
+    await simulatePayloadWithCompleteCrossChainFlow(
+      payload,
+      new web3.PublicKey(config.controllerProgramId),
+      payerPubkey,
+      cpiAuthority,
+      1n // nonce
+    );
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -81,32 +85,72 @@ const main = async () => {
 
   // Validate integration data matches config (only validate non-null fields)
   const integrationCodec = getIntegrationCodec();
-  const [integration] = integrationCodec.read(integrationResp.after.data, 1);
+  const [integrationAfter] = integrationCodec.read(
+    integrationResp.after.data,
+    1
+  );
+  const [integrationBefore] = integrationCodec.read(
+    integrationResp.before.data,
+    1
+  );
 
   if (config.status !== null) {
-    assert.equal(integration.status, config.status, "Status should match config");
+    assert.equal(
+      integrationAfter.status,
+      config.status,
+      "Status should match config"
+    );
+  } else {
+    assert.equal(
+      integrationAfter.status,
+      integrationBefore.status,
+      "Status should not change"
+    );
   }
+
   if (config.description !== null) {
     assert.equal(
-      bytesToUtf8TrimNull(integration.description),
+      bytesToUtf8TrimNull(integrationAfter.description),
       config.description,
       "Description should match config"
     );
+  } else {
+    assert.equal(
+      bytesToUtf8TrimNull(integrationAfter.description),
+      bytesToUtf8TrimNull(integrationBefore.description),
+      "Description should not change"
+    );
   }
+
   if (config.rateLimitSlope !== null) {
     assert.equal(
-      integration.rateLimitSlope.toString(),
+      integrationAfter.rateLimitSlope.toString(),
       config.rateLimitSlope.toString(),
       "Rate limit slope should match config"
     );
+  } else {
+    assert.equal(
+      integrationAfter.rateLimitSlope.toString(),
+      integrationBefore.rateLimitSlope.toString(),
+      "Rate limit slope should not change"
+    );
   }
+
   if (config.rateLimitMaxOutflow !== null) {
     assert.equal(
-      integration.rateLimitMaxOutflow.toString(),
+      integrationAfter.rateLimitMaxOutflow.toString(),
       config.rateLimitMaxOutflow.toString(),
       "Rate limit max outflow should match config"
     );
+  } else {
+    assert.equal(
+      integrationAfter.rateLimitMaxOutflow.toString(),
+      integrationBefore.rateLimitMaxOutflow.toString(),
+      "Rate limit max outflow should not change"
+    );
   }
+
+  assertContainsIn(integrationBefore, integrationAfter);
 
   validateSuccess(config.outputFile);
 };

@@ -8,7 +8,8 @@ import { SERIALIZED_ACCOUNT_LEN } from "../shared-governance-codec";
 /**
  * Static test packet
  */
-const STATIC_PACKET_HEX = "0100000000000000030000759500000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca000075d875b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c3108aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da36243030303937303631373936353732303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303130316361643731623330396533303664373961316464353737653263363766326564373133666136356165366434633665383635333462633330336636323831363630303030636163333736346332333135343064643233363466323463373866653866343931633038633432656632656433373066323239303465646139616334383630393030303064333237363832636633393465326538363337653638346136366232646162393237303665363462393439306237653433386638376335636436653238663462303130306563653739643130663033396261313361326434333332643663663561653339653761623436303337383836353635373939643631323165663138306331313230303030383430623035623030626164396665323132656630346533323436636431373966333933316666616233353931356262323738633864366636663862363732643030303035626337303964633731343132666530366535393732313239313537363434323463613065653036353732653239373363646534663738616464626565323339303030313861616464363666653866313432666235356130386539303032323866353438386663633764373339333862626365323865333133653162383764613336323430303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030333031303030303031303130303030303030303030";
+const STATIC_PACKET_HEX =
+  "0100000000000000030000759500000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca000075d875b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c3108aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da36243030303937303631373936353732303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303130316361643731623330396533303664373961316464353737653263363766326564373133666136356165366434633665383635333462633330336636323831363630303030636163333736346332333135343064643233363466323463373866653866343931633038633432656632656433373066323239303465646139616334383630393030303064333237363832636633393465326538363337653638346136366232646162393237303665363462393439306237653433386638376335636436653238663462303130306563653739643130663033396261313361326434333332643663663561653339653761623436303337383836353635373939643631323165663138306331313230303030383430623035623030626164396665323132656630346533323436636431373966333933316666616233353931356262323738633864366636663862363732643030303035626337303964633731343132666530366535393732313239313537363434323463613065653036353732653239373363646534663738616464626565323339303030313861616464363666653866313432666235356130386539303032323866353438386663633764373339333862626365323865333133653162383764613336323430303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030333031303030303031303130303030303030303030";
 
 const STATIC_PACKET = Buffer.from(STATIC_PACKET_HEX, "hex");
 
@@ -19,11 +20,20 @@ const STATIC_PACKET = Buffer.from(STATIC_PACKET_HEX, "hex");
 const EXPECTED_PACKET = {
   version: 0x01,
   nonce: BigInt(3),
-  srcEid: 30101,  // Ethereum mainnet
-  dstEid: 30168,  // Solana mainnet
-  sender: Buffer.from("00000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca", "hex"),
-  receiver: Buffer.from("75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32", "hex"),
-  guid: Buffer.from("410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f", "hex"),
+  srcEid: 30101, // Ethereum mainnet
+  dstEid: 30168, // Solana mainnet
+  sender: Buffer.from(
+    "00000000000000000000000027fc1dd771817b53be48dc28789533bea53c9cca",
+    "hex"
+  ),
+  receiver: Buffer.from(
+    "75b81a4430dee7012ff31d58540835ccc89a18d1fc0522bc95df16ecd50efc32",
+    "hex"
+  ),
+  guid: Buffer.from(
+    "410dd975b765e87168ac2a1837452aff2a39e08afb4f95f4909d6c0e8325be5f",
+    "hex"
+  ),
   messageLength: 702,
 };
 
@@ -31,8 +41,14 @@ const EXPECTED_PACKET = {
  * Expected governance message components (extracted from the packet message)
  */
 const EXPECTED_GOVERNANCE_MESSAGE = {
-  originCaller: Buffer.from("000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c310", "hex"),
-  target: Buffer.from("8aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da3624", "hex"),
+  originCaller: Buffer.from(
+    "000000000000000000000000355cd90ecb1b409fdf8b64c4473c3b858da2c310",
+    "hex"
+  ),
+  target: Buffer.from(
+    "8aadd66fe8f142fb55a08e900228f5488fcc7d73938bbce28e313e1b87da3624",
+    "hex"
+  ),
 };
 
 /**
@@ -56,112 +72,93 @@ describe("lz-packet-decoder", () => {
   describe("extractGovernancePayloadFromPacket", () => {
     describe("Strategy 1: Direct Governance Message Format", () => {
       // Tests for [ORIGIN_CALLER:32][TARGET:32][instruction_data:*]
-      
+
       describe("static packet message tests", () => {
         // Extract the governance message from the static packet for Strategy 1 testing
         const STATIC_GOVERNANCE_MESSAGE = STATIC_PACKET.subarray(113); // Message starts at offset 113
-        
-        it("should extract governance payload from static governance message", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
-          
-          assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
-        });
-        
-        it("should extract governance payload with correct length from static message", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
-          
-          assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
-        });
-        
-        it("should extract governance payload with correct account count from static message", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_GOVERNANCE_MESSAGE);
-          
-          const accountCount = result.readUInt16BE(0);
-          assert.strictEqual(accountCount, EXPECTED_PAYLOAD_PROPERTIES.accountCount);
-        });
+
+        const result = extractGovernancePayloadFromPacket(
+          STATIC_GOVERNANCE_MESSAGE
+        );
+
+        assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
+
+        assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
+
+        const accountCount = result.readUInt16BE(0);
+        assert.strictEqual(
+          accountCount,
+          EXPECTED_PAYLOAD_PROPERTIES.accountCount
+        );
       });
     });
 
     describe("Strategy 2: Full LayerZero Packet Format", () => {
       // Tests for PacketV1/V0 format
-      
+
       describe("static packet tests", () => {
-        it("should extract governance payload from static packet", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
-          
-          assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
-        });
-        
-        it("should extract governance payload with correct length", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
-          
-          assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
-        });
-        
-        it("should extract governance payload with correct account count", () => {
-          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
-          
-          const accountCount = result.readUInt16BE(0);
-          assert.strictEqual(accountCount, EXPECTED_PAYLOAD_PROPERTIES.accountCount);
-        });
-        
-        it("should handle hex-encoded ASCII instruction data in static packet", () => {
-          // The static packet contains hex-encoded ASCII instruction data
-          // This test verifies the decoder correctly decodes it to binary
-          const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
-          
-          // Verify it's been decoded (not still hex-encoded ASCII)
-          // Hex-encoded ASCII would have length 638, decoded binary has length 319
-          assert.strictEqual(result.length, 319);
-          assert.notStrictEqual(result.length, 638);
-        });
+        const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
+
+        assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
+        assert.strictEqual(result.length, EXPECTED_PAYLOAD_PROPERTIES.length);
+
+        const accountCount = result.readUInt16BE(0);
+        assert.strictEqual(
+          accountCount,
+          EXPECTED_PAYLOAD_PROPERTIES.accountCount
+        );
+
+        // Verify it's been decoded (not still hex-encoded ASCII)
+        // Hex-encoded ASCII would have length 638, decoded binary has length 319
+        assert.strictEqual(result.length, 319);
+        assert.notStrictEqual(result.length, 638);
       });
     });
 
     describe("Error Cases", () => {
       // Tests for when all strategies fail
-      
+
       it("should throw error for empty buffer", () => {
         const emptyBuffer = Buffer.alloc(0);
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(emptyBuffer),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should throw error for buffer that is too short (< 2 bytes)", () => {
         const shortBuffer = Buffer.from([0x01]);
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(shortBuffer),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should throw error for buffer with unreasonable account count (> 100)", () => {
         // Create a buffer that looks like instruction data with account count > 100
         const buffer = Buffer.alloc(10);
         buffer.writeUInt16BE(150, 0); // account count = 150 (> 100)
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(buffer),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should throw error for buffer with account count = 0 and insufficient data", () => {
         // Create a buffer that looks like instruction data with account count = 0
         // but doesn't pass validation
         const buffer = Buffer.alloc(2);
         buffer.writeUInt16BE(0, 0); // account count = 0
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(buffer),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should throw error for buffer with invalid packet version and invalid instruction data", () => {
         // Create a buffer that fails all strategies:
         // - Strategy 1: bytes 64-65 give account count > 100
@@ -173,13 +170,13 @@ describe("lz-packet-decoder", () => {
         // For Strategy 1: bytes at offset 64 and 65 should give account count > 100
         buffer[64] = 0x01; // High byte of account count
         buffer[65] = 0x00; // Low byte = 0x0100 = 256 > 100
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(buffer),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should throw error for garbage data that matches no format", () => {
         // Create random-looking data that won't match any parsing strategy
         const garbageData = Buffer.alloc(50);
@@ -188,28 +185,43 @@ describe("lz-packet-decoder", () => {
         }
         // Make sure the first 2 bytes don't give a valid account count
         garbageData.writeUInt16BE(200, 0); // 200 > 100, invalid
-        
+
         assert.throws(
           () => extractGovernancePayloadFromPacket(garbageData),
           /Failed to decode bytes/
         );
       });
-      
+
       it("should include helpful debug info in error message", () => {
         const invalidData = Buffer.from([0xff, 0xff, 0xff, 0xff]);
-        
+
         try {
           extractGovernancePayloadFromPacket(invalidData);
           assert.fail("Expected error to be thrown");
         } catch (error) {
           const errorMessage = (error as Error).message;
           // Check that error message includes the strategies attempted
-          assert.ok(errorMessage.includes("Governance message format"), "Should mention governance message format");
-          assert.ok(errorMessage.includes("LayerZero PacketV1 format"), "Should mention PacketV1 format");
-          assert.ok(errorMessage.includes("Raw instruction data format"), "Should mention raw instruction data");
+          assert.ok(
+            errorMessage.includes("Governance message format"),
+            "Should mention governance message format"
+          );
+          assert.ok(
+            errorMessage.includes("LayerZero PacketV1 format"),
+            "Should mention PacketV1 format"
+          );
+          assert.ok(
+            errorMessage.includes("Raw instruction data format"),
+            "Should mention raw instruction data"
+          );
           // Check that error message includes bytes info
-          assert.ok(errorMessage.includes("Bytes length:"), "Should include bytes length");
-          assert.ok(errorMessage.includes("First 100 bytes"), "Should include first bytes in hex");
+          assert.ok(
+            errorMessage.includes("Bytes length:"),
+            "Should include bytes length"
+          );
+          assert.ok(
+            errorMessage.includes("First 100 bytes"),
+            "Should include first bytes in hex"
+          );
         }
       });
     });
@@ -217,158 +229,132 @@ describe("lz-packet-decoder", () => {
 
   describe("decodeLayerZeroPacket", () => {
     describe("static packet tests", () => {
-      it("should decode static PacketV1 with correct srcEid", () => {
         const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
+
         assert.strictEqual(result.srcEid, EXPECTED_PACKET.srcEid);
-      });
-      
-      it("should decode static PacketV1 with correct nonce", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
+
         assert.strictEqual(result.nonce, EXPECTED_PACKET.nonce);
-      });
-      
-      it("should decode static PacketV1 with correct sender", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
+
         assert.deepEqual(result.sender, EXPECTED_PACKET.sender);
-      });
-      
-      it("should decode static PacketV1 with correct guid", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
+
         assert.deepEqual(result.guid, EXPECTED_PACKET.guid);
-      });
-      
-      it("should decode static PacketV1 with correct message length", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
-        assert.strictEqual(result.message.length, EXPECTED_PACKET.messageLength);
-      });
-      
-      it("should decode static PacketV1 with empty extraData", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
+
+        assert.strictEqual(
+          result.message.length,
+          EXPECTED_PACKET.messageLength
+        );
         
         assert.deepEqual(result.extraData, Buffer.alloc(0));
-      });
-      
-      it("should decode static PacketV1 with all fields matching expected values", () => {
-        const result = decodeLayerZeroPacket(STATIC_PACKET);
-        
-        assert.strictEqual(result.srcEid, EXPECTED_PACKET.srcEid);
-        assert.strictEqual(result.nonce, EXPECTED_PACKET.nonce);
-        assert.deepEqual(result.sender, EXPECTED_PACKET.sender);
-        assert.deepEqual(result.guid, EXPECTED_PACKET.guid);
-        assert.strictEqual(result.message.length, EXPECTED_PACKET.messageLength);
-        assert.deepEqual(result.extraData, Buffer.alloc(0));
-      });
+
     });
-    
+
     it("should throw error for packet that is too short", () => {
       const shortPacket = Buffer.alloc(50); // Less than 113 bytes minimum
-      
+
       assert.throws(
         () => decodeLayerZeroPacket(shortPacket),
         /Packet too short/
       );
     });
-    
+
     it("should throw error for invalid packet version", () => {
       const packet = Buffer.alloc(113);
       packet[0] = 0x02; // Invalid version
-      
+
       assert.throws(
         () => decodeLayerZeroPacket(packet),
         /Invalid packet version/
       );
     });
-  
+
     describe("packet boundary conditions", () => {
-      
       it("should throw error for packet at 112 bytes (one byte short of minimum)", () => {
         const packet = Buffer.alloc(112);
         packet[0] = 0x01; // Valid version
-        
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Packet too short: 112 bytes \(minimum 113 bytes/
         );
       });
-      
+
       it("should throw error for packet at 1 byte", () => {
         const packet = Buffer.alloc(1);
         packet[0] = 0x01;
-        
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Packet too short: 1 bytes/
         );
       });
     });
-    
+
     describe("additional invalid version values", () => {
       it("should throw error for version 0xFF", () => {
         const packet = Buffer.alloc(113);
-        packet[0] = 0xFF;
-        
+        packet[0] = 0xff;
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Invalid packet version: 0xff \(expected 0x00 or 0x01\)/
         );
       });
-      
+
       it("should throw error for version 0xFE", () => {
         const packet = Buffer.alloc(113);
-        packet[0] = 0xFE;
-        
+        packet[0] = 0xfe;
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Invalid packet version: 0xfe \(expected 0x00 or 0x01\)/
         );
       });
-      
+
       it("should throw error for version 0x03", () => {
         const packet = Buffer.alloc(113);
         packet[0] = 0x03;
-        
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Invalid packet version: 0x03 \(expected 0x00 or 0x01\)/
         );
       });
-      
+
       it("should throw error for version 0x10", () => {
         const packet = Buffer.alloc(113);
         packet[0] = 0x10;
-        
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Invalid packet version: 0x10 \(expected 0x00 or 0x01\)/
         );
       });
-      
+
       it("should throw error for version 0x80", () => {
         const packet = Buffer.alloc(113);
         packet[0] = 0x80;
-        
+
         assert.throws(
           () => decodeLayerZeroPacket(packet),
           /Invalid packet version: 0x80 \(expected 0x00 or 0x01\)/
         );
       });
-      
+
       it("should include version byte in error message for multiple invalid values", () => {
-        const invalidVersions = [0x02, 0x05, 0x0A, 0x20, 0x7F, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
-        
+        const invalidVersions = [
+          0x02, 0x05, 0x0a, 0x20, 0x7f, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
+        ];
+
         for (const version of invalidVersions) {
           const packet = Buffer.alloc(113);
           packet[0] = version;
-          
+
           assert.throws(
             () => decodeLayerZeroPacket(packet),
-            new RegExp(`Invalid packet version: 0x${version.toString(16).padStart(2, '0')}`),
-            `Should throw for version 0x${version.toString(16).padStart(2, '0')}`
+            new RegExp(
+              `Invalid packet version: 0x${version.toString(16).padStart(2, "0")}`
+            ),
+            `Should throw for version 0x${version.toString(16).padStart(2, "0")}`
           );
         }
       });

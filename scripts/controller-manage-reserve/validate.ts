@@ -7,6 +7,7 @@ import {
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  assertContainsIn,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ControllerManageReserveConfig, ACTION } from "./config";
@@ -83,29 +84,55 @@ const main = async () => {
 
   // Validate reserve data matches config (only validate non-null fields)
   const reserveCodec = getReserveCodec();
-  const [reserve] = reserveCodec.read(reserveResp.after.data, 1);
+  const [reserveAfter] = reserveCodec.read(reserveResp.after.data, 1);
+  const [reserveBefore] = reserveCodec.read(reserveResp.before.data, 1);
   
   if (config.status !== null) {
     assert.equal(
-      reserve.status,
+      reserveAfter.status,
       config.status,
       "Reserve status should match config"
     );
   }
+  else {
+    assert.equal(
+      reserveAfter.status,
+      reserveBefore.status,
+      "Reserve status should not change"
+    );
+  }
+
   if (config.rateLimitSlope !== null) {
     assert.equal(
-      reserve.rateLimitSlope,
+      reserveAfter.rateLimitSlope,
       config.rateLimitSlope,
       "Reserve rateLimitSlope should match config"
     );
   }
+  else {
+    assert.equal(
+      reserveAfter.rateLimitSlope,
+      reserveBefore.rateLimitSlope,
+      "Reserve rateLimitSlope should not change"
+    );
+  }
+
   if (config.rateLimitMaxOutflow !== null) {
     assert.equal(
-      reserve.rateLimitMaxOutflow,
+      reserveAfter.rateLimitMaxOutflow,
       config.rateLimitMaxOutflow,
       "Reserve rateLimitMaxOutflow should match config"
     );
   }
+  else {
+    assert.equal(
+      reserveAfter.rateLimitMaxOutflow,
+      reserveBefore.rateLimitMaxOutflow,
+      "Reserve rateLimitMaxOutflow should not change"
+    );
+  }
+
+  assertContainsIn(reserveBefore, reserveAfter);
 
   validateSuccess(config.outputFile);
 };

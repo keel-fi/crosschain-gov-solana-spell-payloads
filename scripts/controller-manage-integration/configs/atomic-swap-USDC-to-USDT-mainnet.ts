@@ -15,7 +15,7 @@ export default {
   payer: MAINNET_PAYER,
   status: IntegrationStatus.Active,
   description: "USDC->USDT AtomicSwap",
-  rateLimitSlope: 10_000_000_000_000n,
+  rateLimitSlope: 15_000_000_000_000n,
   rateLimitMaxOutflow: 25_000_000_000_000n,
   integration: ATOMIC_SWAP_USDC_TO_USDT_INTEGRATION,
 };
