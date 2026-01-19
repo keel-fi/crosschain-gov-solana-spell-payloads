@@ -9,7 +9,7 @@
  */
 
 import { web3 } from "@coral-xyz/anchor";
-import { LiteSVM, FailedTransactionMetadata } from "litesvm";
+import { LiteSVM } from "litesvm";
 import { Connection } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";

@@ -11,5 +11,3 @@ export * from "./utils";
 export * from "./simulation-utils";
 export * from "./wh-governance-codec";
 export * from "./xchain-gov-payload";
-export * from "./xchain-gov-spoof";
-export * from "./xchain-gov-simulation";
