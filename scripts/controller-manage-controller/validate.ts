@@ -64,6 +64,7 @@ const main = async () => {
   // Assert controller changes
   const controllerResp = resp[config.controller];
   assert(controllerResp.after, "Controller should exist");
+  assert(controllerResp.before, "Controller should exist before");
   assert.notDeepEqual(
     controllerResp.after.data,
     controllerResp.before.data,

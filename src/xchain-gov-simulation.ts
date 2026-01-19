@@ -418,7 +418,6 @@ function createEndpointSettingsData(bump: number, admin: web3.PublicKey): Buffer
   offset += 32;
   data[offset] = 0; // lz_token_mint: None
   offset += 1;
-  // padding (32 bytes)
   return data;
 }
 
