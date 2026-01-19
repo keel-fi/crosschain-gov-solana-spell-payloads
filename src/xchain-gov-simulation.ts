@@ -286,6 +286,11 @@ async function createCompleteSpoofedAccounts(
       const adjustedNonce = adjustNonceAccountData(existingNonce, config.nonce);
       svm.setAccount(nonceAccount, adjustedNonce);
       console.log(`   ✅ Adjusted nonce account: ${nonceAccount.toString()}`);
+    } else {
+      // Create new nonce account if doesn't exist
+      const newNonce = createNonceAccountData(config.nonce);
+      svm.setAccount(nonceAccount, newNonce);
+      console.log(`   ✅ Created nonce account: ${nonceAccount.toString()}`);
     }
   } catch (error) {
     // Create new nonce account if doesn't exist

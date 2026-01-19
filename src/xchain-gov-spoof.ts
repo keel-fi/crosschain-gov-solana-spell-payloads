@@ -111,7 +111,7 @@ export function validateLayerZeroAccounts(
   const nonceAccount: NonceAccount = {
     bump: 255, // Mock bump
     outboundNonce: 0n,
-    inboundNonce: nonce - 1n, // Set to allow the target nonce
+    inboundNonce: nonce > 0n ? nonce - 1n : 0n, // Set to allow the target nonce
   };
   
   const payloadHashAccount: PayloadHashAccount = {

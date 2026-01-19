@@ -76,6 +76,7 @@ const main = async () => {
   );
   const reserveResp = resp[reservePda];
   assert(reserveResp.after, "Reserve should exist");
+  assert(reserveResp.before, "Reserve should exist before");
   assert.notDeepEqual(
     reserveResp.after.data,
     reserveResp.before.data,

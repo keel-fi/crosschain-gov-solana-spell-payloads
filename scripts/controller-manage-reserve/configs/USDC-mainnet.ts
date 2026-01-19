@@ -15,7 +15,7 @@ export default {
   mint: USDC_MINT,
   payer: MAINNET_PAYER,
   status: ReserveStatus.Suspended,
-  rateLimitSlope: 10_000_000_000_000n,
-  rateLimitMaxOutflow: 25_000_000_000_000n,
+  rateLimitSlope: null, // null means no change
+  rateLimitMaxOutflow: null, // null means no change
 };
 

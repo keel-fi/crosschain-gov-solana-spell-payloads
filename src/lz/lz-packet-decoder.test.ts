@@ -73,7 +73,7 @@ describe("lz-packet-decoder", () => {
     describe("Strategy 1: Direct Governance Message Format", () => {
       // Tests for [ORIGIN_CALLER:32][TARGET:32][instruction_data:*]
 
-      describe("static packet message tests", () => {
+      it("static packet message tests", () => {
         // Extract the governance message from the static packet for Strategy 1 testing
         const STATIC_GOVERNANCE_MESSAGE = STATIC_PACKET.subarray(113); // Message starts at offset 113
 
@@ -96,7 +96,7 @@ describe("lz-packet-decoder", () => {
     describe("Strategy 2: Full LayerZero Packet Format", () => {
       // Tests for PacketV1/V0 format
 
-      describe("static packet tests", () => {
+      it("static packet tests", () => {
         const result = extractGovernancePayloadFromPacket(STATIC_PACKET);
 
         assert.deepEqual(result, EXPECTED_GOVERNANCE_PAYLOAD);
@@ -228,7 +228,7 @@ describe("lz-packet-decoder", () => {
   });
 
   describe("decodeLayerZeroPacket", () => {
-    describe("static packet tests", () => {
+    it("static packet tests", () => {
         const result = decodeLayerZeroPacket(STATIC_PACKET);
 
         assert.strictEqual(result.srcEid, EXPECTED_PACKET.srcEid);
@@ -243,7 +243,7 @@ describe("lz-packet-decoder", () => {
           result.message.length,
           EXPECTED_PACKET.messageLength
         );
-        
+
         assert.deepEqual(result.extraData, Buffer.alloc(0));
 
     });
