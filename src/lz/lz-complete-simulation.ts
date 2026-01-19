@@ -318,12 +318,22 @@ async function loadProgramFromRpc(
 }
 
 /**
- * Initialize LiteSVM with all core programs
+ * Initialize LiteSVM with all core programs and current Solana clock
  */
 async function initializeLiteSvmWithPrograms(
+  connection: Connection,
   programsDir: string = MAINNET_PROGRAMS_DIR
 ): Promise<LiteSVM> {
   const svm = new LiteSVM();
+  
+  // Initialize clock with current Solana clock to avoid simulation failures
+  // LiteSVM defaults to slot=0, unixTimestamp=0 which can cause issues
+  const slot = await connection.getSlot();
+  const blockTime = await connection.getBlockTime(slot);
+  const svmClock = svm.getClock();
+  svmClock.slot = BigInt(slot);
+  svmClock.unixTimestamp = BigInt(blockTime ?? Math.floor(Date.now() / 1000));
+  svm.setClock(svmClock);
   
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
   
@@ -605,7 +615,7 @@ export async function simulateLzCompleteCrossChainInstruction(
   
   // Step 2: Initialize LiteSVM
   console.log("🔧 Step 2: Initializing LiteSVM environment");
-  const svm = await initializeLiteSvmWithPrograms(config.programsDir);
+  const svm = await initializeLiteSvmWithPrograms(connection, config.programsDir);
   
   // Step 3: Create and fund payer
   const payer = web3.Keypair.generate();

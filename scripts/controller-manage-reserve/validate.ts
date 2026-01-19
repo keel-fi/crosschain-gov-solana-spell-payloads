@@ -95,26 +95,12 @@ const main = async () => {
       "Reserve status should match config"
     );
   }
-  else {
-    assert.equal(
-      reserveAfter.status,
-      reserveBefore.status,
-      "Reserve status should not change"
-    );
-  }
 
   if (config.rateLimitSlope !== null) {
     assert.equal(
       reserveAfter.rateLimitSlope,
       config.rateLimitSlope,
       "Reserve rateLimitSlope should match config"
-    );
-  }
-  else {
-    assert.equal(
-      reserveAfter.rateLimitSlope,
-      reserveBefore.rateLimitSlope,
-      "Reserve rateLimitSlope should not change"
     );
   }
 
@@ -125,15 +111,18 @@ const main = async () => {
       "Reserve rateLimitMaxOutflow should match config"
     );
   }
-  else {
-    assert.equal(
-      reserveAfter.rateLimitMaxOutflow,
-      reserveBefore.rateLimitMaxOutflow,
-      "Reserve rateLimitMaxOutflow should not change"
-    );
-  }
 
-  assertContainsIn(reserveBefore, reserveAfter);
+  // Skip keys that are not null in config (no change expected)
+  // Also skip fields that can change automatically (rate limiting, timestamps, etc.)
+  const skipKeys = [
+    ...Object.entries(config)
+      .filter(([, value]) => value !== null)
+      .map(([key]) => key),
+    "rateLimitOutflowAmountAvailable", // Can change due to rate limiting calculations
+    "lastRefreshTimestamp", // Can change over time
+    "lastRefreshSlot", // Can change over time
+  ];
+  assertContainsIn(reserveBefore, reserveAfter, { skipKeys });
 
   validateSuccess(config.outputFile);
 };

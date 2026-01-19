@@ -100,12 +100,6 @@ const main = async () => {
       config.status,
       "Status should match config"
     );
-  } else {
-    assert.equal(
-      integrationAfter.status,
-      integrationBefore.status,
-      "Status should not change"
-    );
   }
 
   if (config.description !== null) {
@@ -113,12 +107,6 @@ const main = async () => {
       bytesToUtf8TrimNull(integrationAfter.description),
       config.description,
       "Description should match config"
-    );
-  } else {
-    assert.equal(
-      bytesToUtf8TrimNull(integrationAfter.description),
-      bytesToUtf8TrimNull(integrationBefore.description),
-      "Description should not change"
     );
   }
 
@@ -128,13 +116,7 @@ const main = async () => {
       config.rateLimitSlope.toString(),
       "Rate limit slope should match config"
     );
-  } else {
-    assert.equal(
-      integrationAfter.rateLimitSlope.toString(),
-      integrationBefore.rateLimitSlope.toString(),
-      "Rate limit slope should not change"
-    );
-  }
+  } 
 
   if (config.rateLimitMaxOutflow !== null) {
     assert.equal(
@@ -142,15 +124,17 @@ const main = async () => {
       config.rateLimitMaxOutflow.toString(),
       "Rate limit max outflow should match config"
     );
-  } else {
-    assert.equal(
-      integrationAfter.rateLimitMaxOutflow.toString(),
-      integrationBefore.rateLimitMaxOutflow.toString(),
-      "Rate limit max outflow should not change"
-    );
   }
 
-  assertContainsIn(integrationBefore, integrationAfter);
+  const skipKeys = [
+    ...Object.entries(config)
+      .filter(([, value]) => value !== null)
+      .map(([key]) => key),
+    "rateLimitOutflowAmountAvailable", // Can change due to rate limiting calculations
+    "lastRefreshTimestamp", // Can change over time
+    "lastRefreshSlot", // Can change over time
+  ];
+  assertContainsIn(integrationBefore, integrationAfter, { skipKeys });
 
   validateSuccess(config.outputFile);
 };
