@@ -5,7 +5,7 @@
  * custom RPC methods (cheatcodes) for state manipulation.
  */
 
-import { web3, BN } from "@coral-xyz/anchor";
+import { web3 } from "@coral-xyz/anchor";
 import { Connection } from "@solana/web3.js";
 
 /**
@@ -13,7 +13,7 @@ import { Connection } from "@solana/web3.js";
  */
 export interface SurfnetAccountInfo {
   lamports: number;
-  data: string; // Base64 encoded
+  data: string;
   owner: string;
   executable: boolean;
   rentEpoch?: number;
