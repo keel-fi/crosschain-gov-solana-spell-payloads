@@ -20,7 +20,6 @@ import {
 } from "../xchain-gov-payload";
 import {
   deriveLayerZeroAccounts,
-  deriveRemoteAccount,
   deriveCpiAuthority,
 } from "../xchain-gov-spoof";
 import {
