@@ -68,7 +68,9 @@ const main = async () => {
 
   // Load the upgraded NTT program using surfnet_writeProgram
   console.log("📦 Loading upgraded NTT program...");
-  const programPath = path.resolve(__dirname, `./fixtures/ntt-${network}.so`);
+  // Use mainnet binary for surfpool since it simulates mainnet state
+  const fixtureNetwork = network === "surfpool" ? "mainnet" : network;
+  const programPath = path.resolve(__dirname, `./fixtures/ntt-${fixtureNetwork}.so`);
   const programBinary = fs.readFileSync(programPath);
   const programBase64 = programBinary.toString("base64");
   await surfnetWriteProgram(connection, nttProgramIdPubkey, programBase64, 0);
