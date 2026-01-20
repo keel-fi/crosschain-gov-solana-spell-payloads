@@ -38,6 +38,7 @@ export const assertInitializeIntegrationCommonAccountChanges = (
   }
 ) => {
   // Assert payer does not change, except for lamports
+  // Note: payer should be the actual simulation payer (simulationPayer.toString())
   const payerResp = resp[config.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
@@ -159,18 +160,27 @@ export const assertIntegrationCreated = (
  * Uses deep strict equality for each property in `sub`.
  * @param sub - Partial object containing expected values
  * @param sup - Full object to check against
- * @param message - Optional custom error message prefix
+ * @param options - Optional configuration
+ * @param options.message - Optional custom error message prefix
+ * @param options.skipKeys - Optional array of keys to skip (useful for fields that are null in config, meaning no change expected)
  */
 export function assertContainsIn<T extends object>(
   sub: Partial<T>,
   sup: T,
-  message?: string
+  options?: {
+    message?: string;
+    skipKeys?: string[];
+  }
 ) {
+  const skipKeys = options?.skipKeys ?? [];
   for (const [key, value] of Object.entries(sub)) {
+    if (skipKeys.includes(key)) {
+      continue;
+    }
     assert.deepStrictEqual(
       sup[key as keyof T],
       value,
-      message || `Property "${key}" mismatch`
+      options?.message || `Property "${key}" mismatch`
     );
   }
 }

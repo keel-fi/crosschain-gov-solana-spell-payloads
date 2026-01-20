@@ -2,12 +2,10 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
+  readPayloadOrDecodePacket,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
 } from "../../src";
 import {
@@ -25,22 +23,23 @@ import {
 
 const main = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  const payload = readPayloadOrDecodePacket({
+    file: args.file as string | undefined,
+    packetBytes,
+  });
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.superAuthority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.superAuthority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -52,7 +51,8 @@ const main = async () => {
   );
 
   // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
+  // Use the actual payer from simulation (it generates a new keypair)
+  const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert controller does not change
@@ -96,16 +96,16 @@ const main = async () => {
     1
   );
 
-  // Only assert these changes if the Permission previously
-  // existed.
-  if (permissionAccount.before) {
+  // Only assert these changes if the Permission previously existed
+  // and has valid data (not just an empty minimal account from simulation).
+  // Permission account needs at least 65 bytes: 8 (discriminator) + 32 (controller) + 32 (authority) + fields
+  if (permissionAccount.before && permissionAccount.before.data.length > 65) {
     // Validate that the existing permission was owned by the controller program
     assert.equal(
       permissionAccount.before.owner.toString(),
       config.controllerProgramId,
       "Existing permission should be owned by the controller program ID"
     );
-
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1
@@ -119,6 +119,7 @@ const main = async () => {
       permissionBefore.authority.toString()
     );
   } else {
+    // Account didn't exist before or had empty data
     assert.equal(permissionAfter.controller.toString(), config.controller);
     assert.equal(permissionAfter.authority.toString(), config.authority);
   }
@@ -149,7 +150,9 @@ const main = async () => {
     `Permission mismatch:\nExpected: ${JSON.stringify(EXPECTED_PERMISSIONS, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
 
-  validateSuccess(args.file);
+  // Use file path for success message if available, otherwise indicate Packet bytes were used
+  const sourceName = packetBytes ? "Packet bytes" : (args.file as string);
+  validateSuccess(sourceName);
 };
 
 main();

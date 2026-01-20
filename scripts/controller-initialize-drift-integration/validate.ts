@@ -6,14 +6,13 @@ import {
   assertIntegrationCreated,
   assertNoAccountChanges,
   validateCommonIntegrationFields,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
-  simulateInstructions,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   SURFPOOL_URL,
+  getRpcEndpoint,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -39,20 +38,17 @@ const main = async () => {
   }
   const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
   const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
-
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -130,8 +126,9 @@ const main = async () => {
   );
 
   // Assert common account changes
+  // Use the actual payer from simulation (it generates a new keypair)
   assertInitializeIntegrationCommonAccountChanges(resp, {
-    payer: config.payer,
+    payer: simulationPayer.toString(),
     controller: config.controller,
     authority: config.authority,
     controllerProgramId: config.controllerProgramId,
