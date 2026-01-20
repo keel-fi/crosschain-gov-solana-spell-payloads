@@ -1,6 +1,6 @@
 /**
  * Surfpool RPC utilities for testing with Surfnet
- * 
+ *
  * This module provides helper functions to interact with Surfpool's
  * custom RPC methods (cheatcodes) for state manipulation.
  */
@@ -37,19 +37,27 @@ async function callSurfpoolRpc<T>(
       params,
     }),
   });
-  
-  const json = await response.json();
-  
-  if (json.error) {
-    throw new Error(`Surfpool RPC error (${method}): ${JSON.stringify(json.error)}`);
+
+  if (!response.ok) {
+    throw new Error(
+      `Surfpool RPC HTTP error (${method}): ${response.status} ${response.statusText}`
+    );
   }
-  
+
+  const json = await response.json();
+
+  if (json.error) {
+    throw new Error(
+      `Surfpool RPC error (${method}): ${JSON.stringify(json.error)}`
+    );
+  }
+
   return json.result as T;
 }
 
 /**
  * Set an account's state using surfnet_setAccount
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param pubkey - Account public key
  * @param accountInfo - Account info to set
@@ -60,10 +68,11 @@ export async function surfnetSetAccount(
   accountInfo: web3.AccountInfo<Buffer>
 ): Promise<boolean> {
   // Fix rentEpoch: use 0 for the problematic MAX value that RPC returns
-  const rentEpoch = accountInfo.rentEpoch === 18_446_744_073_709_552_000
-    ? 0
-    : (accountInfo.rentEpoch ?? 0);
-  
+  const rentEpoch =
+    accountInfo.rentEpoch === 18_446_744_073_709_552_000
+      ? 0
+      : (accountInfo.rentEpoch ?? 0);
+
   const params = [
     pubkey.toBase58(),
     {
@@ -72,15 +81,19 @@ export async function surfnetSetAccount(
       owner: accountInfo.owner.toBase58(),
       executable: accountInfo.executable,
       rentEpoch: rentEpoch,
-    }
+    },
   ];
-  
-  return await callSurfpoolRpc<boolean>(connection, "surfnet_setAccount", params);
+
+  return await callSurfpoolRpc<boolean>(
+    connection,
+    "surfnet_setAccount",
+    params
+  );
 }
 
 /**
  * Reset an account to its mainnet state using surfnet_resetAccount
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param pubkey - Account public key to reset
  */
@@ -88,46 +101,36 @@ export async function surfnetResetAccount(
   connection: Connection,
   pubkey: web3.PublicKey
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_resetAccount",
-    [pubkey.toBase58()]
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_resetAccount", [
+    pubkey.toBase58(),
+  ]);
 }
 
 /**
  * Reset the entire network to initial state using surfnet_resetNetwork
- * 
+ *
  * @param connection - Connection to surfpool RPC
  */
 export async function surfnetResetNetwork(
   connection: Connection
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_resetNetwork",
-    []
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_resetNetwork", []);
 }
 
 /**
  * Reset surfnet state using surfnet_resetSurfnet
- * 
+ *
  * @param connection - Connection to surfpool RPC
  */
 export async function surfnetResetSurfnet(
   connection: Connection
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_resetSurfnet",
-    []
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_resetSurfnet", []);
 }
 
 /**
  * Set clock using surfnet_setClock
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param slot - Slot number
  * @param unixTimestamp - Unix timestamp
@@ -137,16 +140,14 @@ export async function surfnetSetClock(
   slot: number,
   unixTimestamp: number
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_setClock",
-    [{ slot, unixTimestamp }]
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_setClock", [
+    { slot, unixTimestamp },
+  ]);
 }
 
 /**
  * Advance clock using surfnet_advanceClock
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param slots - Number of slots to advance
  */
@@ -154,16 +155,14 @@ export async function surfnetAdvanceClock(
   connection: Connection,
   slots: number
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_advanceClock",
-    [slots]
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_advanceClock", [
+    slots,
+  ]);
 }
 
 /**
  * Write program bytecode using surfnet_writeProgram
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param programId - Program ID to write to
  * @param data - Program bytecode (base64 encoded)
@@ -175,16 +174,16 @@ export async function surfnetWriteProgram(
   data: string,
   offset: number = 0
 ): Promise<boolean> {
-  return await callSurfpoolRpc<boolean>(
-    connection,
-    "surfnet_writeProgram",
-    [programId.toBase58(), data, offset]
-  );
+  return await callSurfpoolRpc<boolean>(connection, "surfnet_writeProgram", [
+    programId.toBase58(),
+    data,
+    offset,
+  ]);
 }
 
 /**
  * Set program authority using surfnet_setProgramAuthority
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param programId - Program ID
  * @param authority - New authority public key (or null to remove)
@@ -204,7 +203,7 @@ export async function surfnetSetProgramAuthority(
 /**
  * Process a transaction using surfnet_processTransaction
  * This executes the transaction and returns the result
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param transaction - Serialized transaction (base64 encoded)
  */
@@ -222,7 +221,7 @@ export async function surfnetProcessTransaction(
 /**
  * Get account data using surfnet_getAccount
  * This returns the raw account data from surfpool's SVM
- * 
+ *
  * @param connection - Connection to surfpool RPC
  * @param pubkey - Account public key
  */
@@ -235,11 +234,11 @@ export async function surfnetGetAccount(
     "surfnet_getAccount",
     [pubkey.toBase58()]
   );
-  
+
   if (!result) {
     return null;
   }
-  
+
   return {
     lamports: result.lamports,
     data: Buffer.from(result.data, "hex"),
@@ -257,11 +256,7 @@ export async function isSurfpoolConnection(
   connection: Connection
 ): Promise<boolean> {
   try {
-    await callSurfpoolRpc<string>(
-      connection,
-      "surfnet_getSurfpoolVersion",
-      []
-    );
+    await callSurfpoolRpc<string>(connection, "surfnet_getSurfpoolVersion", []);
     return true;
   } catch {
     return false;
