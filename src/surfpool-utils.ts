@@ -267,22 +267,3 @@ export async function isSurfpoolConnection(
     return false;
   }
 }
-
-/**
- * Helper to create account info object for surfnet_setAccount
- */
-export function createAccountInfo(
-  lamports: number,
-  data: Buffer,
-  owner: web3.PublicKey,
-  executable: boolean = false,
-  rentEpoch: number = 0
-): web3.AccountInfo<Buffer> {
-  return {
-    lamports,
-    data,
-    owner,
-    executable,
-    rentEpoch,
-  };
-}
