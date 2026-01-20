@@ -47,7 +47,7 @@ yarn install
 
 | Argument      | Type   | Description                                                                                    |
 | ------------- | ------ | ---------------------------------------------------------------------------------------------- |
-| `--config` / `-c` | string | Required for some scripts. Path to a TypeScript config file (e.g., `configs/CASH-mainnet.ts`) |
+| `--config` / `-c` | string | Required for scripts with multiple config files. Path to a TypeScript config file (e.g., `configs/CASH-mainnet.ts`) |
 | `--bytes`     | string | Optional (validate only). Raw bytes to validate |
 
 ### Examples
@@ -96,7 +96,7 @@ NOTE: we currently leave all generated files in for completeness, but would be o
 
 ## Surfpool
 
-Some of the tests must run on localhost (surfpool) so that the SVM Controller can be upgraded to a planned version. The upgraded controller enables PYUSD and USDG to be used in the controller: https://github.com/keel-fi/svm-alm-controller/pull/158
+Some of the tests must run on localhost (surfpool) so that the SVM Controller can be upgraded to a planned version.  Any script using PYUSD or USDG must use surfpool for testing. The upgraded controller enables PYUSD and USDG to be used in the controller: https://github.com/keel-fi/svm-alm-controller/pull/158
 
 To test with surfpool, you need to run the following commands to set the program upgrade authority and deploy the new controller:
 
