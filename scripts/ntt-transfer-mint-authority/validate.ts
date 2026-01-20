@@ -1,33 +1,42 @@
 // Simulates an example upgrade transaction and asserts value changes
 import assert from "assert";
 import path from "path";
+import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
+import { Connection } from "@solana/web3.js";
 import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
-  createLiteSvmWithInstructionAccounts,
   getRpcEndpoint,
   readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
-  simulateInstructionsWithLiteSVM,
   validateSuccess,
 } from "../../src";
+import {
+  simulateInstructionsWithSurfpool,
+} from "../../src/simulation-utils";
+import {
+  surfnetSetAccount,
+  surfnetWriteProgram,
+} from "../../src/surfpool-utils";
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, NETWORK_CONFIGS } from "./config";
 
 // NOTE: Due to the sequencing of the NTT upgrade transaction
-// and NTT TransferMintAuthority, we must simulate in LiteSVM
-// as Solana mainnet will not have a state possible where we may
-// simulate the TransferMintAuthority prior to spell execution.
+// and NTT TransferMintAuthority, we must simulate with Surfpool
+// loading a custom program binary, as Solana mainnet will not have
+// a state possible where we may simulate the TransferMintAuthority
+// prior to spell execution.
 const main = async () => {
   const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
+  const connection = new Connection(rpcUrl, "confirmed");
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
 
-  const payerPubkey = new web3.PublicKey(config.payer);
+  const payerKeypair = web3.Keypair.generate();
+  const payerPubkey = payerKeypair.publicKey;
   const authorityPubkey = new web3.PublicKey(config.authority);
   const nttProgramIdPubkey = new web3.PublicKey(config.nttProgramId);
   const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
@@ -47,25 +56,29 @@ const main = async () => {
     nttProgramIdPubkey
   )[0];
 
-  // Create SVM environment for simulation with upgraded
-  // NTT Program.
-  const excludedAddresses = [config.nttProgramId];
-  const svm = await createLiteSvmWithInstructionAccounts(
-    connection,
-    [instruction],
-    payerPubkey,
-    excludedAddresses
-  );
-  svm.withSigverify(false);
-  svm.addProgramFromFile(
-    nttProgramIdPubkey,
-    path.resolve(__dirname, `./fixtures/ntt-${network}.so`)
-  );
+  // Fund the payer account using surfnet_setAccount
+  console.log("💰 Funding payer account...");
+  await surfnetSetAccount(connection, payerPubkey, {
+    lamports: 10_000_000_000, // 10 SOL
+    data: Buffer.alloc(0),
+    owner: web3.SystemProgram.programId,
+    executable: false,
+    rentEpoch: 0,
+  });
 
-  const resp = simulateInstructionsWithLiteSVM(svm, payerPubkey, [instruction]);
+  // Load the upgraded NTT program using surfnet_writeProgram
+  console.log("📦 Loading upgraded NTT program...");
+  const programPath = path.resolve(__dirname, `./fixtures/ntt-${network}.so`);
+  const programBinary = fs.readFileSync(programPath);
+  const programBase64 = programBinary.toString("base64");
+  await surfnetWriteProgram(connection, nttProgramIdPubkey, programBase64, 0);
+
+  // Simulate the instruction using Surfpool
+  console.log("🚀 Simulating transaction...");
+  const resp = await simulateInstructionsWithSurfpool(connection, payerKeypair, [instruction]);
 
   // Assert payer does not change aside from lamports
-  const payerResp = resp[config.payer];
+  const payerResp = resp[payerPubkey.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Previous authority should not change

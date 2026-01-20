@@ -42,7 +42,7 @@ export const NETWORK_CONFIGS: Record<Network, ControllerManagePermission> = {
   surfpool: {
     controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
     controller: SVM_ALM_CONTROLLER,
-    authority: "",
+    authority: "9tSZj13gLcuvsXWRLo7xW7d8n1mNndJmKxZX4xmxqcxU",
     superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
     payer: MAINNET_PAYER,
   },

@@ -9,8 +9,9 @@
  */
 
 import { web3 } from "@coral-xyz/anchor";
+import { Connection } from "@solana/web3.js";
 import { createHash } from "crypto";
-import { LiteSVM } from "litesvm";
+import { surfnetSetAccount } from "../surfpool-utils";
 
 /**
  * Parameters for lz_receive instruction (matches LayerZero SDK)
@@ -437,35 +438,39 @@ export function resolveAccountMeta(
 }
 
 /**
- * Debug account context in LiteSVM
+ * Debug account context using Surfpool RPC
  */
-export function debugAccountContext(svm: LiteSVM, pubkey: web3.PublicKey, name: string): void {
-  const account = svm.getAccount(pubkey);
-  if (account) {
-    console.log(`   📋 ${name} (${pubkey.toString()}): EXISTS`);
-    console.log(`      ├─ Lamports: ${account.lamports}`);
-    console.log(`      ├─ Owner: ${account.owner.toString()}`);
-    console.log(`      ├─ Data length: ${account.data.length} bytes`);
-    console.log(`      ├─ Executable: ${account.executable}`);
-    console.log(`      └─ Rent epoch: ${account.rentEpoch}`);
-    
-    if (account.data.length > 0) {
-      const preview = Buffer.from(account.data.slice(0, Math.min(32, account.data.length)));
-      console.log(`      └─ Data preview: 0x${preview.toString('hex')}`);
+export async function debugAccountContext(connection: Connection, pubkey: web3.PublicKey, name: string): Promise<void> {
+  try {
+    const account = await connection.getAccountInfo(pubkey);
+    if (account) {
+      console.log(`   📋 ${name} (${pubkey.toString()}): EXISTS`);
+      console.log(`      ├─ Lamports: ${account.lamports}`);
+      console.log(`      ├─ Owner: ${account.owner.toString()}`);
+      console.log(`      ├─ Data length: ${account.data.length} bytes`);
+      console.log(`      ├─ Executable: ${account.executable}`);
+      console.log(`      └─ Rent epoch: ${account.rentEpoch}`);
+      
+      if (account.data.length > 0) {
+        const preview = account.data.slice(0, Math.min(32, account.data.length));
+        console.log(`      └─ Data preview: 0x${preview.toString('hex')}`);
+      }
+    } else {
+      console.log(`   ❌ ${name} (${pubkey.toString()}): NOT FOUND`);
     }
-  } else {
-    console.log(`   ❌ ${name} (${pubkey.toString()}): NOT FOUND`);
+  } catch (err) {
+    console.log(`   ⚠️ ${name} (${pubkey.toString()}): ERROR - ${err}`);
   }
 }
 
 /**
  * Simulate lz_receive_types_v2 instruction to get account resolution
  * 
- * This function executes the lz_receive_types_v2 instruction in LiteSVM
+ * This function executes the lz_receive_types_v2 instruction using Surfpool RPC
  * and parses the return data to get the execution plan with account resolution.
  */
 export async function simulateLzReceiveTypesV2(
-  svm: LiteSVM,
+  connection: Connection,
   governanceProgram: web3.PublicKey,
   governanceAccount: web3.PublicKey,
   params: LzReceiveParams,
@@ -482,13 +487,13 @@ export async function simulateLzReceiveTypesV2(
   console.log(`   Message Length: ${params.message.length} bytes`);
   console.log(`   Message (first 64 bytes): 0x${params.message.subarray(0, Math.min(64, params.message.length)).toString("hex")}`);
   
-  // Check if governance program is loaded
+  // Check if governance program is loaded (Surfpool auto-fetches from mainnet)
   console.log("\n🔎 === ACCOUNT CONTEXT BEFORE lz_receive_types_v2 ===");
-  debugAccountContext(svm, governanceProgram, "Governance Program");
-  debugAccountContext(svm, governanceAccount, "Governance Account");
-  debugAccountContext(svm, web3.SystemProgram.programId, "System Program");
+  await debugAccountContext(connection, governanceProgram, "Governance Program");
+  await debugAccountContext(connection, governanceAccount, "Governance Account");
+  await debugAccountContext(connection, web3.SystemProgram.programId, "System Program");
   
-  const programAccount = svm.getAccount(governanceProgram);
+  const programAccount = await connection.getAccountInfo(governanceProgram);
   if (!programAccount) {
     throw new Error(`Governance program not loaded at ${governanceProgram.toString()} - cannot get real execution plan`);
   }
@@ -511,15 +516,15 @@ export async function simulateLzReceiveTypesV2(
   for (let i = 0; i < instruction.keys.length; i++) {
     const acc = instruction.keys[i];
     console.log(`   [${i}] ${acc.pubkey.toString()} (signer: ${acc.isSigner}, writable: ${acc.isWritable})`);
-    debugAccountContext(svm, acc.pubkey, `Instruction Account [${i}]`);
+    await debugAccountContext(connection, acc.pubkey, `Instruction Account [${i}]`);
   }
   
-  // Fund the payer account
+  // Fund the payer account using surfnet_setAccount
   const payerPubkey = payer.publicKey;
   console.log(`\n💰 Ensuring payer account is funded: ${payerPubkey.toString()}`);
-  const payerAccount = svm.getAccount(payerPubkey);
+  const payerAccount = await connection.getAccountInfo(payerPubkey);
   if (!payerAccount || payerAccount.lamports < 1_000_000_000) {
-    svm.setAccount(payerPubkey, {
+    await surfnetSetAccount(connection, payerPubkey, {
       lamports: 10_000_000_000,
       data: Buffer.alloc(0),
       owner: web3.SystemProgram.programId,
@@ -529,53 +534,53 @@ export async function simulateLzReceiveTypesV2(
     console.log("✅ Payer funded with 10 SOL");
   }
   
-  // Build and send transaction
+  // Build transaction
   console.log("\n🏃 Executing lz_receive_types_v2 instruction...");
-  const blockhash = svm.latestBlockhash();
-  console.log(`   🔗 Using LiteSVM blockhash: ${blockhash}`);
+  const blockhash = await connection.getLatestBlockhash();
+  console.log(`   🔗 Using blockhash: ${blockhash.blockhash}`);
   
   const messageV0 = new web3.TransactionMessage({
     payerKey: payerPubkey,
-    recentBlockhash: blockhash,
+    recentBlockhash: blockhash.blockhash,
     instructions: [instruction],
   }).compileToV0Message();
   
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  const result = svm.sendTransaction(transaction);
+  // Simulate the transaction using RPC
+  const simulationResult = await connection.simulateTransaction(transaction, {
+    sigVerify: false,
+  });
   
-  // Check if it's a failure
-  if ('meta' in result && 'err' in result) {
-    // Failed transaction
-    const logs = result.meta().logs();
+  const logs = simulationResult.value.logs || [];
+  
+  if (simulationResult.value.err) {
     console.log("❌ lz_receive_types_v2 execution failed!");
     console.log(`📜 ERROR LOGS (${logs.length} entries):`);
     for (let i = 0; i < logs.length; i++) {
       console.log(`   [${i + 1}] ${logs[i]}`);
     }
-    console.log(`🔥 Error: ${result.err()}`);
+    console.log(`🔥 Error: ${JSON.stringify(simulationResult.value.err)}`);
     
-    throw new Error(`lz_receive_types_v2 execution failed: ${result.err()}`);
+    throw new Error(`lz_receive_types_v2 execution failed: ${JSON.stringify(simulationResult.value.err)}`);
   }
   
   // Success
-  const logs = result.logs();
   console.log("✅ lz_receive_types_v2 executed successfully!");
   console.log(`📜 EXECUTION LOGS (${logs.length} entries):`);
   for (let i = 0; i < logs.length; i++) {
     console.log(`   [${i + 1}] ${logs[i]}`);
   }
   
-  // Get return data
-  const returnData = result.returnData();
+  // Get return data from simulation result
+  const returnData = simulationResult.value.returnData;
   if (!returnData) {
     throw new Error("No return data from lz_receive_types_v2");
   }
   
-  // Convert return data to Buffer (litesvm's TransactionReturnData.data() returns Uint8Array)
-  const dataBytes = returnData.data();
-  const returnDataBuffer = Buffer.from(dataBytes);
+  // Decode base64 return data
+  const returnDataBuffer = Buffer.from(returnData.data[0], 'base64');
   if (returnDataBuffer.length === 0) {
     throw new Error("Empty return data from lz_receive_types_v2");
   }

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { web3 } from "@coral-xyz/anchor";
+import { Connection } from "@solana/web3.js";
 import {
   Instruction,
   isInstructionWithAccounts,
@@ -9,9 +10,9 @@ import {
   ReadonlyUint8Array,
 } from "@solana/kit";
 import { parseArgs } from "util";
-import { LiteSVM } from "litesvm";
 import { SURFPOOL_URL } from "./constants";
 import { extractGovernancePayloadFromHex } from "./lz/lz-packet-decoder";
+import { surfnetSetAccount } from "./surfpool-utils";
 
 export type Network = "devnet" | "mainnet" | "surfpool";
 export type Stablecoin = "USDG" | "PYUSD" | "CASH";
@@ -237,53 +238,38 @@ export const getUniquePublicKeysFromInstructionsAndPayer = (
 };
 
 /**
- * Seed a LiteSVM environment with all accounts used within a set
- * of instructions from their state on the supplied connection.
- * @param connection
- * @param instructions
- * @param excludedAddresses
- * @returns
+ * Create a Surfpool connection and set up custom account state for accounts
+ * that need to be overridden (e.g., for simulation purposes).
+ * 
+ * Surfpool automatically fetches mainnet accounts on demand (JIT),
+ * so this function only needs to set custom accounts that differ from mainnet.
+ * 
+ * @param connection - Connection to Surfpool RPC
+ * @param customAccounts - Map of pubkey -> account info for accounts to override
+ * @returns The same connection (for chaining)
  */
-export const createLiteSvmWithInstructionAccounts = async (
-  connection: web3.Connection,
-  instructions: web3.TransactionInstruction[],
-  payer: web3.PublicKey,
-  excludedAddresses: string[]
-) => {
-  // Get all Accounts needed for environment
-  const dedupedAddresses = getUniquePublicKeysFromInstructionsAndPayer(
-    instructions,
-    payer
-  );
-  const filteredkeys = dedupedAddresses.filter(
-    (a) => !excludedAddresses.includes(a.toString())
-  );
+export const setupSurfpoolWithCustomAccounts = async (
+  connection: Connection,
+  customAccounts: Map<web3.PublicKey, web3.AccountInfo<Buffer>>
+): Promise<Connection> => {
+  // Set custom accounts using surfnet_setAccount
+  for (const [pubkey, accountInfo] of customAccounts) {
+    await surfnetSetAccount(connection, pubkey, accountInfo);
+  }
+  
+  return connection;
+};
 
-  // Fetch accounts from the connection
-  const allAccounts = await connection.getMultipleAccountsInfo(filteredkeys);
-
-  // Create LiteSVM environment
-  const svm = new LiteSVM();
-  // Set Accounts from connection in LiteSVM
-  allAccounts.forEach((acctInfo, i) => {
-    if (!acctInfo) {
-      return;
-    }
-    const pubkey = filteredkeys[i];
-    const fixedAcctInfo = {
-      ...acctInfo,
-      // The RPC sends back a rentEpoch greater than u64::MAX::MAX.
-      // So we detect such a number and resolve to an arbitrarily high
-      // epoch number.
-      rentEpoch:
-        acctInfo.rentEpoch === 18_446_744_073_709_552_000
-          ? 999_999_999_999_999
-          : acctInfo.rentEpoch,
-    };
-    svm.setAccount(pubkey, fixedAcctInfo);
-  });
-
-  return svm;
+/**
+ * Create a Connection to Surfpool RPC for simulation
+ * 
+ * Surfpool automatically fetches mainnet accounts on demand (JIT),
+ * so no manual account loading is needed.
+ * 
+ * @returns Connection configured for Surfpool
+ */
+export const createSurfpoolConnection = (): Connection => {
+  return new Connection(SURFPOOL_URL, "confirmed");
 };
 
 /**

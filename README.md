@@ -96,9 +96,36 @@ NOTE: we currently leave all generated files in for completeness, but would be o
 
 ## Surfpool
 
-Some of the tests must run on localhost (surfpool) so that the SVM Controller can be upgraded to a planned version.  Any script using PYUSD or USDG must use surfpool for testing. The upgraded controller enables PYUSD and USDG to be used in the controller: https://github.com/keel-fi/svm-alm-controller/pull/158
+This repository uses [Surfpool](https://docs.surfpool.run/) for local transaction simulation. Surfpool is a drop-in replacement for `solana-test-validator` that automatically fetches mainnet accounts "just in time" during simulation.
 
-To test with surfpool, you need to run the following commands to set the program upgrade authority and deploy the new controller:
+### Installation
+
+Install Surfpool following the [official documentation](https://docs.surfpool.run/installation).
+
+### Running Tests
+
+1. **Start Surfpool:**
+```bash
+surfpool start
+```
+
+2. **Run validation scripts with surfpool:**
+```bash
+NETWORK=surfpool SOLANA_RPC_URL=http://127.0.0.1:8899 ts-node ./scripts/controller-manage-permission/validate.ts
+```
+
+### Surfpool Cheatcodes
+
+The simulation uses Surfpool's cheatcodes for state manipulation:
+
+- `surfnet_setAccount` - Set custom account state (lamports, data, owner)
+- `surfnet_setProgramAuthority` - Set program upgrade authority
+- `surfnet_writeProgram` - Deploy program bytecode
+- `surfnet_resetNetwork` - Reset network to initial state
+
+### Upgrading Programs on Surfpool
+
+To test with an upgraded SVM Controller, use the following commands:
 
 ```bash
 surfpool start
@@ -119,5 +146,7 @@ solana program deploy target/deploy/svm_alm_controller.so \
   --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
   --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
 ```
+
+> **NOTE:** Some scripts using PYUSD or USDG must use surfpool for testing with the upgraded controller: https://github.com/keel-fi/svm-alm-controller/pull/158
 
 > **NOTE:** Simulating on surfpool causes some of the accounts to erroneously become null. Therefore when testing the upgraded controller on surfpool, we must skip these checks.

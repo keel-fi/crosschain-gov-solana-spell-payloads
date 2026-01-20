@@ -1,18 +1,18 @@
 /**
  * Complete cross-chain simulation for LayerZero governance messages
  * 
- * This module provides full LiteSVM-based simulation that executes
+ * This module provides full Surfpool-based simulation that executes
  * the actual lz_receive instruction through the governance program.
+ * 
+ * Surfpool automatically fetches mainnet accounts "just in time" and
+ * provides cheatcodes for state manipulation.
  * 
  * Based on the Rust reference implementation at:
  * /Users/mattauer/src/xchain-gov-simulation/src/simulation.rs
  */
 
 import { web3 } from "@coral-xyz/anchor";
-import { LiteSVM } from "litesvm";
 import { Connection } from "@solana/web3.js";
-import fs from "fs";
-import path from "path";
 import {
   generateCrossChainPayload,
   CrossChainConfig,
@@ -40,19 +40,17 @@ import {
   createLzReceiveParams,
 } from "./lz-receive-types-v2";
 import { deserializeLzInstruction } from "./lz-governance-codec";
-
-// Default directory for mainnet programs
-const MAINNET_PROGRAMS_DIR = "./mainnet_programs";
+import { surfnetSetAccount } from "../surfpool-utils";
 
 /**
- * Complete cross-chain simulation result for LiteSVM-based simulation
+ * Complete cross-chain simulation result for Surfpool-based simulation
  */
 export interface LzCompleteSimulationResult {
   /** The serialized payload for Ethereum side */
   serializedPayload: Buffer;
   /** Transaction signature from execution (simulated) */
   transactionSignature: string;
-  /** Execution logs from LiteSVM */
+  /** Execution logs from Surfpool */
   executionLogs: string[];
   /** Whether execution was successful */
   success: boolean;
@@ -74,7 +72,7 @@ export interface CompleteSimulationConfig extends CrossChainConfig {
   payer: web3.PublicKey;
   /** CPI Authority public key */
   cpiAuthority: web3.PublicKey;
-  /** Directory containing program .so files */
+  /** Directory containing program .so files (unused with Surfpool - programs auto-load) */
   programsDir?: string;
 }
 
@@ -188,18 +186,6 @@ function createEndpointSettingsData(bump: number, admin: web3.PublicKey): Buffer
 }
 
 /**
- * Fix rentEpoch for LiteSVM compatibility
- */
-function fixRentEpoch(account: web3.AccountInfo<Buffer>): web3.AccountInfo<Buffer> {
-  return {
-    ...account,
-    rentEpoch: account.rentEpoch === 18_446_744_073_709_552_000
-      ? 999_999_999_999_999
-      : account.rentEpoch,
-  };
-}
-
-/**
  * Safely get account info with error handling
  */
 async function safeGetAccountInfo(
@@ -214,204 +200,12 @@ async function safeGetAccountInfo(
 }
 
 /**
- * Create minimal account for accounts that don't exist
- */
-function createMinimalAccount(
-  svm: LiteSVM,
-  pubkey: web3.PublicKey,
-  lamports: number = 1_000_000
-): void {
-  svm.setAccount(pubkey, {
-    lamports,
-    data: Buffer.alloc(0),
-    owner: web3.SystemProgram.programId,
-    executable: false,
-    rentEpoch: 0,
-  });
-}
-
-/**
- * Load an account into LiteSVM from RPC
- * Creates a minimal account if it doesn't exist on-chain
- */
-async function loadAccount(
-  svm: LiteSVM,
-  connection: Connection,
-  pubkey: web3.PublicKey,
-  logPrefix: string = "account"
-): Promise<void> {
-  // Skip if already loaded
-  if (svm.getAccount(pubkey)) {
-    return;
-  }
-  
-  const accountData = await safeGetAccountInfo(connection, pubkey);
-  if (accountData) {
-    const fixedAccount = fixRentEpoch(accountData);
-    
-    // Skip executable accounts - they should be loaded via addProgram
-    if (fixedAccount.executable) {
-      return;
-    }
-    
-    try {
-      svm.setAccount(pubkey, fixedAccount);
-      return;
-    } catch {
-      // If setAccount fails, fall through to create minimal account
-    }
-  }
-  
-  // Create minimal account if account doesn't exist or setAccount failed
-  try {
-    createMinimalAccount(svm, pubkey);
-  } catch {
-    // Silently fail if we can't create the account
-  }
-}
-
-/**
- * Load a program from RPC by fetching its program data account
- * For upgradeable programs, the bytecode is in the program data account
- */
-async function loadProgramFromRpc(
-  svm: LiteSVM,
-  connection: Connection,
-  programId: web3.PublicKey
-): Promise<boolean> {
-  try {
-    // First, get the program account to find the program data address
-    const programAccount = await connection.getAccountInfo(programId);
-    if (!programAccount || !programAccount.executable) {
-      return false;
-    }
-    
-    // Check if this is an upgradeable program (owned by BPF Loader Upgradeable)
-    const BPF_LOADER_UPGRADEABLE = new web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
-    if (programAccount.owner.equals(BPF_LOADER_UPGRADEABLE)) {
-      // For upgradeable programs, extract the program data address from the first 32 bytes
-      // Format: [4 bytes type][32 bytes program data address]
-      if (programAccount.data.length >= 36) {
-        const programDataAddress = new web3.PublicKey(programAccount.data.slice(4, 36));
-        const programDataAccount = await connection.getAccountInfo(programDataAddress);
-        
-        if (programDataAccount) {
-          // Program data format: [45 bytes header][actual program bytecode]
-          // The header contains: slot, upgrade authority, etc.
-          const PROGRAM_DATA_HEADER_SIZE = 45;
-          if (programDataAccount.data.length > PROGRAM_DATA_HEADER_SIZE) {
-            const programBytecode = programDataAccount.data.slice(PROGRAM_DATA_HEADER_SIZE);
-            svm.addProgram(programId, programBytecode);
-            return true;
-          }
-        }
-      }
-    } else {
-      // For non-upgradeable programs, the data is the bytecode directly
-      svm.addProgram(programId, programAccount.data);
-      return true;
-    }
-  } catch {
-    // Silently fail if program can't be loaded
-  }
-  return false;
-}
-
-/**
- * Initialize LiteSVM with all core programs and current Solana clock
- */
-async function initializeLiteSvmWithPrograms(
-  connection: Connection,
-  programsDir: string = MAINNET_PROGRAMS_DIR
-): Promise<LiteSVM> {
-  const svm = new LiteSVM();
-  
-  // Initialize clock with current Solana clock to avoid simulation failures
-  // LiteSVM defaults to slot=0, unixTimestamp=0 which can cause issues
-  const slot = await connection.getSlot();
-  const blockTime = await connection.getBlockTime(slot);
-  const svmClock = svm.getClock();
-  svmClock.slot = BigInt(slot);
-  svmClock.unixTimestamp = BigInt(blockTime ?? Math.floor(Date.now() / 1000));
-  svm.setClock(svmClock);
-  
-  const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
-  
-  // Load governance program
-  const governancePath = path.join(programsDir, "governance_mainnet.so");
-  if (fs.existsSync(governancePath)) {
-    const governanceBinary = fs.readFileSync(governancePath);
-    svm.addProgram(governanceProgram, governanceBinary);
-  }
-  
-  // Load LayerZero endpoint
-  const endpointPath = path.join(programsDir, "layerzero_endpoint.so");
-  if (fs.existsSync(endpointPath)) {
-    const endpointBinary = fs.readFileSync(endpointPath);
-    svm.addProgram(LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM, endpointBinary);
-  }
-  
-  // Load memo program
-  const memoPath = path.join(programsDir, "memo_program.so");
-  if (fs.existsSync(memoPath)) {
-    const memoBinary = fs.readFileSync(memoPath);
-    svm.addProgram(LayerZeroConfig.MEMO_PROGRAM, memoBinary);
-  }
-  
-  return svm;
-}
-
-/**
- * Load essential governance accounts from mainnet
- */
-async function loadEssentialGovernanceAccounts(
-  svm: LiteSVM,
-  config: CompleteSimulationConfig,
-  connection: Connection
-): Promise<void> {
-  const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
-  
-  // Load governance account
-  await loadAccount(svm, connection, config.receiver, "governance account");
-  
-  // Load remote account
-  const remoteAccount = deriveRemoteAccount(
-    config.receiver,
-    config.srcEid,
-    governanceProgram
-  );
-  await loadAccount(svm, connection, remoteAccount, "remote account");
-}
-
-/**
- * Dynamically load all accounts referenced in the instruction
- */
-async function loadInstructionAccounts(
-  svm: LiteSVM,
-  instruction: web3.TransactionInstruction,
-  connection: Connection
-): Promise<void> {
-  // First load all non-program accounts referenced in the instruction
-  // This ensures any accounts required by programs are loaded first
-  for (const accountMeta of instruction.keys) {
-    await loadAccount(svm, connection, accountMeta.pubkey, "instruction account");
-  }
-  
-  // Load target program if not already loaded
-  // Try to load from RPC using addProgram (for upgradeable programs)
-  if (!svm.getAccount(instruction.programId)) {
-    await loadProgramFromRpc(svm, connection, instruction.programId);
-  }
-}
-
-/**
- * Create all required spoofed LayerZero accounts
+ * Create all required spoofed LayerZero accounts using Surfpool cheatcodes
  */
 async function createCompleteSpoofedAccounts(
-  svm: LiteSVM,
+  connection: Connection,
   payload: CrossChainPayload,
-  config: CompleteSimulationConfig,
-  connection: Connection
+  config: CompleteSimulationConfig
 ): Promise<void> {
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
   
@@ -422,9 +216,9 @@ async function createCompleteSpoofedAccounts(
     config.nonce
   );
   
-  // Create PayloadHash account
+  // Create PayloadHash account using surfnet_setAccount
   const payloadHashData = createPayloadHashAccountData(payload.payloadHash);
-  svm.setAccount(payloadHashAccount, {
+  await surfnetSetAccount(connection, payloadHashAccount, {
     lamports: 1000000,
     data: payloadHashData,
     owner: LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM,
@@ -436,21 +230,11 @@ async function createCompleteSpoofedAccounts(
   const existingNonce = await safeGetAccountInfo(connection, nonceAccount);
   if (existingNonce) {
     const adjustedNonce = adjustNonceAccountData(existingNonce, config.nonce);
-    svm.setAccount(nonceAccount, fixRentEpoch(adjustedNonce));
+    await surfnetSetAccount(connection, nonceAccount, adjustedNonce);
   } else {
     const newNonce = createNonceAccountData(config.nonce);
-    svm.setAccount(nonceAccount, newNonce);
+    await surfnetSetAccount(connection, nonceAccount, newNonce);
   }
-  
-  // Load governance account
-  await loadAccount(svm, connection, config.receiver, "governance account");
-  
-  // Load remote account
-  const remoteAccount = deriveRemoteAccount(config.receiver, config.srcEid, governanceProgram);
-  await loadAccount(svm, connection, remoteAccount, "remote account");
-  
-  // Load OApp registry
-  await loadAccount(svm, connection, oappRegistry, "OApp registry");
   
   // Create CPI authority account
   const cpiAuthority = deriveCpiAuthority(
@@ -459,7 +243,7 @@ async function createCompleteSpoofedAccounts(
     config.originCaller,
     governanceProgram
   );
-  svm.setAccount(cpiAuthority, {
+  await surfnetSetAccount(connection, cpiAuthority, {
     lamports: 0,
     data: Buffer.alloc(0),
     owner: web3.SystemProgram.programId,
@@ -473,7 +257,7 @@ async function createCompleteSpoofedAccounts(
     LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM
   );
   const endpointData = createEndpointSettingsData(endpointBump, config.receiver);
-  svm.setAccount(endpointSettings, {
+  await surfnetSetAccount(connection, endpointSettings, {
     lamports: 1500000,
     data: endpointData,
     owner: LayerZeroConfig.LAYERZERO_ENDPOINT_PROGRAM,
@@ -483,16 +267,15 @@ async function createCompleteSpoofedAccounts(
 }
 
 /**
- * Execute the lz_receive instruction
+ * Execute the lz_receive instruction using Surfpool RPC simulation
  */
 async function executeLzReceive(
-  svm: LiteSVM,
+  connection: Connection,
   payer: web3.Keypair,
   config: CompleteSimulationConfig,
   lzParams: LzReceiveParams,
-  executionPlan: LzReceiveTypesV2Result,
-  connection: Connection
-): Promise<{ logs: string[]; success: boolean; signature: string }> {
+  executionPlan: LzReceiveTypesV2Result
+): Promise<{ logs: string[]; success: boolean; signature: string; postSimulationAccounts: Map<string, web3.AccountInfo<Buffer> | null> }> {
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
   
   // Find the LzReceive instruction in the execution plan
@@ -511,10 +294,6 @@ async function executeLzReceive(
   for (let i = 0; i < lzReceiveAccounts.length; i++) {
     const accountRef = lzReceiveAccounts[i];
     const accountMeta = resolveAccountMeta(accountRef, payer.publicKey);
-
-    // Ensure account exists in SVM (load from mainnet if needed)
-    await loadAccount(svm, connection, accountMeta.pubkey, `lz_receive account [${i}]`);
-    
     resolvedAccounts.push(accountMeta);
   }
   
@@ -525,65 +304,83 @@ async function executeLzReceive(
     lzParams
   );
   
-  // Build and send transaction
-  const blockhash = svm.latestBlockhash();
+  // Build transaction
+  const blockhash = await connection.getLatestBlockhash();
   const messageV0 = new web3.TransactionMessage({
     payerKey: payer.publicKey,
-    recentBlockhash: blockhash,
+    recentBlockhash: blockhash.blockhash,
     instructions: [lzReceiveIx],
   }).compileToV0Message();
   
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  const result = svm.sendTransaction(transaction);
+  // Get all account addresses from the instruction
+  const accountAddresses = lzReceiveIx.keys.map(k => k.pubkey.toBase58());
   
-  // Check if it's a failure
-  if ('meta' in result && 'err' in result) {
-    // Failed transaction
-    const logs = result.meta().logs();
-    const err = result.err();
+  // Simulate the transaction using standard Solana RPC, requesting post-simulation account states
+  const simulationResult = await connection.simulateTransaction(transaction, {
+    sigVerify: false,
+    accounts: {
+      encoding: "base64",
+      addresses: accountAddresses,
+    },
+  });
+  
+  const logs = simulationResult.value.logs || [];
+  
+  // Parse post-simulation account states
+  // Note: Surfpool returns null for accounts that weren't modified during simulation,
+  // so we only track accounts that have actual data (were modified)
+  const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
+  if (simulationResult.value.accounts) {
+    for (let i = 0; i < accountAddresses.length; i++) {
+      const accountData = simulationResult.value.accounts[i];
+      if (accountData) {
+        postSimulationAccounts.set(accountAddresses[i], {
+          lamports: accountData.lamports,
+          data: Buffer.from(accountData.data[0], "base64"),
+          owner: new web3.PublicKey(accountData.owner),
+          executable: accountData.executable,
+          rentEpoch: accountData.rentEpoch ?? 0,
+        });
+      }
+      // Don't set null for unmodified accounts - getAccountStates will use pre-state
+    }
+  }
+  
+  if (simulationResult.value.err) {
     console.log("❌ lz_receive execution failed!");
     console.log(`📜 ERROR LOGS (${logs.length} entries):`);
     for (let i = 0; i < logs.length; i++) {
       console.log(`   [${i + 1}] ${logs[i]}`);
     }
-    console.log(`🔥 Error: ${err}`);
-    return { logs, success: false, signature: "failed" };
+    console.log(`🔥 Error: ${JSON.stringify(simulationResult.value.err)}`);
+    return { logs, success: false, signature: "failed", postSimulationAccounts };
   }
   
-  // Success
-  const logs = result.logs();
-  
-  const signature = result.signature().toString();
-  return { logs, success: true, signature };
+  // For simulation, we don't have a real signature
+  return { logs, success: true, signature: "simulated", postSimulationAccounts };
 }
 
 /**
  * Get account states before and after simulation
  */
-function getAccountStates(
-  svm: LiteSVM,
+async function getAccountStates(
   accountKeys: web3.PublicKey[],
-  preState: Map<string, web3.AccountInfo<Buffer> | null>
-): SimulateResponse {
+  preState: Map<string, web3.AccountInfo<Buffer> | null>,
+  postSimulationAccounts: Map<string, web3.AccountInfo<Buffer> | null>
+): Promise<SimulateResponse> {
   const result: SimulateResponse = {};
   
-  for (const key of accountKeys) {
+  for (let i = 0; i < accountKeys.length; i++) {
+    const key = accountKeys[i];
     const keyStr = key.toString();
     const before = preState.get(keyStr) || null;
-    const afterAccount = svm.getAccount(key);
-    
-    let after: web3.AccountInfo<Buffer> | null = null;
-    if (afterAccount) {
-      after = {
-        lamports: afterAccount.lamports,
-        data: Buffer.from(afterAccount.data),
-        owner: afterAccount.owner,
-        executable: afterAccount.executable,
-        rentEpoch: afterAccount.rentEpoch,
-      };
-    }
+    // Use post-simulation state if available, otherwise use pre-state (account unchanged)
+    const after = postSimulationAccounts.has(keyStr) 
+      ? postSimulationAccounts.get(keyStr) ?? null
+      : before;
     
     result[keyStr] = { before, after };
   }
@@ -592,16 +389,17 @@ function getAccountStates(
 }
 
 /**
- * Execute complete cross-chain simulation with LiteSVM
+ * Execute complete cross-chain simulation with Surfpool
  * 
  * This function:
  * 1. Generates cross-chain payload from instruction
- * 2. Initializes LiteSVM with required programs
- * 3. Loads all accounts from RPC
- * 4. Creates spoofed LayerZero accounts
- * 5. Calls lz_receive_types_v2 to get account resolution
- * 6. Executes the lz_receive instruction
- * 7. Returns account states and logs
+ * 2. Creates spoofed LayerZero accounts via surfnet_setAccount
+ * 3. Calls lz_receive_types_v2 to get account resolution
+ * 4. Executes the lz_receive instruction via simulation
+ * 5. Returns account states and logs
+ * 
+ * Surfpool automatically fetches mainnet accounts on demand (JIT),
+ * so we don't need to manually load programs or accounts.
  */
 export async function simulateLzCompleteCrossChainInstruction(
   instruction: web3.TransactionInstruction,
@@ -613,14 +411,11 @@ export async function simulateLzCompleteCrossChainInstruction(
   console.log("📦 Step 1: Generating cross-chain payload");
   const payload = generateCrossChainPayload(instruction, config);
   
-  // Step 2: Initialize LiteSVM
-  console.log("🔧 Step 2: Initializing LiteSVM environment");
-  const svm = await initializeLiteSvmWithPrograms(connection, config.programsDir);
-  
-  // Step 3: Create and fund payer
+  // Step 2: Create and fund payer via surfnet_setAccount
+  console.log("🔧 Step 2: Setting up payer account");
   const payer = web3.Keypair.generate();
   const payerBalance = 10_000_000_000; // 10 SOL
-  svm.setAccount(payer.publicKey, {
+  await surfnetSetAccount(connection, payer.publicKey, {
     lamports: payerBalance,
     data: Buffer.alloc(0),
     owner: web3.SystemProgram.programId,
@@ -628,20 +423,12 @@ export async function simulateLzCompleteCrossChainInstruction(
     rentEpoch: 0,
   });
   
-  // Step 4: Load essential governance accounts
-  console.log("📋 Step 4: Loading essential governance accounts");
-  await loadEssentialGovernanceAccounts(svm, config, connection);
+  // Step 3: Create spoofed LayerZero accounts
+  console.log("🎭 Step 3: Creating spoofed LayerZero accounts");
+  await createCompleteSpoofedAccounts(connection, payload, config);
   
-  // Step 5: Dynamically load all accounts referenced in instruction
-  console.log("🔍 Step 5: Dynamically loading instruction-specific accounts");
-  await loadInstructionAccounts(svm, instruction, connection);
-  
-  // Step 6: Create spoofed LayerZero accounts
-  console.log("🎭 Step 6: Creating spoofed LayerZero accounts");
-  await createCompleteSpoofedAccounts(svm, payload, config, connection);
-  
-  // Step 7: Call lz_receive_types_v2 to get account resolution
-  console.log("📋 Step 7: Calling lz_receive_types_v2 for account resolution");
+  // Step 4: Call lz_receive_types_v2 to get account resolution
+  console.log("📋 Step 4: Calling lz_receive_types_v2 for account resolution");
   const senderBuffer = Buffer.from(config.sender);
   const lzParams = createLzReceiveParams(
     config.srcEid,
@@ -653,7 +440,7 @@ export async function simulateLzCompleteCrossChainInstruction(
   
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
   const executionPlan = await simulateLzReceiveTypesV2(
-    svm,
+    connection,
     governanceProgram,
     config.receiver,
     lzParams,
@@ -678,32 +465,22 @@ export async function simulateLzCompleteCrossChainInstruction(
   
   const uniqueKeys = [...new Set(accountKeys.map(k => k.toString()))].map(k => new web3.PublicKey(k));
   
+  // Fetch pre-state from Surfpool
+  const preStateAccounts = await connection.getMultipleAccountsInfo(uniqueKeys);
   const preState = new Map<string, web3.AccountInfo<Buffer> | null>();
-  for (const key of uniqueKeys) {
-    const account = svm.getAccount(key);
-    if (account) {
-      preState.set(key.toString(), {
-        lamports: account.lamports,
-        data: Buffer.from(account.data),
-        owner: account.owner,
-        executable: account.executable,
-        rentEpoch: account.rentEpoch,
-      });
-    } else {
-      preState.set(key.toString(), null);
-    }
+  for (let i = 0; i < uniqueKeys.length; i++) {
+    preState.set(uniqueKeys[i].toString(), preStateAccounts[i]);
   }
   
-  // Step 8: Build and execute real lz_receive instruction
-  console.log("🚀 Step 8: Building and executing real lz_receive instruction");
+  // Step 5: Build and execute real lz_receive instruction
+  console.log("🚀 Step 5: Building and executing real lz_receive instruction");
   try {
-    const { logs, success, signature } = await executeLzReceive(
-      svm,
+    const { logs, success, signature, postSimulationAccounts } = await executeLzReceive(
+      connection,
       payer,
       config,
       lzParams,
-      executionPlan,
-      connection
+      executionPlan
     );
     
     if (!success) {
@@ -714,7 +491,7 @@ export async function simulateLzCompleteCrossChainInstruction(
       }
     }
     
-    const accountStates = getAccountStates(svm, uniqueKeys, preState);
+    const accountStates = await getAccountStates(uniqueKeys, preState, postSimulationAccounts);
     
     return {
       serializedPayload: payload.serializedInstruction,
@@ -729,7 +506,7 @@ export async function simulateLzCompleteCrossChainInstruction(
   } catch (error: any) {
     console.log("❌ Exception during lz_receive execution:");
     console.log(`   Error: ${error?.message || String(error)}`);
-    const accountStates = getAccountStates(svm, uniqueKeys, preState);
+    const accountStates = await getAccountStates(uniqueKeys, preState, new Map());
     
     return {
       serializedPayload: payload.serializedInstruction,

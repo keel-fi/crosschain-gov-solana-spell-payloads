@@ -90,6 +90,7 @@ const main = async () => {
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();
   const permissionAccount = resp[permissionPda];
+  assert(permissionAccount.after, `Permission account ${permissionPda} should exist after simulation`);
   // Read Permission after discriminator
   const [permissionAfter] = permissionCodec.read(
     permissionAccount.after.data,
