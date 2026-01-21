@@ -37,57 +37,10 @@ import {
   resolveAccountMeta,
   createLzReceiveInstruction,
   createLzReceiveParams,
-  ParsedAccountMetaWithLocator,
 } from "./lz-receive-types-v2";
 import { deserializeLzInstruction } from "./lz-governance-codec";
 import { surfnetSetAccount } from "../surfpool-utils";
 
-/**
- * Build a fallback execution plan when lz_receive_types_v2 fails due to return data limit.
- * Constructs the plan from the original instruction accounts.
- */
-function buildFallbackExecutionPlan(
-  instruction: web3.TransactionInstruction,
-  payer: web3.PublicKey,
-  governanceAccount: web3.PublicKey
-): LzReceiveTypesV2Result {
-  const accounts: ParsedAccountMetaWithLocator[] = [];
-  
-  // Add payer as first account
-  accounts.push({
-    addressLocator: { type: "Payer" },
-    pubkey: payer,
-    isSigner: true,
-    isWritable: true,
-  });
-  
-  // Add governance account
-  accounts.push({
-    addressLocator: { type: "Address", address: governanceAccount },
-    pubkey: governanceAccount,
-    isSigner: false,
-    isWritable: false,
-  });
-  
-  // Add all accounts from the original instruction
-  for (const key of instruction.keys) {
-    if (key.pubkey.equals(payer) || key.pubkey.equals(governanceAccount)) continue;
-    accounts.push({
-      addressLocator: { type: "Address", address: key.pubkey },
-      pubkey: key.pubkey,
-      isSigner: key.isSigner,
-      isWritable: key.isWritable,
-    });
-  }
-  
-  console.log(`📋 Built fallback execution plan with ${accounts.length} accounts`);
-  
-  return {
-    contextVersion: 1,
-    alts: [],
-    instructions: [{ type: "LzReceive", accounts }],
-  };
-}
 
 /**
  * Complete cross-chain simulation result for Surfpool-based simulation
@@ -383,7 +336,7 @@ async function executeLzReceive(
   const [createAltIx, altAddress] = web3.AddressLookupTableProgram.createLookupTable({
     authority: payer.publicKey,
     payer: payer.publicKey,
-    recentSlot: slot - 1,
+    recentSlot: Math.max(slot - 1, 0),
   });
   
   // Extend ALT with accounts (max 30 per instruction)
@@ -617,26 +570,13 @@ export async function simulateLzCompleteCrossChainInstruction(
   );
   
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
-  let executionPlan: LzReceiveTypesV2Result;
-  
-  try {
-    executionPlan = await simulateLzReceiveTypesV2(
-      connection,
-      governanceProgram,
-      config.receiver,
-      lzParams,
-      payer
-    );
-  } catch (error: any) {
-    // Fallback: construct execution plan from original instruction accounts
-    // This is needed when lz_receive_types_v2 return data exceeds 1024 bytes
-    if (error.message?.includes("Return data too large") || error.message?.includes("Empty return data")) {
-      console.log("⚠️ lz_receive_types_v2 failed due to return data limit - using fallback account resolution");
-      executionPlan = buildFallbackExecutionPlan(instruction, payer.publicKey, config.receiver);
-    } else {
-      throw error;
-    }
-  }
+  const executionPlan = await simulateLzReceiveTypesV2(
+    connection,
+    governanceProgram,
+    config.receiver,
+    lzParams,
+    payer
+  );
   
   // Capture pre-state of all relevant accounts
   const accountKeys = [
@@ -661,48 +601,6 @@ export async function simulateLzCompleteCrossChainInstruction(
   const preState = new Map<string, web3.AccountInfo<Buffer> | null>();
   for (let i = 0; i < uniqueKeys.length; i++) {
     preState.set(uniqueKeys[i].toString(), preStateAccounts[i]);
-  }
-  
-  // Step 4.5: Reset writable accounts that should be uninitialized
-  // This is needed because Surfpool maintains state between runs
-  // Only reset accounts owned by the target program (controller), not LayerZero infrastructure
-  console.log("🧹 Step 4.5: Resetting writable accounts that should be uninitialized");
-  
-  // Get the target program ID from the original instruction
-  // We only reset accounts owned by this program (not LayerZero infrastructure)
-  const targetProgramId = instruction.programId.toBase58();
-  
-  for (const inst of executionPlan.instructions) {
-    if (inst.type === "LzReceive") {
-      for (const acc of inst.accounts) {
-        const resolved = resolveAccountMeta(acc, payer.publicKey);
-        
-        // Only consider writable non-signer accounts
-        if (!resolved.isWritable || resolved.isSigner) continue;
-        
-        const existingAccount = await safeGetAccountInfo(connection, resolved.pubkey);
-        
-        // Only reset if:
-        // 1. Account exists and has data (already initialized)
-        // 2. Account is owned by the target program (controller) - these are the accounts we want to "re-initialize"
-        if (existingAccount && existingAccount.data.length > 0) {
-          const ownerStr = existingAccount.owner.toBase58();
-          
-          // Only reset accounts owned by the target program (controller)
-          // Don't reset LayerZero accounts or other infrastructure
-          if (ownerStr === targetProgramId) {
-            console.log(`   🔄 Resetting account ${resolved.pubkey.toBase58()} (owned by ${ownerStr}) to uninitialized state`);
-            await surfnetSetAccount(connection, resolved.pubkey, {
-              lamports: 0,
-              data: Buffer.alloc(0),
-              owner: web3.SystemProgram.programId,
-              executable: false,
-              rentEpoch: 0,
-            });
-          }
-        }
-      }
-    }
   }
   
   // Step 5: Build and execute real lz_receive instruction
