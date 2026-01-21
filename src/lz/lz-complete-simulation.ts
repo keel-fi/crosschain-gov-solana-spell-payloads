@@ -272,7 +272,8 @@ async function executeLzReceive(
   connection: Connection,
   payer: web3.Keypair,
   lzParams: LzReceiveParams,
-  executionPlan: LzReceiveTypesV2Result
+  executionPlan: LzReceiveTypesV2Result,
+  uniqueKeys: web3.PublicKey[]
 ): Promise<{ logs: string[]; success: boolean; signature: string; postSimulationAccounts: Map<string, web3.AccountInfo<Buffer> | null> }> {
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
   
@@ -313,10 +314,6 @@ async function executeLzReceive(
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  // Get all account addresses from the instruction (as PublicKey objects for fetching)
-  const accountPublicKeys = lzReceiveIx.keys.map(k => k.pubkey);
-  const accountAddresses = accountPublicKeys.map(k => k.toBase58());
-  
   try {
     // Send and execute the transaction
     const signature = await connection.sendTransaction(transaction);
@@ -346,10 +343,10 @@ async function executeLzReceive(
       }
       
       // Fetch post-execution account states even on failure
-      const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
+      const postExecutionAccounts = await connection.getMultipleAccountsInfo(uniqueKeys);
       const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
-      for (let i = 0; i < accountAddresses.length; i++) {
-        postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+      for (let i = 0; i < uniqueKeys.length; i++) {
+        postSimulationAccounts.set(uniqueKeys[i].toBase58(), postExecutionAccounts[i] || null);
       }
       
       return { logs, success: false, signature, postSimulationAccounts };
@@ -367,10 +364,10 @@ async function executeLzReceive(
     const logs = txDetails.meta?.logMessages || [];
     
     // Fetch post-execution account states
-    const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
+    const postExecutionAccounts = await connection.getMultipleAccountsInfo(uniqueKeys);
     const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
-    for (let i = 0; i < accountAddresses.length; i++) {
-      postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+    for (let i = 0; i < uniqueKeys.length; i++) {
+      postSimulationAccounts.set(uniqueKeys[i].toBase58(), postExecutionAccounts[i] || null);
     }
     
     // Check if transaction had errors in meta
@@ -393,9 +390,9 @@ async function executeLzReceive(
     // Try to fetch account states even on exception
     let postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
     try {
-      const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
-      for (let i = 0; i < accountAddresses.length; i++) {
-        postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+      const postExecutionAccounts = await connection.getMultipleAccountsInfo(uniqueKeys);
+      for (let i = 0; i < uniqueKeys.length; i++) {
+        postSimulationAccounts.set(uniqueKeys[i].toBase58(), postExecutionAccounts[i] || null);
       }
     } catch (e) {
       // If we can't fetch accounts, return empty map
@@ -526,7 +523,8 @@ export async function simulateLzCompleteCrossChainInstruction(
       connection,
       payer,
       lzParams,
-      executionPlan
+      executionPlan,
+      uniqueKeys
     );
     
     if (!success) {
