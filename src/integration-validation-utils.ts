@@ -41,11 +41,26 @@ export const assertInitializeIntegrationCommonAccountChanges = (
   const payerResp = resp[config.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
+  // Assert controller does not change
+  const controllerResp = resp[config.controller];
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
+
   // Assert controller authority does not change
   const controllerAuthorityResp = resp[config.controllerAuthority];
   assertNoAccountChanges(
     controllerAuthorityResp.before,
     controllerAuthorityResp.after
+  );
+
+  // Assert permission does not change
+  const permissionResp = resp[config.permissionPda];
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
   );
 
   // Assert authority does not change

@@ -10,6 +10,7 @@ import {
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  assertNoAccountChanges,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -102,8 +103,7 @@ const main = async () => {
     "Spot market account should be owned by drift program"
   );
 
-  // Note: Spot market change assertions skipped in surfpool mode
-  // as accounts may erroneously become null
+  assertNoAccountChanges(spotMarketResp.before, spotMarketResp.after);
 
   // Compute integration hash
   const driftConfig = {

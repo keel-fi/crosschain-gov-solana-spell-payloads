@@ -10,6 +10,7 @@ import {
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  assertNoAccountChanges,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
@@ -115,8 +116,21 @@ const main = async () => {
   assert(reserveLiquidityMintResp, "Reserve liquidity mint account should be in simulation response");
   assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
 
-  // Note: External read-only account change assertions skipped in surfpool mode
-  // as accounts may erroneously become null
+  // Assert market does not change
+  assertNoAccountChanges(marketResp.before, marketResp.after);
+
+  // Assert reserve does not change
+  assertNoAccountChanges(reserveResp.before, reserveResp.after);
+
+  // Assert reserve liquidity mint does not change
+  assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
+
+  // Note: reserve farm collateral account will change as the number of users increases
+  // when initializing a new integration, so we don't assert it remains unchanged
+
+  // Assert referrer does not change
+  const referrerResp = resp[config.referrer];
+  assertNoAccountChanges(referrerResp.before, referrerResp.after);
 
   // Compute integration hash
   const kaminoConfig = {

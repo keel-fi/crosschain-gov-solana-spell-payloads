@@ -10,6 +10,7 @@ import {
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  assertNoAccountChanges,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -106,10 +107,14 @@ const main = async () => {
     "Input mint should be owned by Token program or Token-2022 program"
   );
 
+  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
+
   // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
   assert(outputMintResp, "Output mint account should be in simulation response");
   assert(outputMintResp.after, "Output mint account should exist");
+
+  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
   
   // Validate output mint is owned by a Token program
   const outputMintOwner = outputMintResp.after.owner.toString();
@@ -122,6 +127,8 @@ const main = async () => {
   const oracleResp = resp[config.oracle];
   assert(oracleResp, "Oracle account should be in simulation response");
   assert(oracleResp.after, "Oracle account should exist");
+
+  assertNoAccountChanges(oracleResp.before, oracleResp.after);
 
   // Assert integration is created
   assertIntegrationCreated(resp, integrationPda);
