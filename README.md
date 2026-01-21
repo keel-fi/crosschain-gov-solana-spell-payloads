@@ -140,5 +140,3 @@ solana program deploy target/deploy/svm_alm_controller.so \
   --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
   --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
 ```
-
-> **NOTE:** Executing on surfpool causes non-writable accounts to become null. Therefore, by design, when testing the controller on surfpool, we skip checking non-writable accounts.

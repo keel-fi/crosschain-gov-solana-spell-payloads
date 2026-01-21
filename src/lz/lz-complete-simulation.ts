@@ -569,13 +569,26 @@ export async function simulateLzCompleteCrossChainInstruction(
   );
   
   const governanceProgram = new web3.PublicKey(SKY_LZ_GOVERNANCE_PROGRAM_ID);
-  const executionPlan = await simulateLzReceiveTypesV2(
-    connection,
-    governanceProgram,
-    config.receiver,
-    lzParams,
-    payer
-  );
+  let executionPlan: LzReceiveTypesV2Result;
+  
+  try {
+    executionPlan = await simulateLzReceiveTypesV2(
+      connection,
+      governanceProgram,
+      config.receiver,
+      lzParams,
+      payer
+    );
+  } catch (error: any) {
+    // Fallback: construct execution plan from original instruction accounts
+    // This is needed when lz_receive_types_v2 return data exceeds 1024 bytes
+    if (error.message?.includes("Return data too large") || error.message?.includes("Empty return data")) {
+      console.log("⚠️ lz_receive_types_v2 failed due to return data limit - using fallback account resolution");
+      executionPlan = buildFallbackExecutionPlan(instruction, payer.publicKey, config.receiver);
+    } else {
+      throw error;
+    }
+  }
   
   // Capture pre-state of all relevant accounts
   const accountKeys = [

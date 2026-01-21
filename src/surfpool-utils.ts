@@ -262,3 +262,21 @@ export async function isSurfpoolConnection(
     return false;
   }
 }
+/**
+ * Set return data limit using surfnet_setReturnDataLimit
+ * This allows programs to return more than the default 1024 bytes
+ *
+ * @param connection - Connection to surfpool RPC
+ * @param limit - Return data limit in bytes
+ */
+export async function surfnetSetReturnDataLimit(
+  connection: Connection,
+  limit: number
+): Promise<boolean> {
+  return await callSurfpoolRpc<boolean>(
+    connection,
+    "surfnet_setReturnDataLimit",
+    [limit]
+  );
+}
+
