@@ -13,19 +13,18 @@ import {
 import { ACTION, CONFIG } from "./config";
 
 const generatePayload = () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
   const setAuthorityInstruction = createSetAuthorityInstruction(
-    new web3.PublicKey(config.tokenMint),
+    new web3.PublicKey(CONFIG.tokenMint),
     WH_OWNER_SENTINEL_KEY,
     AuthorityType.FreezeAccount,
-    new web3.PublicKey(config.newFreezeAuthority),
+    new web3.PublicKey(CONFIG.newFreezeAuthority),
     [],
     TOKEN_PROGRAM_ID
   );
 
   const payload = convertInstructionToWhSolanaGovernancePayload(
-    new web3.PublicKey(config.governanceProgramId),
+    new web3.PublicKey(CONFIG.governanceProgramId),
     setAuthorityInstruction
   );
 

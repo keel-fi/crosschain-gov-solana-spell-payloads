@@ -9,16 +9,15 @@ import {
 import { ACTION, CONFIG } from "./config";
 
 const generateUpgradeAuthorityPayload = () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
   const upgradeInstruction = getUpgradeInstruction(
-    new web3.PublicKey(config.programAddress),
-    new web3.PublicKey(config.programDataAddress),
-    new web3.PublicKey(config.newProgramBuffer),
-    new web3.PublicKey(config.programUpgradeAuthority),
+    new web3.PublicKey(CONFIG.programAddress),
+    new web3.PublicKey(CONFIG.programDataAddress),
+    new web3.PublicKey(CONFIG.newProgramBuffer),
+    new web3.PublicKey(CONFIG.programUpgradeAuthority),
     // Use the authority as the "spill" account for
     // excess lamports
-    new web3.PublicKey(config.spillAccount)
+    new web3.PublicKey(CONFIG.spillAccount)
   );
 
   const upgradeGovernancePayload =

@@ -28,7 +28,6 @@ import { ACTION, CONFIG } from "./config";
 // a state possible where we may simulate the TransferMintAuthority
 // prior to spell execution.
 const main = async () => {
-  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new Connection(rpcUrl, "confirmed");
   const args = readArgs(ACTION);
@@ -36,9 +35,9 @@ const main = async () => {
 
   const payerKeypair = web3.Keypair.generate();
   const payerPubkey = payerKeypair.publicKey;
-  const authorityPubkey = new web3.PublicKey(config.authority);
-  const nttProgramIdPubkey = new web3.PublicKey(config.nttProgramId);
-  const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
+  const authorityPubkey = new web3.PublicKey(CONFIG.authority);
+  const nttProgramIdPubkey = new web3.PublicKey(CONFIG.nttProgramId);
+  const tokenMintPubkey = new web3.PublicKey(CONFIG.tokenMint);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
@@ -86,7 +85,7 @@ const main = async () => {
   assertNoAccountChanges(prevAuthority?.before, prevAuthority?.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[config.newMintAuthority];
+  const newAuthorityResp = resp[CONFIG.newMintAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // NTT config should not change
@@ -95,11 +94,11 @@ const main = async () => {
 
   // NTT config owner should not change, except for Lamports
   // as the TX payer
-  const nttConfigOwner = resp[config.authority];
+  const nttConfigOwner = resp[CONFIG.authority];
   assertNoAccountChanges(nttConfigOwner.before, nttConfigOwner.after, true);
 
   // check mint values
-  const mintResp = resp[config.tokenMint];
+  const mintResp = resp[CONFIG.tokenMint];
   const mintBefore = unpackMint(tokenMintPubkey, mintResp.before);
   const mintAfter = unpackMint(tokenMintPubkey, mintResp.after);
 
@@ -114,7 +113,7 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert mint authority changed as expected
-  assert.equal(mintAfter.mintAuthority.toString(), config.newMintAuthority);
+  assert.equal(mintAfter.mintAuthority.toString(), CONFIG.newMintAuthority);
 
   validateSuccess(args.file);
 };

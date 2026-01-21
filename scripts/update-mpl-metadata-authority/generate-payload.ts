@@ -24,19 +24,18 @@ import { web3 } from "@coral-xyz/anchor";
 import { ACTION, CONFIG } from "./config";
 
 const generatePayload = async () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
   const addressCodec = getAddressCodec();
   const [metadataAddress] = await getProgramDerivedAddress({
-    programAddress: address(config.mplProgramAddress),
+    programAddress: address(CONFIG.mplProgramAddress),
     seeds: [
       "metadata",
-      addressCodec.encode(address(config.mplProgramAddress)),
-      addressCodec.encode(address(config.tokenMint)),
+      addressCodec.encode(address(CONFIG.mplProgramAddress)),
+      addressCodec.encode(address(CONFIG.tokenMint)),
     ],
   });
   const instructionArgs = updateArgs("AsUpdateAuthorityV2", {
-    newUpdateAuthority: address(config.newAuthority),
+    newUpdateAuthority: address(CONFIG.newAuthority),
     data: null,
     primarySaleHappened: null,
     isMutable: null,
@@ -50,12 +49,12 @@ const generatePayload = async () => {
   const kitInstruction = getUpdateInstruction({
     authority: createNoopSigner(address(WH_OWNER_SENTINEL_KEY.toString())),
     metadata: metadataAddress,
-    mint: address(config.tokenMint),
+    mint: address(CONFIG.tokenMint),
     payer: createNoopSigner(address(WH_PAYER_SENTINEL_KEY.toString())),
     updateArgs: instructionArgs,
   });
   const payload = convertInstructionToWhSolanaGovernancePayload(
-    new web3.PublicKey(config.governanceProgramId),
+    new web3.PublicKey(CONFIG.governanceProgramId),
     convertKitInstructionToWeb3Js(kitInstruction)
   );
 

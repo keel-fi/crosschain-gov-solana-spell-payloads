@@ -13,17 +13,16 @@ import { unpackMint } from "@solana/spl-token";
 import { ACTION, CONFIG } from "./config";
 
 const main = async () => {
-  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
 
-  const payerPubkey = new web3.PublicKey(config.payer);
+  const payerPubkey = new web3.PublicKey(CONFIG.payer);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
-    new web3.PublicKey(config.authority)
+    new web3.PublicKey(CONFIG.authority)
   );
 
   const resp = await simulateInstructions(connection, payerPubkey, [
@@ -31,20 +30,20 @@ const main = async () => {
   ]);
 
   // Assert payer does not change aside from lamports
-  const payerResp = resp[config.payer];
+  const payerResp = resp[CONFIG.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Previous authority should not change
-  const prevAuthority = resp[config.authority];
+  const prevAuthority = resp[CONFIG.authority];
   assertNoAccountChanges(prevAuthority.before, prevAuthority.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[config.newFreezeAuthority];
+  const newAuthorityResp = resp[CONFIG.newFreezeAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // check mint values
-  const mintResp = resp[config.tokenMint];
-  const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
+  const mintResp = resp[CONFIG.tokenMint];
+  const tokenMintPubkey = new web3.PublicKey(CONFIG.tokenMint);
   const mintBefore = unpackMint(tokenMintPubkey, mintResp.before);
   const mintAfter = unpackMint(tokenMintPubkey, mintResp.after);
 
@@ -59,7 +58,7 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert freeze authority changed as expected
-  assert.equal(mintAfter.freezeAuthority.toString(), config.newFreezeAuthority);
+  assert.equal(mintAfter.freezeAuthority.toString(), CONFIG.newFreezeAuthority);
 
   validateSuccess(args.file);
 };

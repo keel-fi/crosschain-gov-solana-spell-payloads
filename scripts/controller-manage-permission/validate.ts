@@ -21,7 +21,6 @@ import {
 
 
 const main = async () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
   // Support both file-based and Packet bytes-based payload reading
   const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
@@ -29,24 +28,24 @@ const main = async () => {
     file: args.file as string | undefined,
     packetBytes,
   });
-  const payerPubkey = new web3.PublicKey(config.payer);
-  const cpiAuthority = new web3.PublicKey(config.superAuthority);
+  const payerPubkey = new web3.PublicKey(CONFIG.payer);
+  const cpiAuthority = new web3.PublicKey(CONFIG.superAuthority);
 
   const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
-    new web3.PublicKey(config.controllerProgramId),
+    new web3.PublicKey(CONFIG.controllerProgramId),
     payerPubkey,
     cpiAuthority,
     1n // nonce
   );
 
   const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority),
+    address(CONFIG.controller),
+    address(CONFIG.authority),
   );
   const superPermissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.superAuthority),
+    address(CONFIG.controller),
+    address(CONFIG.superAuthority),
   );
 
   // Assert payer does not change, except for lamports
@@ -55,12 +54,12 @@ const main = async () => {
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert controller does not change
-  const controllerResp = resp[config.controller];
+  const controllerResp = resp[CONFIG.controller];
   assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
+    address(CONFIG.controller),
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -69,18 +68,18 @@ const main = async () => {
   );
 
   // Assert authority does not change
-  const authorityResp = resp[config.authority];
+  const authorityResp = resp[CONFIG.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
 
   // Assert super authority does not change
-  const superAuthorityResp = resp[config.superAuthority];
+  const superAuthorityResp = resp[CONFIG.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
   const superPermission = resp[superPermissionPda];
   assertNoAccountChanges(superPermission.before, superPermission.after);
 
   // Assert controller program does not change
-  const controllerProgramResp = resp[config.controllerProgramId];
+  const controllerProgramResp = resp[CONFIG.controllerProgramId];
   assertNoAccountChanges(
     controllerProgramResp.before,
     controllerProgramResp.after
@@ -103,7 +102,7 @@ const main = async () => {
     // Validate that the existing permission was owned by the controller program
     assert.equal(
       permissionAccount.before.owner.toString(),
-      config.controllerProgramId,
+      CONFIG.controllerProgramId,
       "Existing permission should be owned by the controller program ID"
     );
     const [permissionBefore] = permissionCodec.read(
@@ -120,13 +119,13 @@ const main = async () => {
     );
   } else {
     // Account didn't exist before or had empty data
-    assert.equal(permissionAfter.controller.toString(), config.controller);
-    assert.equal(permissionAfter.authority.toString(), config.authority);
+    assert.equal(permissionAfter.controller.toString(), CONFIG.controller);
+    assert.equal(permissionAfter.authority.toString(), CONFIG.authority);
   }
 
   assert.equal(
     permissionAccount.after.owner.toString(),
-    config.controllerProgramId,
+    CONFIG.controllerProgramId,
     "Permission owner should be the controller program ID"
   );
 

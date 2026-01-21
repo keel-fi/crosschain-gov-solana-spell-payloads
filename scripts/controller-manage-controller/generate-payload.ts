@@ -15,23 +15,22 @@ import {
 import { ACTION, CONFIG } from "./config";
 
 const printControllerManageControllerPayload = async () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller)
+    address(CONFIG.controller)
   );
   const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority)
+    address(CONFIG.controller),
+    address(CONFIG.authority)
   );
   const instruction = getManageControllerInstruction({
-    controller: address(config.controller),
+    controller: address(CONFIG.controller),
     controllerAuthority: controllerAuthority,
-    authority: createNoopSigner(address(config.authority)),
+    authority: createNoopSigner(address(CONFIG.authority)),
     permission: permissionPda,
-    programId: address(config.controllerProgramId),
-    status: config.status,
+    programId: address(CONFIG.controllerProgramId),
+    status: CONFIG.status,
   });
 
   const payload = convertInstructionToSolanaGovernancePayload(

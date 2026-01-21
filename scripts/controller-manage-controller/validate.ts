@@ -16,23 +16,22 @@ import { address } from "@solana/kit";
 import { CONFIG, ACTION } from "./config";
 
 const main = async () => {
-  const config = CONFIG;
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
-  const payerPubkey = new web3.PublicKey(config.payer);
-  const cpiAuthority = new web3.PublicKey(config.authority);
+  const payerPubkey = new web3.PublicKey(CONFIG.payer);
+  const cpiAuthority = new web3.PublicKey(CONFIG.authority);
 
   const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
-    new web3.PublicKey(config.controllerProgramId),
+    new web3.PublicKey(CONFIG.controllerProgramId),
     payerPubkey,
     cpiAuthority,
     1n // nonce
   );
 
   const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority)
+    address(CONFIG.controller),
+    address(CONFIG.authority)
   );
 
   // Assert payer does not change, except for lamports
@@ -42,7 +41,7 @@ const main = async () => {
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller)
+    address(CONFIG.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -51,7 +50,7 @@ const main = async () => {
   );
 
   // Assert authority does not change
-  const authorityResp = resp[config.authority];
+  const authorityResp = resp[CONFIG.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
 
   // Assert permission does not change
@@ -61,7 +60,7 @@ const main = async () => {
   }
 
   // Assert controller changes
-  const controllerResp = resp[config.controller];
+  const controllerResp = resp[CONFIG.controller];
   assert(controllerResp.after, "Controller should exist");
   assert(controllerResp.before, "Controller should exist before");
   assert.notDeepEqual(
@@ -76,7 +75,7 @@ const main = async () => {
   const [controllerBefore] = controllerCodec.read(controllerResp.before.data, 1);
   assert.equal(
     controllerAfter.status,
-    config.status,
+    CONFIG.status,
     "Controller status should match config"
   );
   assert.equal(

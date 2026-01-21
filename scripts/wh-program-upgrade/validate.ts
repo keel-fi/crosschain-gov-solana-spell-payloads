@@ -38,17 +38,16 @@ const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
 const main = async () => {
-  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
 
-  const payerPubkey = new web3.PublicKey(config.payer);
+  const payerPubkey = new web3.PublicKey(CONFIG.payer);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
-    new web3.PublicKey(config.programUpgradeAuthority)
+    new web3.PublicKey(CONFIG.programUpgradeAuthority)
   );
 
   // Simulate the upgrade instruction execution
@@ -57,27 +56,27 @@ const main = async () => {
   ]);
 
   // Assert payer does not change aside from lamports
-  const payerResp = resp[config.payer];
+  const payerResp = resp[CONFIG.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Assert program account does not change
-  const programResp = resp[config.programAddress];
+  const programResp = resp[CONFIG.programAddress];
   assertNoAccountChanges(programResp.before, programResp.after);
 
   // Assert program authority does not change
-  const programUpgradeAuthority = resp[config.programUpgradeAuthority];
+  const programUpgradeAuthority = resp[CONFIG.programUpgradeAuthority];
   assertNoAccountChanges(
     programUpgradeAuthority.before,
     programUpgradeAuthority.after,
     // allow lamport changes only if the authority is the spill account
-    config.programUpgradeAuthority === config.spillAccount
+    CONFIG.programUpgradeAuthority === CONFIG.spillAccount
   );
 
   // Extract ProgramData account after simulation
-  const programDataResp = resp[config.programDataAddress];
+  const programDataResp = resp[CONFIG.programDataAddress];
 
   // Slice out only the ELF code sections
-  const newDataBufferResp = resp[config.newProgramBuffer];
+  const newDataBufferResp = resp[CONFIG.newProgramBuffer];
   const bufferCodeBefore = getBufferCode(newDataBufferResp.before.data);
   const programCodeAfter = getProgramDataCode(programDataResp.after.data);
 
@@ -109,7 +108,7 @@ const main = async () => {
   assert.equal(newDataBufferResp.after.lamports, 0);
 
   // Assert spill account got lamports from closed buffer
-  const spillResp = resp[config.spillAccount];
+  const spillResp = resp[CONFIG.spillAccount];
   assert.ok(
     spillResp.after.lamports >= spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
