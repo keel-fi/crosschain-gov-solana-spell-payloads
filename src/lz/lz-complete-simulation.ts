@@ -37,9 +37,57 @@ import {
   resolveAccountMeta,
   createLzReceiveInstruction,
   createLzReceiveParams,
+  ParsedAccountMetaWithLocator,
 } from "./lz-receive-types-v2";
 import { deserializeLzInstruction } from "./lz-governance-codec";
 import { surfnetSetAccount } from "../surfpool-utils";
+
+/**
+ * Build a fallback execution plan when lz_receive_types_v2 fails due to return data limit.
+ * Constructs the plan from the original instruction accounts.
+ */
+function buildFallbackExecutionPlan(
+  instruction: web3.TransactionInstruction,
+  payer: web3.PublicKey,
+  governanceAccount: web3.PublicKey
+): LzReceiveTypesV2Result {
+  const accounts: ParsedAccountMetaWithLocator[] = [];
+  
+  // Add payer as first account
+  accounts.push({
+    addressLocator: { type: "Payer" },
+    pubkey: payer,
+    isSigner: true,
+    isWritable: true,
+  });
+  
+  // Add governance account
+  accounts.push({
+    addressLocator: { type: "Address", address: governanceAccount },
+    pubkey: governanceAccount,
+    isSigner: false,
+    isWritable: false,
+  });
+  
+  // Add all accounts from the original instruction
+  for (const key of instruction.keys) {
+    if (key.pubkey.equals(payer) || key.pubkey.equals(governanceAccount)) continue;
+    accounts.push({
+      addressLocator: { type: "Address", address: key.pubkey },
+      pubkey: key.pubkey,
+      isSigner: key.isSigner,
+      isWritable: key.isWritable,
+    });
+  }
+  
+  console.log(`📋 Built fallback execution plan with ${accounts.length} accounts`);
+  
+  return {
+    contextVersion: 1,
+    alts: [],
+    instructions: [{ type: "LzReceive", accounts }],
+  };
+}
 
 /**
  * Complete cross-chain simulation result for Surfpool-based simulation
