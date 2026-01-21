@@ -21,7 +21,7 @@ export type Stablecoin = "USDG" | "PYUSD" | "CASH";
  */
 export const validateConfig = <T>(config: T): T => {
   Object.entries(config as object).forEach(([key, val]) => {
-    if (!val) {
+    if (val === undefined || val === null) {
       throw new Error(`Config is missing ${key}`);
     }
   });

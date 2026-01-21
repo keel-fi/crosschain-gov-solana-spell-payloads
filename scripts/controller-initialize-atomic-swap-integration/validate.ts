@@ -92,7 +92,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: true,
   });
 
   // Assert input mint exists and does not change

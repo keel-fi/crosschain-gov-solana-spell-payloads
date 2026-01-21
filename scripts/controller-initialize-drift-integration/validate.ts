@@ -130,7 +130,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: true,
   });
 
   // Assert integration is created
