@@ -3,7 +3,6 @@ import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
   simulateInstructions,
@@ -11,10 +10,10 @@ import {
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
 import { getMetadataDecoder } from "../../src/programs/metaplex-token-metadata";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);

@@ -2,7 +2,6 @@
 
 import {
   convertKitInstructionToWeb3Js,
-  readAndValidateNetworkConfig,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
@@ -13,10 +12,10 @@ import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const printControllerManageControllerPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
 
   const controllerAuthority = await deriveControllerAuthorityPda(

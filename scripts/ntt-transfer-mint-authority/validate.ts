@@ -8,7 +8,6 @@ import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
   validateSuccess,
@@ -21,7 +20,7 @@ import {
   surfnetWriteProgram,
 } from "../../src/surfpool-utils";
 import { unpackMint } from "@solana/spl-token";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 // NOTE: Due to the sequencing of the NTT upgrade transaction
 // and NTT TransferMintAuthority, we must simulate with Surfpool
@@ -29,7 +28,7 @@ import { ACTION, NETWORK_CONFIGS } from "./config";
 // a state possible where we may simulate the TransferMintAuthority
 // prior to spell execution.
 const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new Connection(rpcUrl, "confirmed");
   const args = readArgs(ACTION);
@@ -68,9 +67,8 @@ const main = async () => {
 
   // Load the upgraded NTT program using surfnet_writeProgram
   console.log("📦 Loading upgraded NTT program...");
-  // Use mainnet binary for surfpool since it simulates mainnet state
-  const fixtureNetwork = network === "surfpool" ? "mainnet" : network;
-  const programPath = path.resolve(__dirname, `./fixtures/ntt-${fixtureNetwork}.so`);
+  // Use mainnet binary since surfpool simulates mainnet state
+  const programPath = path.resolve(__dirname, `./fixtures/ntt-mainnet.so`);
   const programBinary = fs.readFileSync(programPath);
   const programBase64 = programBinary.toString("base64");
   await surfnetWriteProgram(connection, nttProgramIdPubkey, programBase64, 0);

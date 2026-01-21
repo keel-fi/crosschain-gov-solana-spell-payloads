@@ -6,15 +6,14 @@ import {
 } from "@solana/spl-token";
 import {
   convertInstructionToWhSolanaGovernancePayload,
-  readAndValidateNetworkConfig,
   readArgs,
   WH_OWNER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const generatePayload = () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   const setAuthorityInstruction = createSetAuthorityInstruction(
     new web3.PublicKey(config.tokenMint),

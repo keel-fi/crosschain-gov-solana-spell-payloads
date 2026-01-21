@@ -71,11 +71,6 @@ export const MAINNET_PAYER = "2rRM7kWjWjS7CGoRnSHTMu4daS24YAA9BgcP1qo2v1UC";
 
 export const SURFPOOL_URL = "http://127.0.0.1:8899";
 
-export const DEVNET_PAYER = "3ZEoogXb7fmYQFwtmm9cNFdgNepxeWE1S7YutTFVYoxr";
-
-/* Devnet controller */
-export const DEVNET_CONTROLLER = "4N4QPLwUviKAXniw6N8CuNwZAp9pHbGdjZtzyoYMHUz6";
-
 /* Token mints */
 export const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 

@@ -37,12 +37,6 @@ yarn install
 
 ## Usage
 
-### Environment Variables
-
-| Variable  | Type | Description                                                          |
-| --------- | ---- | -------------------------------------------------------------------- |
-| NETWORK   | env  | Required. Sets the network: `devnet`, `mainnet`, or `surfpool`      |
-
 ### Command Line Arguments
 
 | Argument      | Type   | Description                                                                                    |
@@ -54,19 +48,19 @@ yarn install
 
 **Using default file names:**
 ```bash
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/generate-payload.ts
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/validate.ts
+ts-node ./scripts/wh-program-upgrade/generate-payload.ts
+ts-node ./scripts/wh-program-upgrade/validate.ts
 ```
 
 **Using config files (for scripts that require them):**
 ```bash
-NETWORK=mainnet ts-node ./scripts/controller-manage-atomic-swap-integration/generate-payload.ts --config configs/CASH-mainnet.ts
-NETWORK=mainnet ts-node ./scripts/controller-manage-atomic-swap-integration/validate.ts --config configs/CASH-mainnet.ts
+ts-node ./scripts/controller-manage-integration/generate-payload.ts --config configs/CASH-mainnet.ts
+ts-node ./scripts/controller-manage-integration/validate.ts --config configs/CASH-mainnet.ts
 ```
 
 **Validating from LayerZero Packet bytes:**
 ```bash
-NETWORK=mainnet ts-node ./scripts/controller-manage-permission/validate.ts --bytes 010000...
+ts-node ./scripts/controller-manage-permission/validate.ts --bytes 010000...
 ```
 
 ## Testing
@@ -102,16 +96,16 @@ This repository uses [Surfpool](https://docs.surfpool.run/) for local transactio
 
 Install Surfpool following the [official documentation](https://docs.surfpool.run/installation).
 
-### Running Tests
+### Running Validation Scripts
 
 1. **Start Surfpool:**
 ```bash
 surfpool start
 ```
 
-2. **Run validation scripts with surfpool:**
+2. **Run validation scripts:**
 ```bash
-NETWORK=surfpool SOLANA_RPC_URL=http://127.0.0.1:8899 ts-node ./scripts/controller-manage-permission/validate.ts
+ts-node ./scripts/controller-manage-permission/validate.ts
 ```
 
 ### Surfpool Cheatcodes
@@ -146,7 +140,5 @@ solana program deploy target/deploy/svm_alm_controller.so \
   --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
   --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
 ```
-
-> **NOTE:** Some scripts using PYUSD or USDG must use surfpool for testing with the upgraded controller: https://github.com/keel-fi/svm-alm-controller/pull/158
 
 > **NOTE:** Simulating on surfpool causes some of the accounts to erroneously become null. Therefore when testing the upgraded controller on surfpool, we must skip these checks.

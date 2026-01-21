@@ -6,13 +6,12 @@ import {
   BPF_LOADER_PROGRAM_ID,
   convertLzSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 // the layout of `UpgradeableLoaderState` can be found here:
 // https://bonfida.github.io/doc-dex-program/solana_program/bpf_loader_upgradeable/enum.UpgradeableLoaderState.html
@@ -40,7 +39,7 @@ const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
 const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);

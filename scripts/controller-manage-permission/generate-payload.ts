@@ -4,20 +4,19 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkConfig,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { Address, address, createNoopSigner, getAddressEncoder } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getManagePermissionInstruction,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
+import { ACTION, CONFIG, PERMISSIONS } from "./config";
 import { deriveControllerAuthorityPda, derivePermissionPda } from "@keel-fi/svm-alm-controller";
 const printControllerManagePermissionPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),

@@ -2,7 +2,6 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  readAndValidateNetworkConfig,
   readArgs,
   readPayloadOrDecodePacket,
   simulatePayloadWithCompleteCrossChainFlow,
@@ -15,14 +14,14 @@ import {
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
 import {
-  NETWORK_CONFIGS,
+  CONFIG,
   PERMISSIONS as EXPECTED_PERMISSIONS,
   ACTION,
 } from "./config";
 
 
 const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   // Support both file-based and Packet bytes-based payload reading
   const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;

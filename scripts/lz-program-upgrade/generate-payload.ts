@@ -1,18 +1,15 @@
 // Creates a payload for LZ governance to upgrade a program.
-import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
 import {
   convertInstructionToSolanaGovernancePayload,
   getUpgradeInstruction,
-  readAndValidateNetworkConfig,
   readArgs,
-  LZ_CPI_AUTHORITY_PLACEHOLDER,
   writeOutputFile,
 } from "../../src";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const generateUpgradeAuthorityPayload = () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   const upgradeInstruction = getUpgradeInstruction(
     new web3.PublicKey(config.programAddress),

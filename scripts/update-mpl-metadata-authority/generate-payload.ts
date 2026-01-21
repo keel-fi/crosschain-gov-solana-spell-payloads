@@ -1,7 +1,6 @@
 import {
   convertInstructionToWhSolanaGovernancePayload,
   convertKitInstructionToWeb3Js,
-  readAndValidateNetworkConfig,
   readArgs,
   WH_OWNER_SENTINEL_KEY,
   WH_PAYER_SENTINEL_KEY,
@@ -22,10 +21,10 @@ import {
   getProgramDerivedAddress,
 } from "@solana/kit";
 import { web3 } from "@coral-xyz/anchor";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const generatePayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   const addressCodec = getAddressCodec();
   const [metadataAddress] = await getProgramDerivedAddress({

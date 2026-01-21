@@ -2,7 +2,6 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  readAndValidateNetworkConfig,
   readArgs,
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
@@ -14,10 +13,10 @@ import {
   derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
-import { NETWORK_CONFIGS, ACTION } from "./config";
+import { CONFIG, ACTION } from "./config";
 
 const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+  const config = CONFIG;
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
   const payerPubkey = new web3.PublicKey(config.payer);
