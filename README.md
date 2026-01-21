@@ -90,7 +90,7 @@ NOTE: we currently leave all generated files in for completeness, but would be o
 
 ## Surfpool
 
-This repository uses [Surfpool](https://docs.surfpool.run/) for local transaction simulation. Surfpool is a drop-in replacement for `solana-test-validator` that automatically fetches mainnet accounts "just in time" during simulation.
+This repository uses [Surfpool](https://docs.surfpool.run/) for local transaction execution. Surfpool is a drop-in replacement for `solana-test-validator` that automatically fetches mainnet accounts "just in time" during execution.
 
 ### Installation
 
@@ -141,4 +141,4 @@ solana program deploy target/deploy/svm_alm_controller.so \
   --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
 ```
 
-> **NOTE:** Simulating on surfpool causes some of the accounts to erroneously become null. Therefore when testing the upgraded controller on surfpool, we must skip these checks.
+> **NOTE:** Executing on surfpool causes non-writable accounts to become null. Therefore, by design, when testing the controller on surfpool, we skip checking non-writable accounts.

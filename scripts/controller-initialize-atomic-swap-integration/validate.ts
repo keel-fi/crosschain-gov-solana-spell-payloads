@@ -105,7 +105,6 @@ const main = async () => {
     inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
     "Input mint should be owned by Token program or Token-2022 program"
   );
-  // Note: Account change assertions skipped in surfpool mode as accounts may erroneously become null
 
   // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
