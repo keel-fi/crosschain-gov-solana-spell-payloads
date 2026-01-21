@@ -266,12 +266,11 @@ async function createCompleteSpoofedAccounts(
 }
 
 /**
- * Execute the lz_receive instruction using Surfpool RPC simulation
+ * Execute the lz_receive instruction using Surfpool RPC execution
  */
 async function executeLzReceive(
   connection: Connection,
   payer: web3.Keypair,
-  config: CompleteSimulationConfig,
   lzParams: LzReceiveParams,
   executionPlan: LzReceiveTypesV2Result
 ): Promise<{ logs: string[]; success: boolean; signature: string; postSimulationAccounts: Map<string, web3.AccountInfo<Buffer> | null> }> {
@@ -314,52 +313,101 @@ async function executeLzReceive(
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  // Get all account addresses from the instruction
-  const accountAddresses = lzReceiveIx.keys.map(k => k.pubkey.toBase58());
+  // Get all account addresses from the instruction (as PublicKey objects for fetching)
+  const accountPublicKeys = lzReceiveIx.keys.map(k => k.pubkey);
+  const accountAddresses = accountPublicKeys.map(k => k.toBase58());
   
-  // Simulate the transaction using standard Solana RPC, requesting post-simulation account states
-  const simulationResult = await connection.simulateTransaction(transaction, {
-    sigVerify: false,
-    accounts: {
-      encoding: "base64",
-      addresses: accountAddresses,
-    },
-  });
-  
-  const logs = simulationResult.value.logs || [];
-  
-  // Parse post-simulation account states
-  // Note: Surfpool returns null for accounts that weren't modified during simulation,
-  // so we only track accounts that have actual data (were modified)
-  const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
-  if (simulationResult.value.accounts) {
-    for (let i = 0; i < accountAddresses.length; i++) {
-      const accountData = simulationResult.value.accounts[i];
-      if (accountData) {
-        postSimulationAccounts.set(accountAddresses[i], {
-          lamports: accountData.lamports,
-          data: Buffer.from(accountData.data[0], "base64"),
-          owner: new web3.PublicKey(accountData.owner),
-          executable: accountData.executable,
-          rentEpoch: accountData.rentEpoch ?? 0,
+  try {
+    // Send and execute the transaction
+    const signature = await connection.sendTransaction(transaction);
+    
+    // Wait for transaction confirmation
+    const confirmation = await connection.confirmTransaction(signature, "confirmed");
+    
+    if (confirmation.value.err) {
+      console.log("❌ lz_receive execution failed!");
+      console.log(`🔥 Error: ${JSON.stringify(confirmation.value.err)}`);
+      
+      // Try to get transaction details for logs even on failure
+      let logs: string[] = [];
+      try {
+        const txDetails = await connection.getTransaction(signature, {
+          maxSupportedTransactionVersion: 0,
         });
+        if (txDetails?.meta?.logMessages) {
+          logs = txDetails.meta.logMessages;
+          console.log(`📜 ERROR LOGS (${logs.length} entries):`);
+          for (let i = 0; i < logs.length; i++) {
+            console.log(`   [${i + 1}] ${logs[i]}`);
+          }
+        }
+      } catch (e) {
+        // If we can't get transaction details, continue with empty logs
       }
-      // Don't set null for unmodified accounts - getAccountStates will use pre-state
+      
+      // Fetch post-execution account states even on failure
+      const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
+      const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
+      for (let i = 0; i < accountAddresses.length; i++) {
+        postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+      }
+      
+      return { logs, success: false, signature, postSimulationAccounts };
     }
-  }
-  
-  if (simulationResult.value.err) {
-    console.log("❌ lz_receive execution failed!");
-    console.log(`📜 ERROR LOGS (${logs.length} entries):`);
-    for (let i = 0; i < logs.length; i++) {
-      console.log(`   [${i + 1}] ${logs[i]}`);
+    
+    // Get transaction details to extract logs
+    const txDetails = await connection.getTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    
+    if (!txDetails) {
+      throw new Error("Failed to fetch transaction details after confirmation");
     }
-    console.log(`🔥 Error: ${JSON.stringify(simulationResult.value.err)}`);
-    return { logs, success: false, signature: "failed", postSimulationAccounts };
+    
+    const logs = txDetails.meta?.logMessages || [];
+    
+    // Fetch post-execution account states
+    const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
+    const postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
+    for (let i = 0; i < accountAddresses.length; i++) {
+      postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+    }
+    
+    // Check if transaction had errors in meta
+    const success = !txDetails.meta?.err;
+    
+    if (!success) {
+      console.log("❌ lz_receive execution failed!");
+      console.log(`📜 ERROR LOGS (${logs.length} entries):`);
+      for (let i = 0; i < logs.length; i++) {
+        console.log(`   [${i + 1}] ${logs[i]}`);
+      }
+      console.log(`🔥 Error: ${JSON.stringify(txDetails.meta?.err)}`);
+    }
+    
+    return { logs, success, signature, postSimulationAccounts };
+  } catch (error: any) {
+    console.log("❌ Exception during lz_receive execution:");
+    console.log(`   Error: ${error?.message || String(error)}`);
+    
+    // Try to fetch account states even on exception
+    let postSimulationAccounts = new Map<string, web3.AccountInfo<Buffer> | null>();
+    try {
+      const postExecutionAccounts = await connection.getMultipleAccountsInfo(accountPublicKeys);
+      for (let i = 0; i < accountAddresses.length; i++) {
+        postSimulationAccounts.set(accountAddresses[i], postExecutionAccounts[i] || null);
+      }
+    } catch (e) {
+      // If we can't fetch accounts, return empty map
+    }
+    
+    return { 
+      logs: [], 
+      success: false, 
+      signature: error?.signature || "error", 
+      postSimulationAccounts 
+    };
   }
-  
-  // For simulation, we don't have a real signature
-  return { logs, success: true, signature: "simulated", postSimulationAccounts };
 }
 
 /**
@@ -394,7 +442,7 @@ async function getAccountStates(
  * 1. Generates cross-chain payload from instruction
  * 2. Creates spoofed LayerZero accounts via surfnet_setAccount
  * 3. Calls lz_receive_types_v2 to get account resolution
- * 4. Executes the lz_receive instruction via simulation
+ * 4. Executes the lz_receive instruction via sendTransaction
  * 5. Returns account states and logs
  * 
  * Surfpool automatically fetches mainnet accounts on demand (JIT),
@@ -477,7 +525,6 @@ export async function simulateLzCompleteCrossChainInstruction(
     const { logs, success, signature, postSimulationAccounts } = await executeLzReceive(
       connection,
       payer,
-      config,
       lzParams,
       executionPlan
     );
