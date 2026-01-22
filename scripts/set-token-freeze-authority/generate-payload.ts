@@ -6,27 +6,25 @@ import {
 } from "@solana/spl-token";
 import {
   convertInstructionToWhSolanaGovernancePayload,
-  readAndValidateNetworkConfig,
   readArgs,
   WH_OWNER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 const generatePayload = () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const setAuthorityInstruction = createSetAuthorityInstruction(
-    new web3.PublicKey(config.tokenMint),
+    new web3.PublicKey(CONFIG.tokenMint),
     WH_OWNER_SENTINEL_KEY,
     AuthorityType.FreezeAccount,
-    new web3.PublicKey(config.newFreezeAuthority),
+    new web3.PublicKey(CONFIG.newFreezeAuthority),
     [],
     TOKEN_PROGRAM_ID
   );
 
   const payload = convertInstructionToWhSolanaGovernancePayload(
-    new web3.PublicKey(config.governanceProgramId),
+    new web3.PublicKey(CONFIG.governanceProgramId),
     setAuthorityInstruction
   );
 

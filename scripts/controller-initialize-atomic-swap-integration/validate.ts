@@ -1,7 +1,6 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  assertNoAccountChanges,
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
@@ -11,8 +10,7 @@ import {
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
-  getRpcEndpoint,
+  assertNoAccountChanges,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -42,7 +40,6 @@ const main = async () => {
       args.config
     );
   
-  const rpcUrl = getRpcEndpoint();
   const payload = readPayloadFile(config.outputFile);
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
@@ -96,7 +93,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert input mint exists and does not change
@@ -111,14 +107,14 @@ const main = async () => {
     "Input mint should be owned by Token program or Token-2022 program"
   );
 
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
-  }
+  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
 
   // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
   assert(outputMintResp, "Output mint account should be in simulation response");
   assert(outputMintResp.after, "Output mint account should exist");
+
+  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
   
   // Validate output mint is owned by a Token program
   const outputMintOwner = outputMintResp.after.owner.toString();
@@ -127,18 +123,12 @@ const main = async () => {
     "Output mint should be owned by Token program or Token-2022 program"
   );
 
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
-  }
-
   // Assert oracle exists and does not change
   const oracleResp = resp[config.oracle];
   assert(oracleResp, "Oracle account should be in simulation response");
   assert(oracleResp.after, "Oracle account should exist");
 
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(oracleResp.before, oracleResp.after);
-  }
+  assertNoAccountChanges(oracleResp.before, oracleResp.after);
 
   // Assert integration is created
   assertIntegrationCreated(resp, integrationPda);

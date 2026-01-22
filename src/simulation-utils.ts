@@ -1,5 +1,5 @@
 import { web3 } from "@coral-xyz/anchor";
-import { FailedTransactionMetadata, LiteSVM } from "litesvm";
+import { Connection } from "@solana/web3.js";
 import {
   convertSimulationToAccountInfo,
   getUniquePublicKeysFromInstructionsAndPayer,
@@ -68,69 +68,66 @@ export const simulateInstructions = async (
 };
 
 /**
- * Simulates a set of instructions within a supplied LiteSVM
- * environment, returning the before & after state keyed by
- * the account's address.
- * @param svm
- * @param payer
- * @param instructions
- * @returns
+ * Simulates a set of instructions within Surfpool using RPC simulation,
+ * returning the before & after state keyed by the account's address.
+ * 
+ * This is the Surfpool-based replacement for the former LiteSVM-based simulation.
+ * Surfpool automatically fetches mainnet accounts on demand (JIT).
+ * 
+ * @param connection - Connection to Surfpool RPC
+ * @param payer - Payer keypair for signing the transaction
+ * @param instructions - Instructions to simulate
+ * @returns SimulateResponse with before/after account states
  */
-export const simulateInstructionsWithLiteSVM = (
-  svm: LiteSVM,
-  payer: web3.PublicKey,
+export const simulateInstructionsWithSurfpool = async (
+  connection: Connection,
+  payer: web3.Keypair,
   instructions: web3.TransactionInstruction[]
-): SimulateResponse => {
+): Promise<SimulateResponse> => {
   const accountKeyList = getUniquePublicKeysFromInstructionsAndPayer(
     instructions,
-    payer
+    payer.publicKey
   );
-  const preTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
+  
+  // Fetch pre-state from Surfpool (will auto-load from mainnet if needed)
+  const preTxAccountState = await connection.getMultipleAccountsInfo(accountKeyList);
 
   // Construct TX
-  const blockhash = svm.latestBlockhash();
+  const blockhash = await connection.getLatestBlockhash();
   const messageV0 = new web3.TransactionMessage({
-    payerKey: payer,
-    recentBlockhash: blockhash,
+    payerKey: payer.publicKey,
+    recentBlockhash: blockhash.blockhash,
     instructions: instructions,
   }).compileToV0Message();
   const transaction = new web3.VersionedTransaction(messageV0);
+  transaction.sign([payer]);
 
-  const resp = svm.sendTransaction(transaction);
-  if (resp instanceof FailedTransactionMetadata) {
-    const logs = resp.meta().logs();
-    console.log("logs: ", logs);
-    const err = resp.err();
+  // Simulate using RPC
+  const respContext = await connection.simulateTransaction(transaction, {
+    sigVerify: false,
+    accounts: {
+      encoding: "base64",
+      addresses: accountKeyList.map((key) => key.toString()),
+    },
+  });
+  
+  const resp = respContext.value;
+  if (resp.err) {
+    console.log("logs: ", resp.logs);
     // Provide more detailed error information
-    const errorDetails = typeof err === 'object' && err !== null
-      ? JSON.stringify(err, null, 2)
-      : err?.toString() || String(err);
+    const errorDetails = typeof resp.err === 'object' && resp.err !== null
+      ? JSON.stringify(resp.err, null, 2)
+      : String(resp.err);
     throw new Error(`Simulation failed: ${errorDetails}`);
   }
-  const postTxAccountState = accountKeyList.map((key) => svm.getAccount(key));
 
   const ret: SimulateResponse = {};
   for (let i = 0; i < accountKeyList.length; i++) {
     const pubkey = accountKeyList[i];
 
-    let before: web3.AccountInfo<Buffer> | null = null;
-    let after: web3.AccountInfo<Buffer> | null = null;
-    if (preTxAccountState[i]) {
-      before = {
-        ...preTxAccountState[i],
-        data: Buffer.from(preTxAccountState[i].data),
-      };
-    }
-    if (postTxAccountState[i]) {
-      after = {
-        ...postTxAccountState[i],
-        data: Buffer.from(postTxAccountState[i].data),
-      };
-    }
-
     ret[pubkey.toString()] = {
-      before,
-      after,
+      before: preTxAccountState[i],
+      after: convertSimulationToAccountInfo(resp.accounts?.[i] ?? null),
     };
   }
 

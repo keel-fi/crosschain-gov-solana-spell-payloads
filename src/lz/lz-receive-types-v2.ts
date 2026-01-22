@@ -9,8 +9,11 @@
  */
 
 import { web3 } from "@coral-xyz/anchor";
+import { Connection } from "@solana/web3.js";
 import { createHash } from "crypto";
-import { LiteSVM } from "litesvm";
+import { surfnetSetAccount } from "../surfpool-utils";
+import { extractTargetProgram, extractInstructionData } from "../xchain-gov-payload";
+import { convertLzSolanaGovernancePayloadToInstruction } from "./lz-governance-codec";
 
 /**
  * Parameters for lz_receive instruction (matches LayerZero SDK)
@@ -395,6 +398,7 @@ export function resolveAccountMeta(
   accountRef: ParsedAccountMetaWithLocator,
   payer: web3.PublicKey,
   context?: web3.PublicKey,
+  alts?: web3.AddressLookupTableAccount[],
 ): web3.AccountMeta {
   let pubkey: web3.PublicKey;
   // Use the signer status from the execution plan, but Payer is always a signer
@@ -409,8 +413,14 @@ export function resolveAccountMeta(
       isSigner = true; // Payer is always a signer
       break;
     case "AltIndex":
-      // For simulation, use a placeholder
-      pubkey = web3.Keypair.generate().publicKey;
+      if (!alts || accountRef.addressLocator.altIndex >= alts.length) {
+        throw new Error(`Invalid ALT index: ${accountRef.addressLocator.altIndex} (available: ${alts?.length || 0})`);
+      }
+      const alt = alts[accountRef.addressLocator.altIndex];
+      if (accountRef.addressLocator.addressIndex >= alt.state.addresses.length) {
+        throw new Error(`Invalid address index ${accountRef.addressLocator.addressIndex} in ALT ${accountRef.addressLocator.altIndex} (available: ${alt.state.addresses.length})`);
+      }
+      pubkey = alt.state.addresses[accountRef.addressLocator.addressIndex];
       break;
     case "Signer":
       // Signer type means this account should be a signer
@@ -437,35 +447,39 @@ export function resolveAccountMeta(
 }
 
 /**
- * Debug account context in LiteSVM
+ * Debug account context using Surfpool RPC
  */
-export function debugAccountContext(svm: LiteSVM, pubkey: web3.PublicKey, name: string): void {
-  const account = svm.getAccount(pubkey);
-  if (account) {
-    console.log(`   📋 ${name} (${pubkey.toString()}): EXISTS`);
-    console.log(`      ├─ Lamports: ${account.lamports}`);
-    console.log(`      ├─ Owner: ${account.owner.toString()}`);
-    console.log(`      ├─ Data length: ${account.data.length} bytes`);
-    console.log(`      ├─ Executable: ${account.executable}`);
-    console.log(`      └─ Rent epoch: ${account.rentEpoch}`);
-    
-    if (account.data.length > 0) {
-      const preview = Buffer.from(account.data.slice(0, Math.min(32, account.data.length)));
-      console.log(`      └─ Data preview: 0x${preview.toString('hex')}`);
+export async function debugAccountContext(connection: Connection, pubkey: web3.PublicKey, name: string): Promise<void> {
+  try {
+    const account = await connection.getAccountInfo(pubkey);
+    if (account) {
+      console.log(`   📋 ${name} (${pubkey.toString()}): EXISTS`);
+      console.log(`      ├─ Lamports: ${account.lamports}`);
+      console.log(`      ├─ Owner: ${account.owner.toString()}`);
+      console.log(`      ├─ Data length: ${account.data.length} bytes`);
+      console.log(`      ├─ Executable: ${account.executable}`);
+      console.log(`      └─ Rent epoch: ${account.rentEpoch}`);
+      
+      if (account.data.length > 0) {
+        const preview = account.data.slice(0, Math.min(32, account.data.length));
+        console.log(`      └─ Data preview: 0x${preview.toString('hex')}`);
+      }
+    } else {
+      console.log(`   ❌ ${name} (${pubkey.toString()}): NOT FOUND`);
     }
-  } else {
-    console.log(`   ❌ ${name} (${pubkey.toString()}): NOT FOUND`);
+  } catch (err) {
+    console.log(`   ⚠️ ${name} (${pubkey.toString()}): ERROR - ${err}`);
   }
 }
 
 /**
  * Simulate lz_receive_types_v2 instruction to get account resolution
  * 
- * This function executes the lz_receive_types_v2 instruction in LiteSVM
+ * This function executes the lz_receive_types_v2 instruction using Surfpool RPC
  * and parses the return data to get the execution plan with account resolution.
  */
 export async function simulateLzReceiveTypesV2(
-  svm: LiteSVM,
+  connection: Connection,
   governanceProgram: web3.PublicKey,
   governanceAccount: web3.PublicKey,
   params: LzReceiveParams,
@@ -482,25 +496,107 @@ export async function simulateLzReceiveTypesV2(
   console.log(`   Message Length: ${params.message.length} bytes`);
   console.log(`   Message (first 64 bytes): 0x${params.message.subarray(0, Math.min(64, params.message.length)).toString("hex")}`);
   
-  // Check if governance program is loaded
+  // Check if governance program is loaded (Surfpool auto-fetches from mainnet)
   console.log("\n🔎 === ACCOUNT CONTEXT BEFORE lz_receive_types_v2 ===");
-  debugAccountContext(svm, governanceProgram, "Governance Program");
-  debugAccountContext(svm, governanceAccount, "Governance Account");
-  debugAccountContext(svm, web3.SystemProgram.programId, "System Program");
+  await debugAccountContext(connection, governanceProgram, "Governance Program");
+  await debugAccountContext(connection, governanceAccount, "Governance Account");
+  await debugAccountContext(connection, web3.SystemProgram.programId, "System Program");
   
-  const programAccount = svm.getAccount(governanceProgram);
+  const programAccount = await connection.getAccountInfo(governanceProgram);
   if (!programAccount) {
     throw new Error(`Governance program not loaded at ${governanceProgram.toString()} - cannot get real execution plan`);
   }
   
   console.log("\n🚀 ATTEMPTING REAL lz_receive_types_v2 EXECUTION");
   
-  // Create the lz_receive_types_v2 instruction
+  // Extract accounts from governance payload to create ALT for compact return data
+  console.log("\n📋 Extracting accounts from governance payload for ALT...");
+  let altAddress: web3.PublicKey | null = null;
+  
+  try {
+    // Extract target program and instruction data from message
+    const targetProgram = extractTargetProgram(params.message);
+    const instructionData = extractInstructionData(params.message);
+    
+    // Get CPI authority (executor program)
+    const EXECUTOR_ID = new web3.PublicKey("6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn");
+    
+    // Convert payload to instruction with resolved placeholders
+    const resolvedInstruction = convertLzSolanaGovernancePayloadToInstruction(
+      instructionData,
+      targetProgram,
+      EXECUTOR_ID,
+      payer.publicKey
+    );
+    
+    // Collect unique non-signer account addresses for ALT
+    const altAccounts: web3.PublicKey[] = [];
+    const seenKeys = new Set<string>();
+    seenKeys.add(payer.publicKey.toBase58()); // Exclude payer (signer)
+    
+    for (const acc of resolvedInstruction.keys) {
+      const key = acc.pubkey.toBase58();
+      if (!seenKeys.has(key) && !acc.isSigner) {
+        altAccounts.push(acc.pubkey);
+        seenKeys.add(key);
+      }
+    }
+    
+    if (altAccounts.length > 0) {
+      console.log(`📋 Creating ALT with ${altAccounts.length} accounts to reduce return data size`);
+      
+      // Get blockhash for ALT creation
+      const blockhash = await connection.getLatestBlockhash();
+      
+      // Create Address Lookup Table
+      const slot = await connection.getSlot();
+      const [createAltIx, altAddr] = web3.AddressLookupTableProgram.createLookupTable({
+        authority: payer.publicKey,
+        payer: payer.publicKey,
+        recentSlot: Math.max(slot - 1, 0),
+      });
+      altAddress = altAddr;
+      
+      // Extend ALT with accounts (max 30 per instruction)
+      const extendIxs: web3.TransactionInstruction[] = [];
+      for (let i = 0; i < altAccounts.length; i += 30) {
+        const chunk = altAccounts.slice(i, i + 30);
+        extendIxs.push(
+          web3.AddressLookupTableProgram.extendLookupTable({
+            payer: payer.publicKey,
+            authority: payer.publicKey,
+            lookupTable: altAddress,
+            addresses: chunk,
+          })
+        );
+      }
+      
+      // Create and extend ALT in one transaction
+      const setupTx = new web3.Transaction();
+      setupTx.recentBlockhash = blockhash.blockhash;
+      setupTx.feePayer = payer.publicKey;
+      setupTx.add(createAltIx, ...extendIxs);
+      setupTx.sign(payer);
+      
+      const setupSig = await connection.sendRawTransaction(setupTx.serialize(), {
+        skipPreflight: true,
+      });
+      await connection.confirmTransaction(setupSig, "confirmed");
+      console.log(`✅ ALT created and extended: ${altAddress.toBase58()}`);
+    } else {
+      console.log("📋 No accounts found for ALT (all accounts are signers or duplicates)");
+    }
+  } catch (error) {
+    console.log(`⚠️ Failed to create ALT from payload: ${error}`);
+    console.log("📋 Proceeding without ALT (may hit return data limit)");
+  }
+  
+  // Create the lz_receive_types_v2 instruction with ALT
   const instruction = createLzReceiveTypesV2Instruction(
     governanceProgram,
     governanceAccount,
     params,
-    [] // No ALTs for now
+    altAddress ? [altAddress] : [] // Pass ALT if created
   );
   
   console.log("📋 lz_receive_types_v2 instruction details:");
@@ -511,15 +607,15 @@ export async function simulateLzReceiveTypesV2(
   for (let i = 0; i < instruction.keys.length; i++) {
     const acc = instruction.keys[i];
     console.log(`   [${i}] ${acc.pubkey.toString()} (signer: ${acc.isSigner}, writable: ${acc.isWritable})`);
-    debugAccountContext(svm, acc.pubkey, `Instruction Account [${i}]`);
+    await debugAccountContext(connection, acc.pubkey, `Instruction Account [${i}]`);
   }
   
-  // Fund the payer account
+  // Fund the payer account using surfnet_setAccount
   const payerPubkey = payer.publicKey;
   console.log(`\n💰 Ensuring payer account is funded: ${payerPubkey.toString()}`);
-  const payerAccount = svm.getAccount(payerPubkey);
+  const payerAccount = await connection.getAccountInfo(payerPubkey);
   if (!payerAccount || payerAccount.lamports < 1_000_000_000) {
-    svm.setAccount(payerPubkey, {
+    await surfnetSetAccount(connection, payerPubkey, {
       lamports: 10_000_000_000,
       data: Buffer.alloc(0),
       owner: web3.SystemProgram.programId,
@@ -529,53 +625,63 @@ export async function simulateLzReceiveTypesV2(
     console.log("✅ Payer funded with 10 SOL");
   }
   
-  // Build and send transaction
+  // Build transaction
   console.log("\n🏃 Executing lz_receive_types_v2 instruction...");
-  const blockhash = svm.latestBlockhash();
-  console.log(`   🔗 Using LiteSVM blockhash: ${blockhash}`);
+  const blockhash = await connection.getLatestBlockhash();
+  console.log(`   🔗 Using blockhash: ${blockhash.blockhash}`);
+  
+  // If ALT was created, fetch it and include in transaction
+  let altAccountForTx: web3.AddressLookupTableAccount | null = null;
+  if (altAddress) {
+    const altAccount = await connection.getAddressLookupTable(altAddress);
+    if (altAccount.value) {
+      altAccountForTx = altAccount.value;
+      console.log(`📋 Including ALT in transaction: ${altAddress.toBase58()}`);
+    }
+  }
   
   const messageV0 = new web3.TransactionMessage({
     payerKey: payerPubkey,
-    recentBlockhash: blockhash,
+    recentBlockhash: blockhash.blockhash,
     instructions: [instruction],
-  }).compileToV0Message();
+  }).compileToV0Message(altAccountForTx ? [altAccountForTx] : undefined);
   
   const transaction = new web3.VersionedTransaction(messageV0);
   transaction.sign([payer]);
   
-  const result = svm.sendTransaction(transaction);
+  // Simulate the transaction using RPC
+  const simulationResult = await connection.simulateTransaction(transaction, {
+    sigVerify: false,
+  });
   
-  // Check if it's a failure
-  if ('meta' in result && 'err' in result) {
-    // Failed transaction
-    const logs = result.meta().logs();
+  const logs = simulationResult.value.logs || [];
+  
+  if (simulationResult.value.err) {
     console.log("❌ lz_receive_types_v2 execution failed!");
     console.log(`📜 ERROR LOGS (${logs.length} entries):`);
     for (let i = 0; i < logs.length; i++) {
       console.log(`   [${i + 1}] ${logs[i]}`);
     }
-    console.log(`🔥 Error: ${result.err()}`);
+    console.log(`🔥 Error: ${JSON.stringify(simulationResult.value.err)}`);
     
-    throw new Error(`lz_receive_types_v2 execution failed: ${result.err()}`);
+    throw new Error(`lz_receive_types_v2 execution failed: ${JSON.stringify(simulationResult.value.err)}`);
   }
   
   // Success
-  const logs = result.logs();
   console.log("✅ lz_receive_types_v2 executed successfully!");
   console.log(`📜 EXECUTION LOGS (${logs.length} entries):`);
   for (let i = 0; i < logs.length; i++) {
     console.log(`   [${i + 1}] ${logs[i]}`);
   }
   
-  // Get return data
-  const returnData = result.returnData();
+  // Get return data from simulation result
+  const returnData = simulationResult.value.returnData;
   if (!returnData) {
     throw new Error("No return data from lz_receive_types_v2");
   }
   
-  // Convert return data to Buffer (litesvm's TransactionReturnData.data() returns Uint8Array)
-  const dataBytes = returnData.data();
-  const returnDataBuffer = Buffer.from(dataBytes);
+  // Decode base64 return data
+  const returnDataBuffer = Buffer.from(returnData.data[0], 'base64');
   if (returnDataBuffer.length === 0) {
     throw new Error("Empty return data from lz_receive_types_v2");
   }

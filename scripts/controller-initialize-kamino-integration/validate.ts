@@ -4,15 +4,13 @@ import {
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
-  assertNoAccountChanges,
   validateCommonIntegrationFields,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
-  getRpcEndpoint,
+  assertNoAccountChanges,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
@@ -39,7 +37,6 @@ const main = async () => {
   }
   const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
   const payload = readPayloadFile(config.outputFile);
-  const rpcUrl = getRpcEndpoint();
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -119,27 +116,21 @@ const main = async () => {
   assert(reserveLiquidityMintResp, "Reserve liquidity mint account should be in simulation response");
   assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
 
-  // Assert external read-only accounts do not change
-  if (rpcUrl !== SURFPOOL_URL) {
-    // Assert market does not change
-    const marketResp = resp[config.market];
-    assertNoAccountChanges(marketResp.before, marketResp.after);
+  // Assert market does not change
+  assertNoAccountChanges(marketResp.before, marketResp.after);
 
-    // Assert reserve does not change
-    const reserveResp = resp[config.reserve];
-    assertNoAccountChanges(reserveResp.before, reserveResp.after);
+  // Assert reserve does not change
+  assertNoAccountChanges(reserveResp.before, reserveResp.after);
 
-    // Assert reserve liquidity mint does not change
-    const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
-    assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
+  // Assert reserve liquidity mint does not change
+  assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
 
-    // Note: reserve farm collateral account will change as the number of users increases
-    // when initializing a new integration, so we don't assert it remains unchanged
+  // Note: reserve farm collateral account will change as the number of users increases
+  // when initializing a new integration, so we don't assert it remains unchanged
 
-    // Assert referrer does not change
-    const referrerResp = resp[config.referrer];
-    assertNoAccountChanges(referrerResp.before, referrerResp.after);
-  }
+  // Assert referrer does not change
+  const referrerResp = resp[config.referrer];
+  assertNoAccountChanges(referrerResp.before, referrerResp.after);
 
   // Compute integration hash
   const kaminoConfig = {
@@ -170,7 +161,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert integration is created

@@ -3,13 +3,11 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   assertContainsIn,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
   readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeReserveConfig } from "./config";
@@ -34,7 +32,6 @@ const main = async () => {
   );
 
   const payload = readPayloadFile(config.outputFile);
-  const rpcUrl = getRpcEndpoint();
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -58,9 +55,7 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(controllerResp.before, controllerResp.after);
-  }
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -86,9 +81,7 @@ const main = async () => {
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
   const reservePda = await deriveReservePda(
     address(config.controller),

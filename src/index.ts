@@ -7,6 +7,7 @@ export * from "./lz/lz-receive-types-v2";
 export * from "./lz/lz-complete-simulation";
 export * from "./programs";
 export * from "./simulation-assertions";
+export * from "./surfpool-utils";
 export * from "./utils";
 export * from "./simulation-utils";
 export * from "./wh-governance-codec";

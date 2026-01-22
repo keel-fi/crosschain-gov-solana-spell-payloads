@@ -37,12 +37,6 @@ yarn install
 
 ## Usage
 
-### Environment Variables
-
-| Variable  | Type | Description                                                          |
-| --------- | ---- | -------------------------------------------------------------------- |
-| NETWORK   | env  | Required. Sets the network: `devnet`, `mainnet`, or `surfpool`      |
-
 ### Command Line Arguments
 
 | Argument      | Type   | Description                                                                                    |
@@ -54,19 +48,19 @@ yarn install
 
 **Using default file names:**
 ```bash
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/generate-payload.ts
-NETWORK=devnet ts-node ./scripts/wh-program-upgrade/validate.ts
+ts-node ./scripts/wh-program-upgrade/generate-payload.ts
+ts-node ./scripts/wh-program-upgrade/validate.ts
 ```
 
 **Using config files (for scripts that require them):**
 ```bash
-NETWORK=mainnet ts-node ./scripts/controller-manage-atomic-swap-integration/generate-payload.ts --config configs/CASH-mainnet.ts
-NETWORK=mainnet ts-node ./scripts/controller-manage-atomic-swap-integration/validate.ts --config configs/CASH-mainnet.ts
+ts-node ./scripts/controller-manage-integration/generate-payload.ts --config configs/CASH-mainnet.ts
+ts-node ./scripts/controller-manage-integration/validate.ts --config configs/CASH-mainnet.ts
 ```
 
 **Validating from LayerZero Packet bytes:**
 ```bash
-NETWORK=mainnet ts-node ./scripts/controller-manage-permission/validate.ts --bytes 010000...
+ts-node ./scripts/controller-manage-permission/validate.ts --bytes 010000...
 ```
 
 ## Testing
@@ -96,9 +90,36 @@ NOTE: we currently leave all generated files in for completeness, but would be o
 
 ## Surfpool
 
-Some of the tests must run on localhost (surfpool) so that the SVM Controller can be upgraded to a planned version.  Any script using PYUSD or USDG must use surfpool for testing. The upgraded controller enables PYUSD and USDG to be used in the controller: https://github.com/keel-fi/svm-alm-controller/pull/158
+This repository uses [Surfpool](https://docs.surfpool.run/) for local transaction execution. Surfpool is a drop-in replacement for `solana-test-validator` that automatically fetches mainnet accounts "just in time" during execution.
 
-To test with surfpool, you need to run the following commands to set the program upgrade authority and deploy the new controller:
+### Installation
+
+Install Surfpool following the [official documentation](https://docs.surfpool.run/installation).
+
+### Running Validation Scripts
+
+1. **Start Surfpool:**
+```bash
+surfpool start
+```
+
+2. **Run validation scripts:**
+```bash
+ts-node ./scripts/controller-manage-permission/validate.ts
+```
+
+### Surfpool Cheatcodes
+
+The simulation uses Surfpool's cheatcodes for state manipulation:
+
+- `surfnet_setAccount` - Set custom account state (lamports, data, owner)
+- `surfnet_setProgramAuthority` - Set program upgrade authority
+- `surfnet_writeProgram` - Deploy program bytecode
+- `surfnet_resetNetwork` - Reset network to initial state
+
+### Upgrading Programs on Surfpool
+
+To test with an upgraded SVM Controller, use the following commands:
 
 ```bash
 surfpool start
@@ -119,5 +140,3 @@ solana program deploy target/deploy/svm_alm_controller.so \
   --program-id ALM1JSnEhc5PkNecbSZotgprBuJujL5objTbwGtpTgTd \
   --upgrade-authority /path/to/funded/wallet (can fund using surfpool studio)
 ```
-
-> **NOTE:** Simulating on surfpool causes some of the accounts to erroneously become null. Therefore when testing the upgraded controller on surfpool, we must skip these checks.

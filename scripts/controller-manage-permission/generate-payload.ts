@@ -4,47 +4,45 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkConfig,
   readArgs,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { Address, address, createNoopSigner, getAddressEncoder } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getManagePermissionInstruction,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
+import { ACTION, CONFIG, PERMISSIONS } from "./config";
 import { deriveControllerAuthorityPda, derivePermissionPda } from "@keel-fi/svm-alm-controller";
 const printControllerManagePermissionPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(config.controller),
+    address(CONFIG.controller),
   );
   const permissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.authority),
+    address(CONFIG.controller),
+    address(CONFIG.authority),
   );
 
   const superPermissionPda = await derivePermissionPda(
-    address(config.controller),
-    address(config.superAuthority),
+    address(CONFIG.controller),
+    address(CONFIG.superAuthority),
   );
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const instruction = getManagePermissionInstruction({
     payer: createNoopSigner(lzPayerSentinel),
-    controller: address(config.controller),
+    controller: address(CONFIG.controller),
     controllerAuthority: controllerAuthority,
     // NOTE: we do not use sentinel here because it cannot be used
     // above for PDA derivation.
-    superAuthority: createNoopSigner(address(config.superAuthority)),
+    superAuthority: createNoopSigner(address(CONFIG.superAuthority)),
     superPermission: superPermissionPda,
-    authority: address(config.authority),
+    authority: address(CONFIG.authority),
     permission: permissionPda,
-    programId: address(config.controllerProgramId),
+    programId: address(CONFIG.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
     ...PERMISSIONS,
   });

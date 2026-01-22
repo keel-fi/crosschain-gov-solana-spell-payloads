@@ -34,7 +34,6 @@ export const assertInitializeIntegrationCommonAccountChanges = (
     permissionPda: string;
     integrationPda: string;
     expectedHash: Buffer | Uint8Array;
-    skipSurfpoolChecks?: boolean;
   }
 ) => {
   // Assert payer does not change, except for lamports
@@ -44,9 +43,7 @@ export const assertInitializeIntegrationCommonAccountChanges = (
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  if (!config.skipSurfpoolChecks) {
-    assertNoAccountChanges(controllerResp.before, controllerResp.after);
-  }
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthorityResp = resp[config.controllerAuthority];
@@ -55,24 +52,20 @@ export const assertInitializeIntegrationCommonAccountChanges = (
     controllerAuthorityResp.after
   );
 
+  // Assert permission does not change
+  const permissionResp = resp[config.permissionPda];
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
+  
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
+
   // Assert authority does not change
   const authorityResp = resp[config.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
-
-  // Assert permission does not change
-  const permissionResp = resp[config.permissionPda];
-  if (!config.skipSurfpoolChecks) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
-
-  // Assert controller program does not change
-  const controllerProgramResp = resp[config.controllerProgramId];
-  if (!config.skipSurfpoolChecks) {
-    assertNoAccountChanges(
-      controllerProgramResp.before,
-      controllerProgramResp.after
-    );
-  }
 
   // Assert integration is created and validate controller and hash fields
   const integrationResp = resp[config.integrationPda];
