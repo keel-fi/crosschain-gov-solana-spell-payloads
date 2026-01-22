@@ -72,8 +72,6 @@ export interface CompleteSimulationConfig extends CrossChainConfig {
   payer: web3.PublicKey;
   /** CPI Authority public key */
   cpiAuthority: web3.PublicKey;
-  /** Directory containing program .so files (unused with Surfpool - programs auto-load) */
-  programsDir?: string;
 }
 
 /**
@@ -292,6 +290,18 @@ async function executeLzReceive(
   
   const lzReceiveAccounts = lzReceiveInstruction.accounts;
   
+  // Fetch ALT accounts if needed for resolving AltIndex locators
+  const executionPlanAlts: web3.AddressLookupTableAccount[] = [];
+  if (executionPlan.alts.length > 0) {
+    for (const altAddress of executionPlan.alts) {
+      const altAccount = await connection.getAddressLookupTable(altAddress);
+      if (!altAccount.value) {
+        throw new Error(`Failed to fetch ALT account: ${altAddress.toBase58()}`);
+      }
+      executionPlanAlts.push(altAccount.value);
+    }
+  }
+  
   // Resolve AddressLocator to actual AccountMeta
   // IMPORTANT: Keep accounts in the exact order returned by lz_receive_types_v2
   // The instruction expects accounts at specific indices - do NOT reorder or deduplicate here
@@ -299,7 +309,7 @@ async function executeLzReceive(
   const resolvedAccounts: web3.AccountMeta[] = [];
   for (let i = 0; i < lzReceiveAccounts.length; i++) {
     const accountRef = lzReceiveAccounts[i];
-    const accountMeta = resolveAccountMeta(accountRef, payer.publicKey);
+    const accountMeta = resolveAccountMeta(accountRef, payer.publicKey, undefined, executionPlanAlts);
     resolvedAccounts.push(accountMeta);
   }
   
@@ -316,20 +326,20 @@ async function executeLzReceive(
   // The transaction is too large without ALT (1374 > 1232 bytes)
   const blockhash = await connection.getLatestBlockhash();
   
-  // Collect unique non-signer accounts for ALT (signers can't be in ALT)
-  const altAccounts: web3.PublicKey[] = [];
+  // Collect unique non-signer accounts for transaction ALT (signers can't be in ALT)
+  const txAltAccounts: web3.PublicKey[] = [];
   const seenKeys = new Set<string>();
   seenKeys.add(payer.publicKey.toBase58()); // Exclude payer (signer)
   
   for (const acc of resolvedAccounts) {
     const key = acc.pubkey.toBase58();
     if (!seenKeys.has(key) && !acc.isSigner) {
-      altAccounts.push(acc.pubkey);
+      txAltAccounts.push(acc.pubkey);
       seenKeys.add(key);
     }
   }
   
-  console.log(`📋 Creating ALT with ${altAccounts.length} accounts to reduce transaction size`);
+  console.log(`📋 Creating ALT with ${txAltAccounts.length} accounts to reduce transaction size`);
   
   // Create Address Lookup Table
   const slot = await connection.getSlot();
@@ -341,8 +351,8 @@ async function executeLzReceive(
   
   // Extend ALT with accounts (max 30 per instruction)
   const extendIxs: web3.TransactionInstruction[] = [];
-  for (let i = 0; i < altAccounts.length; i += 30) {
-    const chunk = altAccounts.slice(i, i + 30);
+  for (let i = 0; i < txAltAccounts.length; i += 30) {
+    const chunk = txAltAccounts.slice(i, i + 30);
     extendIxs.push(
       web3.AddressLookupTableProgram.extendLookupTable({
         payer: payer.publicKey,
@@ -578,6 +588,18 @@ export async function simulateLzCompleteCrossChainInstruction(
     payer
   );
   
+  // Fetch ALT accounts if needed for resolving AltIndex locators
+  const executionPlanAlts: web3.AddressLookupTableAccount[] = [];
+  if (executionPlan.alts.length > 0) {
+    for (const altAddress of executionPlan.alts) {
+      const altAccount = await connection.getAddressLookupTable(altAddress);
+      if (!altAccount.value) {
+        throw new Error(`Failed to fetch ALT account: ${altAddress.toBase58()}`);
+      }
+      executionPlanAlts.push(altAccount.value);
+    }
+  }
+  
   // Capture pre-state of all relevant accounts
   const accountKeys = [
     payer.publicKey,
@@ -588,7 +610,7 @@ export async function simulateLzCompleteCrossChainInstruction(
   for (const inst of executionPlan.instructions) {
     if (inst.type === "LzReceive") {
       for (const acc of inst.accounts) {
-        const resolved = resolveAccountMeta(acc, payer.publicKey);
+        const resolved = resolveAccountMeta(acc, payer.publicKey, undefined, executionPlanAlts);
         accountKeys.push(resolved.pubkey);
       }
     }
