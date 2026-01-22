@@ -77,8 +77,12 @@ const main = async () => {
   const superAuthorityResp = resp[config.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
-  const superPermission = resp[superPermissionPda];
-  assertNoAccountChanges(superPermission.before, superPermission.after);
+  // Assert super permission does not change when different
+  // from the managed permission.
+  if (permissionPda != superPermissionPda) {
+    const superPermission = resp[superPermissionPda];
+    assertNoAccountChanges(superPermission.before, superPermission.after);
+  }
 
   // Assert controller program does not change
   const controllerProgramResp = resp[config.controllerProgramId];
