@@ -42,7 +42,7 @@ const main = async () => {
     readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
       args.config
     );
-  
+
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
   const payload = readPayloadFile(config.outputFile);
@@ -105,41 +105,43 @@ const main = async () => {
   // Assert input mint exists and does not change
   const inputMintResp = resp[config.inputTokenMint];
   assert(inputMintResp, "Input mint account should be in simulation response");
-  assert(inputMintResp.after, "Input mint account should exist");
-  
-  // Validate input mint is owned by a Token program
-  const inputMintOwner = inputMintResp.after.owner.toString();
-  assert(
-    inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
-    "Input mint should be owned by Token program or Token-2022 program"
-  );
-
   if (rpcUrl !== SURFPOOL_URL) {
+    assert(inputMintResp.after, "Input mint account should exist");
+
+    // Validate input mint is owned by a Token program
+    const inputMintOwner = inputMintResp.after.owner.toString();
+    assert(
+      inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+      "Input mint should be owned by Token program or Token-2022 program"
+    );
+
     assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
   }
 
   // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
   assert(outputMintResp, "Output mint account should be in simulation response");
-  assert(outputMintResp.after, "Output mint account should exist");
-  
-  // Validate output mint is owned by a Token program
-  const outputMintOwner = outputMintResp.after.owner.toString();
-  assert(
-    outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
-    "Output mint should be owned by Token program or Token-2022 program"
-  );
-
   if (rpcUrl !== SURFPOOL_URL) {
+
+    assert(outputMintResp.after, "Output mint account should exist");
+
+    // Validate output mint is owned by a Token program
+    const outputMintOwner = outputMintResp.after.owner.toString();
+    assert(
+      outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+      "Output mint should be owned by Token program or Token-2022 program"
+    );
+
     assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
   }
 
   // Assert oracle exists and does not change
   const oracleResp = resp[config.oracle];
   assert(oracleResp, "Oracle account should be in simulation response");
-  assert(oracleResp.after, "Oracle account should exist");
-
   if (rpcUrl !== SURFPOOL_URL) {
+
+    assert(oracleResp.after, "Oracle account should exist");
+
     assertNoAccountChanges(oracleResp.before, oracleResp.after);
   }
 

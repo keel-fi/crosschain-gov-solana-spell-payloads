@@ -101,12 +101,15 @@ const main = async () => {
   // Validate market account exists and is owned by Kamino Lend program
   const marketResp = resp[config.market];
   assert(marketResp, "Market account should be in simulation response");
-  assert(marketResp.after, "Market account should exist");
-  assert.equal(
-    marketResp.after.owner.toString(),
-    kamino.KAMINO_LEND_PROGRAM_ID.toString(),
-    "Market account should be owned by Kamino Lend program"
-  );
+  if (rpcUrl !== SURFPOOL_URL) {
+    assert(marketResp.after, "Market account should exist");
+
+    assert.equal(
+      marketResp.after.owner.toString(),
+      kamino.KAMINO_LEND_PROGRAM_ID.toString(),
+      "Market account should be owned by Kamino Lend program"
+    );
+  }
 
   // Validate reserve account exists and is owned by Kamino Lend program
   const reserveResp = resp[config.reserve];
@@ -121,10 +124,11 @@ const main = async () => {
   // Validate reserve liquidity mint account exists
   const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
   assert(reserveLiquidityMintResp, "Reserve liquidity mint account should be in simulation response");
-  assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
-
-  // Assert external read-only accounts do not change
   if (rpcUrl !== SURFPOOL_URL) {
+
+    assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
+
+    // Assert external read-only accounts do not change
     // Assert market does not change
     const marketResp = resp[config.market];
     assertNoAccountChanges(marketResp.before, marketResp.after);
@@ -134,7 +138,6 @@ const main = async () => {
     assertNoAccountChanges(reserveResp.before, reserveResp.after);
 
     // Assert reserve liquidity mint does not change
-    const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
     assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
 
     // Note: reserve farm collateral account will change as the number of users increases

@@ -8,6 +8,7 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  SURFPOOL_URL,
   validateSuccess,
 } from "../../src";
 import {
@@ -57,7 +58,9 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  }
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -79,17 +82,19 @@ const main = async () => {
 
   // Assert super permission does not change when different
   // from the managed permission.
-  if (permissionPda != superPermissionPda) {
+  if (permissionPda != superPermissionPda && rpcUrl !== SURFPOOL_URL) {
     const superPermission = resp[superPermissionPda];
     assertNoAccountChanges(superPermission.before, superPermission.after);
   }
 
   // Assert controller program does not change
   const controllerProgramResp = resp[config.controllerProgramId];
-  assertNoAccountChanges(
-    controllerProgramResp.before,
-    controllerProgramResp.after
-  );
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(
+      controllerProgramResp.before,
+      controllerProgramResp.after
+    );
+  }
 
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();

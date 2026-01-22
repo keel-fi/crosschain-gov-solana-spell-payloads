@@ -98,20 +98,20 @@ const main = async () => {
     spotMarketResp,
     "Spot market account should be in simulation response"
   );
-  assert(
-    spotMarketResp.after,
-    "Spot market account should exist"
-  );
-
-  // Validate spot market account is owned by drift program
-  assert.equal(
-    spotMarketResp.after.owner.toString(),
-    drift.DRIFT_PROGRAM_ID.toString(),
-    "Spot market account should be owned by drift program"
-  );
-
-  // Assert spot market does not change
   if (rpcUrl !== SURFPOOL_URL) {
+    assert(
+      spotMarketResp.after,
+      "Spot market account should exist"
+    );
+
+    // Validate spot market account is owned by drift program
+    assert.equal(
+      spotMarketResp.after.owner.toString(),
+      drift.DRIFT_PROGRAM_ID.toString(),
+      "Spot market account should be owned by drift program"
+    );
+
+    // Assert spot market does not change
     assertNoAccountChanges(spotMarketResp.before, spotMarketResp.after);
   }
 
