@@ -37,4 +37,12 @@ export const NETWORK_CONFIGS: Record<Network, UpdateMplTokenMetadataAuthority> =
       newAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
       payer: KEEL_DEPLOYER,
     },
+    surfpool: {
+      authority: SKY_WH_GOVERNANCE_AUTHORITY,
+      governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
+      mplProgramAddress: MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+      tokenMint: USDS_TOKEN_MINT,
+      newAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
+      payer: KEEL_DEPLOYER,
+    },
   };

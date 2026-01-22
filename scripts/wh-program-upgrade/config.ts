@@ -40,4 +40,13 @@ export const NETWORK_CONFIGS: Record<Network, ProgramUpgrade> = {
     spillAccount: KEEL_DEPLOYER,
     payer: KEEL_DEPLOYER,
   },
+  surfpool: {
+    governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
+    programAddress: USDS_WH_NTT_PROGRAM_ID,
+    programDataAddress: USDS_WH_NTT_PROGRAM_DATA,
+    programUpgradeAuthority: SKY_WH_GOVERNANCE_AUTHORITY,
+    newProgramBuffer: "43Ggis1nd29QdZFNXQAhhKKj3nxEtwN1DnbNiLf1VfEy",
+    spillAccount: KEEL_DEPLOYER,
+    payer: KEEL_DEPLOYER,
+  },
 };

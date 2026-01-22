@@ -32,4 +32,11 @@ export const NETWORK_CONFIGS: Record<Network, SetFreezeTokenAuthority> = {
     newFreezeAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
     payer: KEEL_DEPLOYER,
   },
+  surfpool: {
+    governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
+    authority: SKY_WH_GOVERNANCE_AUTHORITY,
+    tokenMint: USDS_TOKEN_MINT,
+    newFreezeAuthority: SKY_LZ_GOVERNANCE_CPI_AUTHORITY,
+    payer: KEEL_DEPLOYER,
+  },
 };
