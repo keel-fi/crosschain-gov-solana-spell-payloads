@@ -178,6 +178,13 @@ const main = async () => {
   if (integration.config.__kind !== "AtomicSwap") {
     throw new Error("Expected AtomicSwap config");
   }
+
+  assert.equal(
+    integration.config.__kind,
+    "AtomicSwap",
+    "Config kind should be AtomicSwap"
+  );
+
   const actualAtomicSwapConfig = integration.config.fields[0];
   assert(actualAtomicSwapConfig, "AtomicSwap config should exist");
 

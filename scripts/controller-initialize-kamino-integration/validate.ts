@@ -26,6 +26,7 @@ import {
   kamino,
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
+import { PublicKey } from "@solana/web3.js";
 
 // In this script we validate that state and configuration 
 // was correctly set in the SVM ALM Controller program.
@@ -81,22 +82,24 @@ const main = async () => {
     "Obligation account should be owned by Kamino Lend program"
   );
 
-  const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
-  assert(
-    reserveFarmCollateralResp,
-    "Reserve farm collateral account should be in simulation response"
-  );
-  assert(
-    reserveFarmCollateralResp.after,
-    "Reserve farm collateral account should exist"
-  );
+  if (config.reserveFarmCollateral !== PublicKey.default.toString()) {
+    const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
+    assert(
+      reserveFarmCollateralResp,
+      "Reserve farm collateral account should be in simulation response"
+    );
+    assert(
+      reserveFarmCollateralResp.after,
+      "Reserve farm collateral account should exist"
+    );
 
-  // Validate reserve farm collateral account is owned by Kamino Farm program
-  assert.equal(
-    reserveFarmCollateralResp.after.owner.toString(),
-    kamino.KAMINO_FARMS_PROGRAM_ID.toString(),
-    "Reserve farm collateral account should be owned by Kamino Farm program"
-  );
+    // Validate reserve farm collateral account is owned by Kamino Farm program
+    assert.equal(
+      reserveFarmCollateralResp.after.owner.toString(),
+      kamino.KAMINO_FARMS_PROGRAM_ID.toString(),
+      "Reserve farm collateral account should be owned by Kamino Farm program"
+    );
+  }
 
   // Validate market account exists and is owned by Kamino Lend program
   const marketResp = resp[config.market];
