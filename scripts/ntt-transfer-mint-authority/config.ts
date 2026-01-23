@@ -36,4 +36,12 @@ export const NETWORK_CONFIGS: Record<Network, NttTransferMintAuthority> = {
     newMintAuthority: USDS_LZ_OFT_STORE,
     payer: KEEL_DEPLOYER,
   },
+  surfpool: {
+    governanceProgramId: SKY_WH_GOVERNANCE_PROGRAM_ID,
+    nttProgramId: USDS_WH_NTT_PROGRAM_ID,
+    authority: SKY_WH_GOVERNANCE_AUTHORITY,
+    tokenMint: USDS_TOKEN_MINT,
+    newMintAuthority: USDS_LZ_OFT_STORE,
+    payer: KEEL_DEPLOYER,
+  },
 };

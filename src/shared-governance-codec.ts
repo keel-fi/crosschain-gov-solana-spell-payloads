@@ -47,11 +47,13 @@ export const deserializeAccountFromBytes = (
 
 /** Create "Sentinel" PublicKey to match WH governance placeholder keys */
 export const generateSentinelPubkey = (name: string) => {
-  if (name.length > 32) {
-    throw new Error("Sentinel key name must be 32 bytes or less");
+  const nameBytes = Buffer.from(name);
+  if (nameBytes.length > 32) {
+    throw new Error(
+      `Invalid sentinel key name: must be 32 bytes or less (got ${nameBytes.length} bytes)`
+    );
   }
   const buf = Buffer.alloc(32);
-  const nameBytes = Buffer.from(name);
   buf.set(nameBytes);
   return new web3.PublicKey(buf);
 };

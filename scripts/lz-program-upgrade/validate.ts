@@ -42,8 +42,6 @@ const getProgramDataCode = (buf: Buffer) =>
 const main = async () => {
   const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const rpcUrl = getRpcEndpoint();
-  // Uncomment to use surfpool
-  //const rpcUrl = "http://127.0.0.1:8899";
   const connection = new web3.Connection(rpcUrl);
   const args = readArgs(ACTION);
   const payload = readPayloadFile(args.file);
@@ -114,10 +112,16 @@ const main = async () => {
   // Assert buffer was closed (balance is 0)
   assert.equal(newDataBufferResp.after.lamports, 0);
 
+  assert.ok(
+    programDataResp.after.data.length >= bufferCodeBefore.length,
+    `ProgramData size (${programDataResp.after.data.length}) is less than buffer length (${bufferCodeBefore.length})`
+  );
+
+  assert.equal(programDataResp.after.data.length, programDataResp.before.data.length);
   // Assert spill account got lamports from closed buffer
   const spillResp = resp[config.spillAccount];
   assert.ok(
-    spillResp.after.lamports >= spillResp.before.lamports,
+    spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
   );
 

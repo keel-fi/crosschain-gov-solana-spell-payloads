@@ -1,15 +1,19 @@
 import fs from "fs";
+import path from "path";
 import { web3 } from "@coral-xyz/anchor";
 import {
   Instruction,
   isInstructionWithAccounts,
   isSignerRole,
   isWritableRole,
+  ReadonlyUint8Array,
 } from "@solana/kit";
 import { parseArgs } from "util";
 import { LiteSVM } from "litesvm";
+import { SURFPOOL_URL } from "./constants";
 
-export type Network = "devnet" | "mainnet";
+export type Network = "devnet" | "mainnet" | "surfpool";
+export type Stablecoin = "USDG" | "PYUSD" | "CASH";
 
 export type NetworkConfig<T> = Record<Network, T>;
 
@@ -18,8 +22,8 @@ export type NetworkConfig<T> = Record<Network, T>;
  */
 export const readNetwork = (): Network => {
   const network = process.env.NETWORK;
-  if (network !== "devnet" && network !== "mainnet") {
-    throw new Error("Invalid network argument.");
+  if (network !== "devnet" && network !== "mainnet" && network !== "surfpool") {
+    throw new Error("Invalid network argument. Must be devnet, mainnet, or surfpool.");
   }
   return network;
 };
@@ -50,8 +54,48 @@ export const getRpcEndpoint = () => {
   if (network === "mainnet") {
     return "https://api.mainnet-beta.solana.com";
   }
+  if (network === "surfpool") {
+    return SURFPOOL_URL;
+  }
 
   return "https://api.devnet.solana.com";
+};
+
+/**
+ * Read config from a TypeScript file
+ * The file should export a default export with the config object
+ */
+export const readConfigFromFile = <T>(configPath: string): T => {
+  // Resolve the absolute path - handle both relative and absolute paths
+  let absolutePath: string;
+  if (path.isAbsolute(configPath) || configPath.startsWith("./") || configPath.startsWith("../")) {
+    // Absolute or explicitly relative path - resolve from current working directory
+    absolutePath = path.resolve(process.cwd(), configPath);
+  } else {
+    // Try to resolve as a module
+    try {
+      absolutePath = require.resolve(configPath, { paths: [process.cwd()] });
+    } catch {
+      // If that fails, treat as relative path
+      absolutePath = path.resolve(process.cwd(), configPath);
+    }
+  }
+  
+  // Delete from cache to allow hot reloading during development
+  delete require.cache[absolutePath];
+  
+  // Require the config file (works with ts-node)
+  const configModule = require(absolutePath);
+  const config = (configModule.default || configModule) as T;
+  
+  // Validate that config has required fields
+  Object.entries(config as Record<string, unknown>).forEach(([key, val]) => {
+    if (val === undefined || val === null) {
+      throw new Error(`Config is missing ${key}`);
+    }
+  });
+  
+  return config;
 };
 
 /**
@@ -59,19 +103,27 @@ export const getRpcEndpoint = () => {
  */
 export const readArgs = (action: string) => {
   const network = readNetwork();
+  const stablecoin = process.env.STABLECOIN;
+  const defaultFile = stablecoin
+    ? `${action}-${stablecoin}-${network}.txt`
+    : `${action}-${network}.txt`;
   const args = parseArgs({
     options: {
       file: {
         type: "string",
         short: "f",
-        default: `${action}-${network}.txt`,
+        default: defaultFile,
+      },
+      config: {
+        type: "string",
+        short: "c",
+      },
+      surfpool: {
+        type: "boolean",
+        short: "s",
       },
     },
   }).values;
-
-  if (!args.file) {
-    throw new Error("Must include file prefix '--file [FILE_NAME]'");
-  }
 
   return args;
 };
@@ -217,4 +269,13 @@ export function convertKitInstructionToWeb3Js(
     programId: new web3.PublicKey(kitInstruction.programAddress),
     data: Buffer.from(kitInstruction.data || new Uint8Array()),
   });
+}
+
+
+export function bytesToUtf8TrimNull(bytes: ReadonlyUint8Array): string {
+  const decoded = new TextDecoder("utf-8", { fatal: false }).decode(
+    bytes as Uint8Array
+  );
+
+  return decoded.replace(/\0+$/, "");
 }

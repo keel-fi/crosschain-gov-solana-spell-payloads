@@ -8,10 +8,13 @@ import {
   readArgs,
   readPayloadFile,
   simulateInstructions,
+  SURFPOOL_URL,
   validateSuccess,
 } from "../../src";
 import {
   getPermissionCodec,
+  derivePermissionPda,
+  deriveControllerAuthorityPda,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
 import {
@@ -19,7 +22,6 @@ import {
   PERMISSIONS as EXPECTED_PERMISSIONS,
   ACTION,
 } from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "../../src";
 
 
 const main = async () => {
@@ -44,12 +46,10 @@ const main = async () => {
   const permissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.authority),
-    address(config.controllerProgramId)
   );
   const superPermissionPda = await derivePermissionPda(
     address(config.controller),
     address(config.superAuthority),
-    address(config.controllerProgramId)
   );
 
   // Assert payer does not change, except for lamports
@@ -58,12 +58,13 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(controllerResp.before, controllerResp.after);
+  }
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
-    address(config.controllerProgramId)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -81,9 +82,18 @@ const main = async () => {
 
   // Assert super permission does not change when different
   // from the managed permission.
-  if (permissionPda != superPermissionPda) {
+  if (permissionPda != superPermissionPda && rpcUrl !== SURFPOOL_URL) {
     const superPermission = resp[superPermissionPda];
     assertNoAccountChanges(superPermission.before, superPermission.after);
+  }
+
+  // Assert controller program does not change
+  const controllerProgramResp = resp[config.controllerProgramId];
+  if (rpcUrl !== SURFPOOL_URL) {
+    assertNoAccountChanges(
+      controllerProgramResp.before,
+      controllerProgramResp.after
+    );
   }
 
   // Assert Permission changes
@@ -98,6 +108,13 @@ const main = async () => {
   // Only assert these changes if the Permission previously
   // existed.
   if (permissionAccount.before) {
+    // Validate that the existing permission was owned by the controller program
+    assert.equal(
+      permissionAccount.before.owner.toString(),
+      config.controllerProgramId,
+      "Existing permission should be owned by the controller program ID"
+    );
+
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1
@@ -110,42 +127,35 @@ const main = async () => {
       permissionAfter.authority.toString(),
       permissionBefore.authority.toString()
     );
+  } else {
+    assert.equal(permissionAfter.controller.toString(), config.controller);
+    assert.equal(permissionAfter.authority.toString(), config.authority);
   }
 
+  assert.equal(
+    permissionAccount.after.owner.toString(),
+    config.controllerProgramId,
+    "Permission owner should be the controller program ID"
+  );
+
   // Assert permission matrix matches expected values
-  assert.equal(permissionAfter.status, EXPECTED_PERMISSIONS.status);
-  assert.equal(
-    permissionAfter.canExecuteSwap,
-    EXPECTED_PERMISSIONS.canExecuteSwap
-  );
-  assert.equal(
-    permissionAfter.canFreezeController,
-    EXPECTED_PERMISSIONS.canFreezeController
-  );
-  assert.equal(
-    permissionAfter.canInvokeExternalTransfer,
-    EXPECTED_PERMISSIONS.canInvokeExternalTransfer
-  );
-  assert.equal(permissionAfter.canLiquidate, EXPECTED_PERMISSIONS.canLiquidate);
-  assert.equal(
-    permissionAfter.canManagePermissions,
-    EXPECTED_PERMISSIONS.canManagePermissions
-  );
-  assert.equal(
-    permissionAfter.canManageReservesAndIntegrations,
-    EXPECTED_PERMISSIONS.canManageReservesAndIntegrations
-  );
-  assert.equal(
-    permissionAfter.canReallocate,
-    EXPECTED_PERMISSIONS.canReallocate
-  );
-  assert.equal(
-    permissionAfter.canSuspendPermissions,
-    EXPECTED_PERMISSIONS.canSuspendPermissions
-  );
-  assert.equal(
-    permissionAfter.canUnfreezeController,
-    EXPECTED_PERMISSIONS.canUnfreezeController
+  const observedPermission: typeof EXPECTED_PERMISSIONS = {
+    status: permissionAfter.status,
+    canManagePermissions: permissionAfter.canManagePermissions,
+    canInvokeExternalTransfer: permissionAfter.canInvokeExternalTransfer,
+    canExecuteSwap: permissionAfter.canExecuteSwap,
+    canReallocate: permissionAfter.canReallocate,
+    canFreezeController: permissionAfter.canFreezeController,
+    canUnfreezeController: permissionAfter.canUnfreezeController,
+    canManageReservesAndIntegrations: permissionAfter.canManageReservesAndIntegrations,
+    canSuspendPermissions: permissionAfter.canSuspendPermissions,
+    canLiquidate: permissionAfter.canLiquidate,
+  };
+
+  assert.deepEqual(
+    observedPermission,
+    EXPECTED_PERMISSIONS,
+    `Permission mismatch:\nExpected: ${JSON.stringify(EXPECTED_PERMISSIONS, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
 
   validateSuccess(args.file);

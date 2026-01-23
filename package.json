@@ -12,6 +12,7 @@
     "@codama/renderers-js": "^1.4.2",
     "@solana/compat": "^3.0.3",
     "@solana/kit": "^3.0.3",
+    "@types/keccak": "^3.0.5",
     "@types/mocha": "^10.0.10",
     "codama": "^1.3.7",
     "mocha": "^11.7.2",
@@ -21,10 +22,11 @@
   "dependencies": {
     "@coral-xyz/anchor": "0.31.1",
     "@coral-xyz/anchor-29": "npm:@coral-xyz/anchor@0.29.0",
-    "@keel-fi/svm-alm-controller": "1.0.0-rc.1",
+    "@keel-fi/svm-alm-controller": "1.0.6-rc.1",
     "@solana/buffer-layout": "^4.0.1",
     "@solana/buffer-layout-utils": "^0.2.0",
     "@solana/spl-token": "^0.4.14",
+    "keccak": "^3.0.4",
     "litesvm": "^0.3.3"
   }
 }
