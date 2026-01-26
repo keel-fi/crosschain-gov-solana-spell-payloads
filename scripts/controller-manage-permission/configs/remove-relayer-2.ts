@@ -7,18 +7,18 @@ import {
 } from "../../../src";
 
 export default {
-  outputFile: "controller-manage-permission-example-mainnet.txt",
+  outputFile: "controller-manage-permission-remove-relayer-2-mainnet.txt",
   controllerProgramId: SVM_ALM_CONTROLLER_PROGRAM_ID,
   controller: SVM_ALM_CONTROLLER,
-  authority: "9tSZj13gLcuvsXWRLo7xW7d8n1mNndJmKxZX4xmxqcxU",
+  authority: "2gDBGyhU8M96JDMWzCfiGb3Pw2HvrEvdL5MkfwosBYnh",
   superAuthority: KEEL_SUB_PROXY_CPI_AUTHORITY,
   payer: MAINNET_PAYER,
   // Permission settings
-  status: PermissionStatus.Active,
+  status: PermissionStatus.Suspended,
   canManagePermissions: false,
   canInvokeExternalTransfer: false,
-  canExecuteSwap: true,
-  canReallocate: true,
+  canExecuteSwap: false,
+  canReallocate: false,
   canFreezeController: false,
   canUnfreezeController: false,
   canManageReservesAndIntegrations: false,
