@@ -5,6 +5,7 @@ import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
   readArgs,
+  readConfigFromFile,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
@@ -12,45 +13,61 @@ import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getManagePermissionInstruction,
+  deriveControllerAuthorityPda,
+  derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, CONFIG, PERMISSIONS } from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "@keel-fi/svm-alm-controller";
+import { ACTION, ControllerManagePermissionConfig } from "./config";
+
 const printControllerManagePermissionPayload = async () => {
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManagePermissionConfig>(args.config);
+
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(CONFIG.controller),
+    address(config.controller),
   );
   const permissionPda = await derivePermissionPda(
-    address(CONFIG.controller),
-    address(CONFIG.authority),
+    address(config.controller),
+    address(config.authority),
   );
 
   const superPermissionPda = await derivePermissionPda(
-    address(CONFIG.controller),
-    address(CONFIG.superAuthority),
+    address(config.controller),
+    address(config.superAuthority),
   );
   
   const lzPayerSentinel = fromLegacyPublicKey(LZ_PAYER_PLACEHOLDER);
 
   const instruction = getManagePermissionInstruction({
     payer: createNoopSigner(lzPayerSentinel),
-    controller: address(CONFIG.controller),
+    controller: address(config.controller),
     controllerAuthority: controllerAuthority,
     // NOTE: we do not use sentinel here because it cannot be used
     // above for PDA derivation.
-    superAuthority: createNoopSigner(address(CONFIG.superAuthority)),
+    superAuthority: createNoopSigner(address(config.superAuthority)),
     superPermission: superPermissionPda,
-    authority: address(CONFIG.authority),
+    authority: address(config.authority),
     permission: permissionPda,
-    programId: address(CONFIG.controllerProgramId),
+    programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
-    ...PERMISSIONS,
+    status: config.status,
+    canManagePermissions: config.canManagePermissions,
+    canInvokeExternalTransfer: config.canInvokeExternalTransfer,
+    canExecuteSwap: config.canExecuteSwap,
+    canReallocate: config.canReallocate,
+    canFreezeController: config.canFreezeController,
+    canUnfreezeController: config.canUnfreezeController,
+    canManageReservesAndIntegrations: config.canManageReservesAndIntegrations,
+    canSuspendPermissions: config.canSuspendPermissions,
+    canLiquidate: config.canLiquidate,
   });
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerManagePermissionPayload();
