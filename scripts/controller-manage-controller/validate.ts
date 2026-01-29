@@ -3,7 +3,8 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   readArgs,
-  readPayloadFile,
+  readConfigFromFile,
+  readPayloadOrDecodePacket,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
 } from "../../src";
@@ -13,25 +14,35 @@ import {
   derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
-import { CONFIG, ACTION } from "./config";
+import { ACTION, ControllerManageControllerConfig } from "./config";
 
 const main = async () => {
   const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-  const payerPubkey = new web3.PublicKey(CONFIG.payer);
-  const cpiAuthority = new web3.PublicKey(CONFIG.authority);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageControllerConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+  const payerPubkey = new web3.PublicKey(config.payer);
+  const cpiAuthority = new web3.PublicKey(config.authority);
 
   const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
-    new web3.PublicKey(CONFIG.controllerProgramId),
+    new web3.PublicKey(config.controllerProgramId),
     payerPubkey,
     cpiAuthority,
     1n // nonce
   );
 
   const permissionPda = await derivePermissionPda(
-    address(CONFIG.controller),
-    address(CONFIG.authority)
+    address(config.controller),
+    address(config.authority)
   );
 
   // Assert payer does not change, except for lamports
@@ -41,7 +52,7 @@ const main = async () => {
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(CONFIG.controller)
+    address(config.controller)
   );
   const controllerAuthorityResp = resp[controllerAuthority];
   assertNoAccountChanges(
@@ -50,7 +61,7 @@ const main = async () => {
   );
 
   // Assert authority does not change
-  const authorityResp = resp[CONFIG.authority];
+  const authorityResp = resp[config.authority];
   assertNoAccountChanges(authorityResp.before, authorityResp.after);
 
   // Assert permission does not change
@@ -60,7 +71,7 @@ const main = async () => {
   }
 
   // Assert controller changes
-  const controllerResp = resp[CONFIG.controller];
+  const controllerResp = resp[config.controller];
   assert(controllerResp.after, "Controller should exist");
   assert(controllerResp.before, "Controller should exist before");
   assert.notDeepEqual(
@@ -75,7 +86,7 @@ const main = async () => {
   const [controllerBefore] = controllerCodec.read(controllerResp.before.data, 1);
   assert.equal(
     controllerAfter.status,
-    CONFIG.status,
+    config.status,
     "Controller status should match config"
   );
   assert.equal(
@@ -98,13 +109,15 @@ const main = async () => {
     controllerAfter.id,
     "Controller id should match after"
   );
-  assert.equal(
+  assert.deepStrictEqual(
     controllerBefore.padding,
     controllerAfter.padding,
     "Controller padding should match after"
   );
 
-  validateSuccess(args.file);
+  // Use file path for success message if available, otherwise indicate Packet bytes were used
+  const sourceName = packetBytes ? "Packet bytes" : config.outputFile;
+  validateSuccess(sourceName);
 };
 
 main();

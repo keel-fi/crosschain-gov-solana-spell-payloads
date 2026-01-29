@@ -3,6 +3,7 @@
 import {
   convertKitInstructionToWeb3Js,
   readArgs,
+  readConfigFromFile,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
@@ -12,32 +13,36 @@ import {
   deriveControllerAuthorityPda,
   derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, CONFIG } from "./config";
+import { ACTION, ControllerManageControllerConfig } from "./config";
 
 const printControllerManageControllerPayload = async () => {
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageControllerConfig>(args.config);
 
   const controllerAuthority = await deriveControllerAuthorityPda(
-    address(CONFIG.controller)
+    address(config.controller)
   );
   const permissionPda = await derivePermissionPda(
-    address(CONFIG.controller),
-    address(CONFIG.authority)
+    address(config.controller),
+    address(config.authority)
   );
   const instruction = getManageControllerInstruction({
-    controller: address(CONFIG.controller),
+    controller: address(config.controller),
     controllerAuthority: controllerAuthority,
-    authority: createNoopSigner(address(CONFIG.authority)),
+    authority: createNoopSigner(address(config.authority)),
     permission: permissionPda,
-    programId: address(CONFIG.controllerProgramId),
-    status: CONFIG.status,
+    programId: address(config.controllerProgramId),
+    status: config.status,
   });
 
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerManageControllerPayload();
