@@ -4,26 +4,32 @@ import {
   convertInstructionToSolanaGovernancePayload,
   getUpgradeInstruction,
   readArgs,
+  readConfigFromFile,
   writeOutputFile,
 } from "../../src";
-import { ACTION, CONFIG } from "./config";
+import { ACTION, ProgramUpgradeConfig } from "./config";
 
 const generateUpgradeAuthorityPayload = () => {
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ProgramUpgradeConfig>(args.config);
+
   const upgradeInstruction = getUpgradeInstruction(
-    new web3.PublicKey(CONFIG.programAddress),
-    new web3.PublicKey(CONFIG.programDataAddress),
-    new web3.PublicKey(CONFIG.newProgramBuffer),
-    new web3.PublicKey(CONFIG.programUpgradeAuthority),
+    new web3.PublicKey(config.programAddress),
+    new web3.PublicKey(config.programDataAddress),
+    new web3.PublicKey(config.newProgramBuffer),
+    new web3.PublicKey(config.programUpgradeAuthority),
     // Use the authority as the "spill" account for
     // excess lamports
-    new web3.PublicKey(CONFIG.spillAccount)
+    new web3.PublicKey(config.spillAccount)
   );
 
   const upgradeGovernancePayload =
     convertInstructionToSolanaGovernancePayload(upgradeInstruction);
 
-  writeOutputFile(args.file, upgradeGovernancePayload);
+  writeOutputFile(config.outputFile, upgradeGovernancePayload);
 };
 
 generateUpgradeAuthorityPayload();
