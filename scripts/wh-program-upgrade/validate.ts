@@ -6,7 +6,7 @@ import {
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readArgs,
-  readPayloadFile,
+  readPayloadOrDecodePacket,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
@@ -37,12 +37,17 @@ const getBufferCode = (buf: Buffer) => buf.subarray(CODE_OFFSET_BUFFER);
 const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
-const main = async () => {
+export const validateWhProgramUpgrade = async (
+  config: {outputFile: string},
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
   const payerPubkey = new web3.PublicKey(CONFIG.payer);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
@@ -113,8 +118,22 @@ const main = async () => {
     spillResp.after.lamports >= spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+
+  await validateWhProgramUpgrade({outputFile: args.file}, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

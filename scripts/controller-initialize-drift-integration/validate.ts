@@ -7,10 +7,10 @@ import {
   validateCommonIntegrationFields,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   assertNoAccountChanges,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -24,18 +24,16 @@ import {
   drift,
 } from "@keel-fi/svm-alm-controller";
 
-// In this script we validate that state and configuration
-// was correctly set in the SVM ALM Controller program.
-// The different accounts and args passed to the initialize integration instruction
-// (mint, spot market index) have been manually validated. Links to their respective
-// sources have been added in the constants.ts file.
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
-  const payload = readPayloadFile(config.outputFile);
+
+export const validateInitDriftIntegration = async (
+  config: ControllerInitializeDriftIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -171,8 +169,31 @@ const main = async () => {
     padding: Buffer.from(new Uint8Array(40)),
   };
   assertContainsIn(expectedDriftState, actualDriftState);
+}
+
+// In this script we validate that state and configuration
+// was correctly set in the SVM ALM Controller program.
+// The different accounts and args passed to the initialize integration instruction
+// (mint, spot market index) have been manually validated. Links to their respective
+// sources have been added in the constants.ts file.
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateInitDriftIntegration(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

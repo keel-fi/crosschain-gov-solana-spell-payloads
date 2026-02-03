@@ -16,15 +16,10 @@ import {
 import { address } from "@solana/kit";
 import { ACTION, ControllerManageControllerConfig } from "./config";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerManageControllerConfig>(args.config);
-
-  // Support both file-based and Packet bytes-based payload reading
-  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+export const validateManageController = async (
+  config: ControllerManageControllerConfig,
+  packetBytes: string | undefined,
+) => {
   const payload = readPayloadOrDecodePacket({
     file: packetBytes ? undefined : config.outputFile,
     packetBytes,
@@ -114,11 +109,29 @@ const main = async () => {
     controllerAfter.padding,
     "Controller padding should match after"
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageControllerConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateManageController(config, packetBytes);
 
   // Use file path for success message if available, otherwise indicate Packet bytes were used
   const sourceName = packetBytes ? "Packet bytes" : config.outputFile;
   validateSuccess(sourceName);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
 

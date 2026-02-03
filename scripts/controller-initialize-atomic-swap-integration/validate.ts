@@ -7,10 +7,10 @@ import {
   validateCommonIntegrationFields,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   assertNoAccountChanges,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -30,17 +30,15 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config =
-    readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
-      args.config
-    );
-  
-  const payload = readPayloadFile(config.outputFile);
+export const validateInitAtomicSwap = async (
+  config: ControllerInitializeAtomicSwapIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -179,8 +177,29 @@ const main = async () => {
     padding: Buffer.from(new Uint8Array(107)),
   };
   assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config =
+    readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
+      args.config
+    );
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+    
+  await validateInitAtomicSwap(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

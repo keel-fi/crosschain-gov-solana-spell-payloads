@@ -9,7 +9,7 @@ import {
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readArgs,
-  readPayloadFile,
+  readPayloadOrDecodePacket,
   validateSuccess,
 } from "../../src";
 import {
@@ -22,17 +22,17 @@ import {
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, CONFIG } from "./config";
 
-// NOTE: Due to the sequencing of the NTT upgrade transaction
-// and NTT TransferMintAuthority, we must simulate with Surfpool
-// loading a custom program binary, as Solana mainnet will not have
-// a state possible where we may simulate the TransferMintAuthority
-// prior to spell execution.
-const main = async () => {
+export const validateNttTransferMintAuthority = async (
+  config: {outputFile: string},
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const rpcUrl = getRpcEndpoint();
   const connection = new Connection(rpcUrl, "confirmed");
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
   const payerKeypair = web3.Keypair.generate();
   const payerPubkey = payerKeypair.publicKey;
   const authorityPubkey = new web3.PublicKey(CONFIG.authority);
@@ -114,8 +114,27 @@ const main = async () => {
 
   // Assert mint authority changed as expected
   assert.equal(mintAfter.mintAuthority.toString(), CONFIG.newMintAuthority);
+}
+
+// NOTE: Due to the sequencing of the NTT upgrade transaction
+// and NTT TransferMintAuthority, we must simulate with Surfpool
+// loading a custom program binary, as Solana mainnet will not have
+// a state possible where we may simulate the TransferMintAuthority
+// prior to spell execution.
+const main = async () => {
+  const args = readArgs(ACTION);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+
+  await validateNttTransferMintAuthority({outputFile: args.file}, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

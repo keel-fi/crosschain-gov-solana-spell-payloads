@@ -5,19 +5,24 @@ import {
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
   readArgs,
-  readPayloadFile,
+  readPayloadOrDecodePacket,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { unpackMint } from "@solana/spl-token";
 import { ACTION, CONFIG } from "./config";
 
-const main = async () => {
+export const validateSetTokenFreezeAuthority = async (
+  config: {outputFile: string},
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
   const payerPubkey = new web3.PublicKey(CONFIG.payer);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
@@ -59,8 +64,22 @@ const main = async () => {
 
   // Assert freeze authority changed as expected
   assert.equal(mintAfter.freezeAuthority.toString(), CONFIG.newFreezeAuthority);
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+
+  await validateSetTokenFreezeAuthority({outputFile: args.file}, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
