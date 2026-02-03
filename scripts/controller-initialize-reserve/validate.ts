@@ -5,9 +5,9 @@ import {
   assertContainsIn,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeReserveConfig } from "./config";
@@ -22,16 +22,15 @@ import {
   unpackAccount,
 } from "@solana/spl-token";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerInitializeReserveConfig>(
-    args.config
-  );
-
-  const payload = readPayloadFile(config.outputFile);
+export const validateInitReserve = async (
+  config: ControllerInitializeReserveConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+  
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -153,8 +152,28 @@ const main = async () => {
     tokenAccount.amount.toString(),
     "Reserve lastBalance should equal vault token amount after sync_balance"
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeReserveConfig>(
+    args.config
+  );
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateInitReserve(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

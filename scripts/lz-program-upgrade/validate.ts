@@ -39,17 +39,12 @@ const getBufferCode = (buf: Buffer) => buf.subarray(CODE_OFFSET_BUFFER);
 const getProgramDataCode = (buf: Buffer) =>
   buf.subarray(CODE_OFFSET_PROGRAMDATA);
 
-const main = async () => {
+export const validateLzProgramUpgrade = async (
+  config: ProgramUpgradeConfig,
+  packetBytes: string | undefined,
+) => {
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ProgramUpgradeConfig>(args.config);
-
-  // Support both file-based and Packet bytes-based payload reading
-  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
   const payload = readPayloadOrDecodePacket({
     file: packetBytes ? undefined : config.outputFile,
     packetBytes,
@@ -133,10 +128,28 @@ const main = async () => {
     spillResp.after.lamports > spillResp.before.lamports,
     "Spill account did not receive lamports from buffer"
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ProgramUpgradeConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateLzProgramUpgrade(config, packetBytes);
 
   // Use file path for success message if available, otherwise indicate Packet bytes were used
   const sourceName = packetBytes ? "Packet bytes" : config.outputFile;
   validateSuccess(sourceName);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

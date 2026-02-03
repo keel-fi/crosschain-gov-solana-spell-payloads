@@ -16,19 +16,15 @@ import {
 import { address } from "@solana/kit";
 import { ACTION, ControllerManagePermissionConfig } from "./config";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerManagePermissionConfig>(args.config);
-
-  // Support both file-based and Packet bytes-based payload reading
-  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+export const validateManagePermission = async (
+  config: ControllerManagePermissionConfig,
+  packetBytes: string | undefined,
+) => {
   const payload = readPayloadOrDecodePacket({
     file: packetBytes ? undefined : config.outputFile,
     packetBytes,
   });
+
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.superAuthority);
 
@@ -163,10 +159,28 @@ const main = async () => {
     expectedPermissions,
     `Permission mismatch:\nExpected: ${JSON.stringify(expectedPermissions, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManagePermissionConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateManagePermission(config, packetBytes);
 
   // Use file path for success message if available, otherwise indicate Packet bytes were used
   const sourceName = packetBytes ? "Packet bytes" : config.outputFile;
   validateSuccess(sourceName);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

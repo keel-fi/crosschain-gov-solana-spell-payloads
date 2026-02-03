@@ -4,11 +4,11 @@ import {
   assertNoAccountChanges,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
   simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
   bytesToUtf8TrimNull,
   assertContainsIn,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ControllerManageIntegrationConfig, ACTION } from "./config";
@@ -18,15 +18,15 @@ import {
   getIntegrationCodec,
 } from "@keel-fi/svm-alm-controller";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerManageIntegrationConfig>(
-    args.config
-  );
-  const payload = readPayloadFile(config.outputFile);
+export const validateManageIntegration = async (
+  config: ControllerManageIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const payerPubkey = new web3.PublicKey(config.payer);
   const cpiAuthority = new web3.PublicKey(config.authority);
 
@@ -135,6 +135,22 @@ const main = async () => {
     "lastRefreshSlot", // Can change over time
   ];
   assertContainsIn(integrationBefore, integrationAfter, { skipKeys });
+
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManageIntegrationConfig>(
+    args.config
+  );
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateManageIntegration(config, packetBytes);
 
   validateSuccess(config.outputFile);
 };
