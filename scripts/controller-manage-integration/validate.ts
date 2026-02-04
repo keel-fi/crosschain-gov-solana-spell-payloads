@@ -155,4 +155,9 @@ const main = async () => {
   validateSuccess(config.outputFile);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

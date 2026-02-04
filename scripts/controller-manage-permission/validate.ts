@@ -89,9 +89,7 @@ export const validateManagePermission = async (
   );
 
   // Only assert these changes if the Permission previously existed
-  // and has valid data (not just an empty minimal account from simulation).
-  // Permission account needs at least 65 bytes: 8 (discriminator) + 32 (controller) + 32 (authority) + fields
-  if (permissionAccount.before && permissionAccount.before.data.length > 65) {
+  if (permissionAccount.before) {
     // Validate that the existing permission was owned by the controller program
     assert.equal(
       permissionAccount.before.owner.toString(),
