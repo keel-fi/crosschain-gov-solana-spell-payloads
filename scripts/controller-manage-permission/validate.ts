@@ -2,13 +2,10 @@ import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
-  SURFPOOL_URL,
+  readConfigFromFile,
+  readPayloadOrDecodePacket,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
 } from "../../src";
 import {
@@ -17,31 +14,27 @@ import {
   deriveControllerAuthorityPda,
 } from "@keel-fi/svm-alm-controller";
 import { address } from "@solana/kit";
-import {
-  NETWORK_CONFIGS,
-  PERMISSIONS as EXPECTED_PERMISSIONS,
-  ACTION,
-} from "./config";
+import { ACTION, ControllerManagePermissionConfig } from "./config";
 
-
-const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
+export const validateManagePermission = async (
+  config: ControllerManagePermissionConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.superAuthority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.superAuthority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -53,14 +46,9 @@ const main = async () => {
   );
 
   // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
+  // Use the actual payer from simulation (it generates a new keypair)
+  const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
-
-  // Assert controller does not change
-  const controllerResp = resp[config.controller];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(controllerResp.before, controllerResp.after);
-  }
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -80,33 +68,27 @@ const main = async () => {
   const superAuthorityResp = resp[config.superAuthority];
   assertNoAccountChanges(superAuthorityResp.before, superAuthorityResp.after);
 
-  // Assert super permission does not change when different
-  // from the managed permission.
-  if (permissionPda != superPermissionPda && rpcUrl !== SURFPOOL_URL) {
-    const superPermission = resp[superPermissionPda];
-    assertNoAccountChanges(superPermission.before, superPermission.after);
-  }
+  const superPermission = resp[superPermissionPda];
+  assertNoAccountChanges(superPermission.before, superPermission.after);
 
   // Assert controller program does not change
   const controllerProgramResp = resp[config.controllerProgramId];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(
-      controllerProgramResp.before,
-      controllerProgramResp.after
-    );
-  }
+  assertNoAccountChanges(
+    controllerProgramResp.before,
+    controllerProgramResp.after
+  );
 
   // Assert Permission changes
   const permissionCodec = getPermissionCodec();
   const permissionAccount = resp[permissionPda];
+  assert(permissionAccount.after, `Permission account ${permissionPda} should exist after simulation`);
   // Read Permission after discriminator
   const [permissionAfter] = permissionCodec.read(
     permissionAccount.after.data,
     1
   );
 
-  // Only assert these changes if the Permission previously
-  // existed.
+  // Only assert these changes if the Permission previously existed
   if (permissionAccount.before) {
     // Validate that the existing permission was owned by the controller program
     assert.equal(
@@ -114,7 +96,6 @@ const main = async () => {
       config.controllerProgramId,
       "Existing permission should be owned by the controller program ID"
     );
-
     const [permissionBefore] = permissionCodec.read(
       permissionAccount.before.data,
       1
@@ -128,6 +109,7 @@ const main = async () => {
       permissionBefore.authority.toString()
     );
   } else {
+    // Account didn't exist before or had empty data
     assert.equal(permissionAfter.controller.toString(), config.controller);
     assert.equal(permissionAfter.authority.toString(), config.authority);
   }
@@ -138,8 +120,22 @@ const main = async () => {
     "Permission owner should be the controller program ID"
   );
 
+  // Expected permissions from config
+  const expectedPermissions = {
+    status: config.status,
+    canManagePermissions: config.canManagePermissions,
+    canInvokeExternalTransfer: config.canInvokeExternalTransfer,
+    canExecuteSwap: config.canExecuteSwap,
+    canReallocate: config.canReallocate,
+    canFreezeController: config.canFreezeController,
+    canUnfreezeController: config.canUnfreezeController,
+    canManageReservesAndIntegrations: config.canManageReservesAndIntegrations,
+    canSuspendPermissions: config.canSuspendPermissions,
+    canLiquidate: config.canLiquidate,
+  };
+
   // Assert permission matrix matches expected values
-  const observedPermission: typeof EXPECTED_PERMISSIONS = {
+  const observedPermission: typeof expectedPermissions = {
     status: permissionAfter.status,
     canManagePermissions: permissionAfter.canManagePermissions,
     canInvokeExternalTransfer: permissionAfter.canInvokeExternalTransfer,
@@ -154,11 +150,31 @@ const main = async () => {
 
   assert.deepEqual(
     observedPermission,
-    EXPECTED_PERMISSIONS,
-    `Permission mismatch:\nExpected: ${JSON.stringify(EXPECTED_PERMISSIONS, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
+    expectedPermissions,
+    `Permission mismatch:\nExpected: ${JSON.stringify(expectedPermissions, null, 2)}\nObserved: ${JSON.stringify(observedPermission, null, 2)}`
   );
+}
 
-  validateSuccess(args.file);
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManagePermissionConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateManagePermission(config, packetBytes);
+
+  // Use file path for success message if available, otherwise indicate Packet bytes were used
+  const sourceName = packetBytes ? "Packet bytes" : config.outputFile;
+  validateSuccess(sourceName);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

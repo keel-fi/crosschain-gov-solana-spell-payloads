@@ -3,14 +3,11 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   assertNoAccountChanges,
   assertContainsIn,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeReserveConfig } from "./config";
@@ -25,33 +22,29 @@ import {
   unpackAccount,
 } from "@solana/spl-token";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerInitializeReserveConfig>(
-    args.config
-  );
-
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const payload = readPayloadFile(config.outputFile);
-
+export const validateInitReserve = async (
+  config: ControllerInitializeReserveConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+  
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
 
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
-
   // Assert payer does not change, except for lamports
-  const payerResp = resp[config.payer];
+  // Use the actual payer from simulation (it generates a new keypair)
+  const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   const permissionPda = await derivePermissionPda(
@@ -61,9 +54,7 @@ const main = async () => {
 
   // Assert controller does not change
   const controllerResp = resp[config.controller];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(controllerResp.before, controllerResp.after);
-  }
+  assertNoAccountChanges(controllerResp.before, controllerResp.after);
 
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
@@ -89,9 +80,7 @@ const main = async () => {
 
   // Assert permission does not change
   const permissionResp = resp[permissionPda];
-  if (rpcUrl !== SURFPOOL_URL) {
-    assertNoAccountChanges(permissionResp.before, permissionResp.after);
-  }
+  assertNoAccountChanges(permissionResp.before, permissionResp.after);
 
   const reservePda = await deriveReservePda(
     address(config.controller),
@@ -163,8 +152,28 @@ const main = async () => {
     tokenAccount.amount.toString(),
     "Reserve lastBalance should equal vault token amount after sync_balance"
   );
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeReserveConfig>(
+    args.config
+  );
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateInitReserve(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

@@ -4,16 +4,13 @@ import {
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
-  assertNoAccountChanges,
   validateCommonIntegrationFields,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
+  assertNoAccountChanges,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeKaminoIntegrationConfig } from "./config";
@@ -26,35 +23,26 @@ import {
   kamino,
   computeIntegrationHash,
 } from "@keel-fi/svm-alm-controller";
-import { PublicKey } from "@solana/web3.js";
 
-// In this script we validate that state and configuration 
-// was correctly set in the SVM ALM Controller program.
-// The different accounts passed to the initialize integration instruction 
-// (mint, kamino market, kamino reserve, reserve farm collateral)
-// have been manually validated. Links to their respective 
-// sources have been added in the constants.ts file.
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const payload = readPayloadFile(config.outputFile);
+export const validateInitKaminoIntegration = async (
+  config: ControllerInitializeKaminoIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -82,37 +70,32 @@ const main = async () => {
     "Obligation account should be owned by Kamino Lend program"
   );
 
-  if (config.reserveFarmCollateral !== PublicKey.default.toString()) {
-    const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
-    assert(
-      reserveFarmCollateralResp,
-      "Reserve farm collateral account should be in simulation response"
-    );
-    assert(
-      reserveFarmCollateralResp.after,
-      "Reserve farm collateral account should exist"
-    );
+  const reserveFarmCollateralResp = resp[config.reserveFarmCollateral];
+  assert(
+    reserveFarmCollateralResp,
+    "Reserve farm collateral account should be in simulation response"
+  );
+  assert(
+    reserveFarmCollateralResp.after,
+    "Reserve farm collateral account should exist"
+  );
 
-    // Validate reserve farm collateral account is owned by Kamino Farm program
-    assert.equal(
-      reserveFarmCollateralResp.after.owner.toString(),
-      kamino.KAMINO_FARMS_PROGRAM_ID.toString(),
-      "Reserve farm collateral account should be owned by Kamino Farm program"
-    );
-  }
+  // Validate reserve farm collateral account is owned by Kamino Farm program
+  assert.equal(
+    reserveFarmCollateralResp.after.owner.toString(),
+    kamino.KAMINO_FARMS_PROGRAM_ID.toString(),
+    "Reserve farm collateral account should be owned by Kamino Farm program"
+  );
 
   // Validate market account exists and is owned by Kamino Lend program
   const marketResp = resp[config.market];
   assert(marketResp, "Market account should be in simulation response");
-  if (rpcUrl !== SURFPOOL_URL) {
-    assert(marketResp.after, "Market account should exist");
-
-    assert.equal(
-      marketResp.after.owner.toString(),
-      kamino.KAMINO_LEND_PROGRAM_ID.toString(),
-      "Market account should be owned by Kamino Lend program"
-    );
-  }
+  assert(marketResp.after, "Market account should exist");
+  assert.equal(
+    marketResp.after.owner.toString(),
+    kamino.KAMINO_LEND_PROGRAM_ID.toString(),
+    "Market account should be owned by Kamino Lend program"
+  );
 
   // Validate reserve account exists and is owned by Kamino Lend program
   const reserveResp = resp[config.reserve];
@@ -127,29 +110,23 @@ const main = async () => {
   // Validate reserve liquidity mint account exists
   const reserveLiquidityMintResp = resp[config.reserveLiquidityMint];
   assert(reserveLiquidityMintResp, "Reserve liquidity mint account should be in simulation response");
-  if (rpcUrl !== SURFPOOL_URL) {
+  assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
 
-    assert(reserveLiquidityMintResp.after, "Reserve liquidity mint account should exist");
+  // Assert market does not change
+  assertNoAccountChanges(marketResp.before, marketResp.after);
 
-    // Assert external read-only accounts do not change
-    // Assert market does not change
-    const marketResp = resp[config.market];
-    assertNoAccountChanges(marketResp.before, marketResp.after);
+  // Assert reserve does not change
+  assertNoAccountChanges(reserveResp.before, reserveResp.after);
 
-    // Assert reserve does not change
-    const reserveResp = resp[config.reserve];
-    assertNoAccountChanges(reserveResp.before, reserveResp.after);
+  // Assert reserve liquidity mint does not change
+  assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
 
-    // Assert reserve liquidity mint does not change
-    assertNoAccountChanges(reserveLiquidityMintResp.before, reserveLiquidityMintResp.after);
+  // Note: reserve farm collateral account will change as the number of users increases
+  // when initializing a new integration, so we don't assert it remains unchanged
 
-    // Note: reserve farm collateral account will change as the number of users increases
-    // when initializing a new integration, so we don't assert it remains unchanged
-
-    // Assert referrer does not change
-    const referrerResp = resp[config.referrer];
-    assertNoAccountChanges(referrerResp.before, referrerResp.after);
-  }
+  // Assert referrer does not change
+  const referrerResp = resp[config.referrer];
+  assertNoAccountChanges(referrerResp.before, referrerResp.after);
 
   // Compute integration hash
   const kaminoConfig = {
@@ -170,8 +147,9 @@ const main = async () => {
   );
 
   // Assert common account changes
+  // Use the actual payer from simulation (it generates a new keypair)
   assertInitializeIntegrationCommonAccountChanges(resp, {
-    payer: config.payer,
+    payer: simulationPayer.toString(),
     controller: config.controller,
     authority: config.authority,
     controllerProgramId: config.controllerProgramId,
@@ -179,7 +157,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert integration is created
@@ -222,8 +199,32 @@ const main = async () => {
     padding: Buffer.from(new Uint8Array(40)),
   };
   assertContainsIn(expectedKaminoState, actualKaminoState);
+}
+
+// In this script we validate that state and configuration 
+// was correctly set in the SVM ALM Controller program.
+// The different accounts passed to the initialize integration instruction 
+// (mint, kamino market, kamino reserve, reserve farm collateral)
+// have been manually validated. Links to their respective 
+// sources have been added in the constants.ts file.
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeKaminoIntegrationConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateInitKaminoIntegration(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

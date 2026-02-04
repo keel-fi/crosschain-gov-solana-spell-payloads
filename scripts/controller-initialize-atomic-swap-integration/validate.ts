@@ -1,19 +1,16 @@
 import assert from "assert";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  assertNoAccountChanges,
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
   validateCommonIntegrationFields,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
+  assertNoAccountChanges,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import {
@@ -33,31 +30,25 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config =
-    readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
-      args.config
-    );
-
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const payload = readPayloadFile(config.outputFile);
+export const validateInitAtomicSwap = async (
+  config: ControllerInitializeAtomicSwapIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -90,8 +81,9 @@ const main = async () => {
   );
 
   // Assert common account changes
+  // Use the actual payer from simulation (it generates a new keypair)
   assertInitializeIntegrationCommonAccountChanges(resp, {
-    payer: config.payer,
+    payer: simulationPayer.toString(),
     controller: config.controller,
     authority: config.authority,
     controllerProgramId: config.controllerProgramId,
@@ -99,51 +91,42 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert input mint exists and does not change
   const inputMintResp = resp[config.inputTokenMint];
   assert(inputMintResp, "Input mint account should be in simulation response");
-  if (rpcUrl !== SURFPOOL_URL) {
-    assert(inputMintResp.after, "Input mint account should exist");
+  assert(inputMintResp.after, "Input mint account should exist");
+  
+  // Validate input mint is owned by a Token program
+  const inputMintOwner = inputMintResp.after.owner.toString();
+  assert(
+    inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Input mint should be owned by Token program or Token-2022 program"
+  );
 
-    // Validate input mint is owned by a Token program
-    const inputMintOwner = inputMintResp.after.owner.toString();
-    assert(
-      inputMintOwner === TOKEN_PROGRAM_ID.toString() || inputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
-      "Input mint should be owned by Token program or Token-2022 program"
-    );
-
-    assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
-  }
+  assertNoAccountChanges(inputMintResp.before, inputMintResp.after);
 
   // Assert output mint exists and does not change
   const outputMintResp = resp[config.outputTokenMint];
   assert(outputMintResp, "Output mint account should be in simulation response");
-  if (rpcUrl !== SURFPOOL_URL) {
+  assert(outputMintResp.after, "Output mint account should exist");
 
-    assert(outputMintResp.after, "Output mint account should exist");
-
-    // Validate output mint is owned by a Token program
-    const outputMintOwner = outputMintResp.after.owner.toString();
-    assert(
-      outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
-      "Output mint should be owned by Token program or Token-2022 program"
-    );
-
-    assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
-  }
+  assertNoAccountChanges(outputMintResp.before, outputMintResp.after);
+  
+  // Validate output mint is owned by a Token program
+  const outputMintOwner = outputMintResp.after.owner.toString();
+  assert(
+    outputMintOwner === TOKEN_PROGRAM_ID.toString() || outputMintOwner === TOKEN_2022_PROGRAM_ID.toString(),
+    "Output mint should be owned by Token program or Token-2022 program"
+  );
 
   // Assert oracle exists and does not change
   const oracleResp = resp[config.oracle];
   assert(oracleResp, "Oracle account should be in simulation response");
-  if (rpcUrl !== SURFPOOL_URL) {
+  assert(oracleResp.after, "Oracle account should exist");
 
-    assert(oracleResp.after, "Oracle account should exist");
-
-    assertNoAccountChanges(oracleResp.before, oracleResp.after);
-  }
+  assertNoAccountChanges(oracleResp.before, oracleResp.after);
 
   // Assert integration is created
   assertIntegrationCreated(resp, integrationPda);
@@ -201,8 +184,29 @@ const main = async () => {
     padding: Buffer.from(new Uint8Array(107)),
   };
   assertContainsIn(expectedConfigForValidation, actualAtomicSwapConfig);
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config =
+    readConfigFromFile<ControllerInitializeAtomicSwapIntegrationConfig>(
+      args.config
+    );
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+    
+  await validateInitAtomicSwap(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

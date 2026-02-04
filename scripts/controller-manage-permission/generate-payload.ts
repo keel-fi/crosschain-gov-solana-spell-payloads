@@ -4,21 +4,27 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   convertKitInstructionToWeb3Js,
   LZ_PAYER_PLACEHOLDER,
-  readAndValidateNetworkConfig,
   readArgs,
+  readConfigFromFile,
   convertInstructionToSolanaGovernancePayload,
   writeOutputFile,
 } from "../../src";
-import { Address, address, createNoopSigner, getAddressEncoder } from "@solana/kit";
+import { address, createNoopSigner } from "@solana/kit";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   getManagePermissionInstruction,
+  deriveControllerAuthorityPda,
+  derivePermissionPda,
 } from "@keel-fi/svm-alm-controller";
-import { ACTION, NETWORK_CONFIGS, PERMISSIONS } from "./config";
-import { deriveControllerAuthorityPda, derivePermissionPda } from "@keel-fi/svm-alm-controller";
+import { ACTION, ControllerManagePermissionConfig } from "./config";
+
 const printControllerManagePermissionPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerManagePermissionConfig>(args.config);
+
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
   );
@@ -46,13 +52,22 @@ const printControllerManagePermissionPayload = async () => {
     permission: permissionPda,
     programId: address(config.controllerProgramId),
     systemProgram: fromLegacyPublicKey(web3.SystemProgram.programId),
-    ...PERMISSIONS,
+    status: config.status,
+    canManagePermissions: config.canManagePermissions,
+    canInvokeExternalTransfer: config.canInvokeExternalTransfer,
+    canExecuteSwap: config.canExecuteSwap,
+    canReallocate: config.canReallocate,
+    canFreezeController: config.canFreezeController,
+    canUnfreezeController: config.canUnfreezeController,
+    canManageReservesAndIntegrations: config.canManageReservesAndIntegrations,
+    canSuspendPermissions: config.canSuspendPermissions,
+    canLiquidate: config.canLiquidate,
   });
   const payload = convertInstructionToSolanaGovernancePayload(
     convertKitInstructionToWeb3Js(instruction)
   );
 
-  writeOutputFile(args.file, payload);
+  writeOutputFile(config.outputFile, payload);
 };
 
 printControllerManagePermissionPayload();

@@ -3,37 +3,40 @@ import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
-  readPayloadFile,
+  readPayloadOrDecodePacket,
   simulateInstructions,
   validateSuccess,
 } from "../../src";
 import { web3 } from "@coral-xyz/anchor";
 import { getMetadataDecoder } from "../../src/programs/metaplex-token-metadata";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
-const main = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+export const validateUpdateMplMetadataAuthority = async (
+  config: {outputFile: string},
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
-  const payerPubkey = new web3.PublicKey(config.payer);
+  const payerPubkey = new web3.PublicKey(CONFIG.payer);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
-    new web3.PublicKey(config.authority)
+    new web3.PublicKey(CONFIG.authority)
   );
 
   const [METADATA_ADDRESS] = web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("metadata"),
-      new web3.PublicKey(config.mplProgramAddress).toBuffer(),
-      new web3.PublicKey(config.tokenMint).toBuffer(),
+      new web3.PublicKey(CONFIG.mplProgramAddress).toBuffer(),
+      new web3.PublicKey(CONFIG.tokenMint).toBuffer(),
     ],
-    new web3.PublicKey(config.mplProgramAddress)
+    new web3.PublicKey(CONFIG.mplProgramAddress)
   );
 
   const resp = await simulateInstructions(connection, payerPubkey, [
@@ -41,19 +44,19 @@ const main = async () => {
   ]);
 
   // Assert payer does not change aside from lamports
-  const payerResp = resp[config.payer];
+  const payerResp = resp[CONFIG.payer];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Token Mint should not change
-  const tokenMintResp = resp[config.tokenMint];
+  const tokenMintResp = resp[CONFIG.tokenMint];
   assertNoAccountChanges(tokenMintResp.before, tokenMintResp.after);
 
   // Current Authority should not change
-  const currentAuthResp = resp[config.authority];
+  const currentAuthResp = resp[CONFIG.authority];
   assertNoAccountChanges(currentAuthResp?.before, currentAuthResp?.after);
 
   // New Authority should not change
-  const newAuthResp = resp[config.newAuthority];
+  const newAuthResp = resp[CONFIG.newAuthority];
   assertNoAccountChanges(newAuthResp?.before, newAuthResp?.after);
 
   // Metadata authority should have changed
@@ -61,7 +64,7 @@ const main = async () => {
   const metadataDecoder = getMetadataDecoder();
   const metadataBefore = metadataDecoder.decode(metadataResp.before.data);
   const metadataAfter = metadataDecoder.decode(metadataResp.after.data);
-  assert.equal(metadataAfter.updateAuthority.toString(), config.newAuthority);
+  assert.equal(metadataAfter.updateAuthority.toString(), CONFIG.newAuthority);
 
   // Other Metadata values should remain unchanged
   assert.deepEqual(metadataAfter.collection, metadataBefore.collection);
@@ -84,8 +87,22 @@ const main = async () => {
   );
   assert.deepEqual(metadataAfter.tokenStandard, metadataBefore.tokenStandard);
   assert.deepEqual(metadataAfter.uses, metadataBefore.uses);
+}
+
+const main = async () => {
+  const args = readArgs(ACTION);
+  
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+
+  await validateUpdateMplMetadataAuthority({outputFile: args.file}, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

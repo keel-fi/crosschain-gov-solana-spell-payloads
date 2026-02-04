@@ -4,16 +4,13 @@ import {
   assertContainsIn,
   assertInitializeIntegrationCommonAccountChanges,
   assertIntegrationCreated,
-  assertNoAccountChanges,
   validateCommonIntegrationFields,
-  convertLzSolanaGovernancePayloadToInstruction,
-  getRpcEndpoint,
   readConfigFromFile,
   readArgs,
-  readPayloadFile,
-  simulateInstructions,
+  simulatePayloadWithCompleteCrossChainFlow,
   validateSuccess,
-  SURFPOOL_URL,
+  assertNoAccountChanges,
+  readPayloadOrDecodePacket,
 } from "../../src";
 import { address } from "@solana/kit";
 import { ACTION, ControllerInitializeDriftIntegrationConfig } from "./config";
@@ -27,32 +24,26 @@ import {
   drift,
 } from "@keel-fi/svm-alm-controller";
 
-// In this script we validate that state and configuration
-// was correctly set in the SVM ALM Controller program.
-// The different accounts and args passed to the initialize integration instruction
-// (mint, spot market index) have been manually validated. Links to their respective
-// sources have been added in the constants.ts file.
-const main = async () => {
-  const args = readArgs(ACTION);
-  if (!args.config) {
-    throw new Error("Must include config file '--config [CONFIG_FILE]'");
-  }
-  const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
-  const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const payload = readPayloadFile(config.outputFile);
+
+export const validateInitDriftIntegration = async (
+  config: ControllerInitializeDriftIntegrationConfig,
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
 
   const payerPubkey = new web3.PublicKey(config.payer);
-  const instruction = convertLzSolanaGovernancePayloadToInstruction(
+  const cpiAuthority = new web3.PublicKey(config.authority);
+
+  const { accountStates: resp, payer: simulationPayer } = await simulatePayloadWithCompleteCrossChainFlow(
     payload,
     new web3.PublicKey(config.controllerProgramId),
-    new web3.PublicKey(config.authority),
-    payerPubkey
+    payerPubkey,
+    cpiAuthority,
+    1n // nonce
   );
-
-  const resp = await simulateInstructions(connection, payerPubkey, [
-    instruction,
-  ]);
 
   const permissionPda = await derivePermissionPda(
     address(config.controller),
@@ -98,22 +89,19 @@ const main = async () => {
     spotMarketResp,
     "Spot market account should be in simulation response"
   );
-  if (rpcUrl !== SURFPOOL_URL) {
-    assert(
-      spotMarketResp.after,
-      "Spot market account should exist"
-    );
+  assert(
+    spotMarketResp.after,
+    "Spot market account should exist"
+  );
 
-    // Validate spot market account is owned by drift program
-    assert.equal(
-      spotMarketResp.after.owner.toString(),
-      drift.DRIFT_PROGRAM_ID.toString(),
-      "Spot market account should be owned by drift program"
-    );
+  // Validate spot market account is owned by drift program
+  assert.equal(
+    spotMarketResp.after.owner.toString(),
+    drift.DRIFT_PROGRAM_ID.toString(),
+    "Spot market account should be owned by drift program"
+  );
 
-    // Assert spot market does not change
-    assertNoAccountChanges(spotMarketResp.before, spotMarketResp.after);
-  }
+  assertNoAccountChanges(spotMarketResp.before, spotMarketResp.after);
 
   // Compute integration hash
   const driftConfig = {
@@ -130,8 +118,9 @@ const main = async () => {
   );
 
   // Assert common account changes
+  // Use the actual payer from simulation (it generates a new keypair)
   assertInitializeIntegrationCommonAccountChanges(resp, {
-    payer: config.payer,
+    payer: simulationPayer.toString(),
     controller: config.controller,
     authority: config.authority,
     controllerProgramId: config.controllerProgramId,
@@ -139,7 +128,6 @@ const main = async () => {
     permissionPda,
     integrationPda: integrationPda.toString(),
     expectedHash: integrationHash,
-    skipSurfpoolChecks: rpcUrl === SURFPOOL_URL,
   });
 
   // Assert integration is created
@@ -181,8 +169,31 @@ const main = async () => {
     padding: Buffer.from(new Uint8Array(40)),
   };
   assertContainsIn(expectedDriftState, actualDriftState);
+}
+
+// In this script we validate that state and configuration
+// was correctly set in the SVM ALM Controller program.
+// The different accounts and args passed to the initialize integration instruction
+// (mint, spot market index) have been manually validated. Links to their respective
+// sources have been added in the constants.ts file.
+const main = async () => {
+  const args = readArgs(ACTION);
+  if (!args.config) {
+    throw new Error("Must include config file '--config [CONFIG_FILE]'");
+  }
+  const config = readConfigFromFile<ControllerInitializeDriftIntegrationConfig>(args.config);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+  
+  await validateInitDriftIntegration(config, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

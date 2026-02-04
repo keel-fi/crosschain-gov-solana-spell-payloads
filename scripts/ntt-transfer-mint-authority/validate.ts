@@ -1,36 +1,43 @@
 // Simulates an example upgrade transaction and asserts value changes
 import assert from "assert";
 import path from "path";
+import fs from "fs";
 import { web3 } from "@coral-xyz/anchor";
+import { Connection } from "@solana/web3.js";
 import {
   assertNoAccountChanges,
   convertWhSolanaGovernancePayloadToInstruction,
-  createLiteSvmWithInstructionAccounts,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
-  readPayloadFile,
-  simulateInstructionsWithLiteSVM,
+  readPayloadOrDecodePacket,
   validateSuccess,
 } from "../../src";
+import {
+  simulateInstructionsWithSurfpool,
+} from "../../src/simulation-utils";
+import {
+  surfnetSetAccount,
+  surfnetWriteProgram,
+} from "../../src/surfpool-utils";
 import { unpackMint } from "@solana/spl-token";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
-// NOTE: Due to the sequencing of the NTT upgrade transaction
-// and NTT TransferMintAuthority, we must simulate in LiteSVM
-// as Solana mainnet will not have a state possible where we may
-// simulate the TransferMintAuthority prior to spell execution.
-const main = async () => {
-  const { config, network } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
+export const validateNttTransferMintAuthority = async (
+  config: {outputFile: string},
+  packetBytes: string | undefined,
+) => {
+  const payload = readPayloadOrDecodePacket({
+    file: packetBytes ? undefined : config.outputFile,
+    packetBytes,
+  });
+
   const rpcUrl = getRpcEndpoint();
-  const connection = new web3.Connection(rpcUrl);
-  const args = readArgs(ACTION);
-  const payload = readPayloadFile(args.file);
-
-  const payerPubkey = new web3.PublicKey(config.payer);
-  const authorityPubkey = new web3.PublicKey(config.authority);
-  const nttProgramIdPubkey = new web3.PublicKey(config.nttProgramId);
-  const tokenMintPubkey = new web3.PublicKey(config.tokenMint);
+  const connection = new Connection(rpcUrl, "confirmed");
+  const payerKeypair = web3.Keypair.generate();
+  const payerPubkey = payerKeypair.publicKey;
+  const authorityPubkey = new web3.PublicKey(CONFIG.authority);
+  const nttProgramIdPubkey = new web3.PublicKey(CONFIG.nttProgramId);
+  const tokenMintPubkey = new web3.PublicKey(CONFIG.tokenMint);
   const instruction = convertWhSolanaGovernancePayloadToInstruction(
     payload,
     payerPubkey,
@@ -47,25 +54,30 @@ const main = async () => {
     nttProgramIdPubkey
   )[0];
 
-  // Create SVM environment for simulation with upgraded
-  // NTT Program.
-  const excludedAddresses = [config.nttProgramId];
-  const svm = await createLiteSvmWithInstructionAccounts(
-    connection,
-    [instruction],
-    payerPubkey,
-    excludedAddresses
-  );
-  svm.withSigverify(false);
-  svm.addProgramFromFile(
-    nttProgramIdPubkey,
-    path.resolve(__dirname, `./fixtures/ntt-${network}.so`)
-  );
+  // Fund the payer account using surfnet_setAccount
+  console.log("💰 Funding payer account...");
+  await surfnetSetAccount(connection, payerPubkey, {
+    lamports: 10_000_000_000, // 10 SOL
+    data: Buffer.alloc(0),
+    owner: web3.SystemProgram.programId,
+    executable: false,
+    rentEpoch: 0,
+  });
 
-  const resp = simulateInstructionsWithLiteSVM(svm, payerPubkey, [instruction]);
+  // Load the upgraded NTT program using surfnet_writeProgram
+  console.log("📦 Loading upgraded NTT program...");
+  // Use mainnet binary since surfpool simulates mainnet state
+  const programPath = path.resolve(__dirname, `./fixtures/ntt-mainnet.so`);
+  const programBinary = fs.readFileSync(programPath);
+  const programBase64 = programBinary.toString("base64");
+  await surfnetWriteProgram(connection, nttProgramIdPubkey, programBase64, 0);
+
+  // Simulate the instruction using Surfpool
+  console.log("🚀 Simulating transaction...");
+  const resp = await simulateInstructionsWithSurfpool(connection, payerKeypair, [instruction]);
 
   // Assert payer does not change aside from lamports
-  const payerResp = resp[config.payer];
+  const payerResp = resp[payerPubkey.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
   // Previous authority should not change
@@ -73,7 +85,7 @@ const main = async () => {
   assertNoAccountChanges(prevAuthority?.before, prevAuthority?.after);
 
   // Assert new authority did not change
-  const newAuthorityResp = resp[config.newMintAuthority];
+  const newAuthorityResp = resp[CONFIG.newMintAuthority];
   assertNoAccountChanges(newAuthorityResp?.before, newAuthorityResp?.after);
 
   // NTT config should not change
@@ -82,11 +94,11 @@ const main = async () => {
 
   // NTT config owner should not change, except for Lamports
   // as the TX payer
-  const nttConfigOwner = resp[config.authority];
+  const nttConfigOwner = resp[CONFIG.authority];
   assertNoAccountChanges(nttConfigOwner.before, nttConfigOwner.after, true);
 
   // check mint values
-  const mintResp = resp[config.tokenMint];
+  const mintResp = resp[CONFIG.tokenMint];
   const mintBefore = unpackMint(tokenMintPubkey, mintResp.before);
   const mintAfter = unpackMint(tokenMintPubkey, mintResp.after);
 
@@ -101,9 +113,28 @@ const main = async () => {
   assert.deepEqual(mintAfter.tlvData, mintBefore.tlvData);
 
   // Assert mint authority changed as expected
-  assert.equal(mintAfter.mintAuthority.toString(), config.newMintAuthority);
+  assert.equal(mintAfter.mintAuthority.toString(), CONFIG.newMintAuthority);
+}
+
+// NOTE: Due to the sequencing of the NTT upgrade transaction
+// and NTT TransferMintAuthority, we must simulate with Surfpool
+// loading a custom program binary, as Solana mainnet will not have
+// a state possible where we may simulate the TransferMintAuthority
+// prior to spell execution.
+const main = async () => {
+  const args = readArgs(ACTION);
+
+  // Support both file-based and Packet bytes-based payload reading
+  const packetBytes = (args["packet-bytes"] || args.bytes) as string | undefined;
+
+  await validateNttTransferMintAuthority({outputFile: args.file}, packetBytes);
 
   validateSuccess(args.file);
 };
 
-main();
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

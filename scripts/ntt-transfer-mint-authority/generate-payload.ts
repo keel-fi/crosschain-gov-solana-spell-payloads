@@ -3,13 +3,12 @@ import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor-29/dist/cjs/utils/token";
 import {
   convertInstructionToWhSolanaGovernancePayload,
   getRpcEndpoint,
-  readAndValidateNetworkConfig,
   readArgs,
   WH_OWNER_SENTINEL_KEY,
   writeOutputFile,
 } from "../../src";
 import { _NTT_IDL } from "./idl";
-import { ACTION, NETWORK_CONFIGS } from "./config";
+import { ACTION, CONFIG } from "./config";
 
 // Hack around Anchor's wonky types by fixing the IDL as
 // a constant, but typing it as mutable.
@@ -19,12 +18,11 @@ type Mutable<T> = {
 const NTT_IDL = _NTT_IDL as Mutable<typeof _NTT_IDL>;
 
 const generateTransferMintAuthorityPayload = async () => {
-  const { config } = readAndValidateNetworkConfig(NETWORK_CONFIGS);
   const args = readArgs(ACTION);
   const rpcUrl = getRpcEndpoint();
   const connection = new web3.Connection(rpcUrl);
 
-  const nttProgramIdPubkey = new web3.PublicKey(config.nttProgramId);
+  const nttProgramIdPubkey = new web3.PublicKey(CONFIG.nttProgramId);
   const nttProgram = new Program<typeof NTT_IDL>(NTT_IDL, nttProgramIdPubkey, {
     connection,
   });
@@ -41,20 +39,20 @@ const generateTransferMintAuthorityPayload = async () => {
 
   const transferMintAuthorityInstruction = await nttProgram.methods
     .transferMintAuthority({
-      newMintAuthority: new web3.PublicKey(config.newMintAuthority),
+      newMintAuthority: new web3.PublicKey(CONFIG.newMintAuthority),
     })
     .accountsStrict({
       owner: WH_OWNER_SENTINEL_KEY,
       config: nttConfig,
       tokenAuthority: tokenAuthority,
-      mint: new web3.PublicKey(config.tokenMint),
+      mint: new web3.PublicKey(CONFIG.tokenMint),
       tokenProgram: TOKEN_PROGRAM_ID,
     })
     .instruction();
 
   const transferMintAuthorityGovernancePayload =
     convertInstructionToWhSolanaGovernancePayload(
-      new web3.PublicKey(config.governanceProgramId),
+      new web3.PublicKey(CONFIG.governanceProgramId),
       transferMintAuthorityInstruction
     );
 
