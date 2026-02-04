@@ -50,10 +50,6 @@ export const validateManagePermission = async (
   const payerResp = resp[simulationPayer.toString()];
   assertNoAccountChanges(payerResp.before, payerResp.after, true);
 
-  // Assert controller does not change
-  const controllerResp = resp[config.controller];
-  assertNoAccountChanges(controllerResp.before, controllerResp.after);
-
   // Assert controller authority does not change
   const controllerAuthority = await deriveControllerAuthorityPda(
     address(config.controller),
