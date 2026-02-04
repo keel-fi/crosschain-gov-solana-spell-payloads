@@ -63,6 +63,13 @@ export const readConfigFromFile = <T>(configPath: string): T => {
   const configModule = require(absolutePath);
   const config = (configModule.default || configModule) as T;
   
+  // Validate that config has required fields
+  Object.entries(config as Record<string, unknown>).forEach(([key, val]) => {
+    if (val === undefined || val === null) {
+      throw new Error(`Config is missing ${key}`);
+    }
+  });
+  
   return config;
 };
 
